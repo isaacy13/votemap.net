@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "democratize everything. vote for the future you want to see.",
   keywords: ["votemap", "democratize", "voting", "future", "collective decision making"],
   authors: [{ name: "OneX Engineering" }],
+  alternates: {
+    canonical: "https://votemap.net",
+  },
+  icons: {
+    icon: "/globe.svg",
+  },
+  manifest: "/manifest.json",
   openGraph: {
     title: "votemap",
     description: "democratize everything. vote for the future you want to see.",
@@ -44,6 +51,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "votemap",
+              "url": "https://votemap.net",
+              "description": "democratize everything. vote for the future you want to see.",
+              "publisher": {
+                "@type": "Organization",
+                "name": "OneX Engineering",
+              },
+            }),
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
