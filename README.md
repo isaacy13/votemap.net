@@ -23,7 +23,7 @@ Effectively, we want to dangle disgusting amounts of money over these politician
 
 If the grifters choose to misappropriate funds, they will need to do so publicly.
 
-Aside from politics, think about all the other places this could be applied to stop the grift (churches, companies, )
+Aside from politics, think about all the other places this could be applied to stop the grift (churches, companies, etc.)
 
 Our message to the people is: *stop donating directly to **grifters*** that *create problems*. Donate to ***problem-solvers*** that *make the world a better place*.
 
