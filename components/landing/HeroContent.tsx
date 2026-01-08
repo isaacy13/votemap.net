@@ -56,7 +56,7 @@ export const HeroContent = () => {
                     transition="all 0.2s"
                 >
                     <a href="https://github.com/isaacy13/votemap.net" target="_blank" rel="noopener noreferrer">
-                        <FaGithub /> Contribute
+                        <FaGithub /> Build Now
                     </a>
                 </Button>
             </MotionStack>
