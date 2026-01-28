@@ -6,6 +6,8 @@
 
 **votemap** aims to fix this by rewarding the *problem solvers* of society, not the *problem makers*
 
+![votemap light logo](public/images/votemap_light.JPG)
+
 ---
 
 ## 💭 How will votemap work?

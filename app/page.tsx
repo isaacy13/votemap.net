@@ -1,7 +1,7 @@
 'use client'
 
 import { Box, Container, Stack, VStack } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { HeroContent } from '@/components/landing/HeroContent'
 import { SocialLinks } from '@/components/landing/SocialLinks'
