@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     canonical: "https://votemap.net",
   },
   icons: {
-    icon: "/globe.svg",
+    icon: "/favicon.ico",
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -30,11 +30,18 @@ export const metadata: Metadata = {
     url: "https://votemap.net",
     siteName: "votemap",
     type: "website",
+    images: [
+      {
+        url: "/images/votemap_light.JPG",
+        alt: "votemap",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "votemap",
     description: "democratize everything. vote for the future you want to see.",
+    images: ["/images/votemap_light.JPG"],
   },
   robots: {
     index: true,
