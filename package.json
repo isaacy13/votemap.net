@@ -5,21 +5,38 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "build:cf": "opennextjs-cloudflare build",
+    "preview": "npm run build:cf && npx wrangler dev",
+    "deploy": "npm run build:cf && npx wrangler deploy",
     "lint": "eslint"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.33.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@opennextjs/cloudflare": "^1.17.1",
+    "@selfxyz/core": "^1.0.8",
+    "@selfxyz/qrcode": "^1.0.11",
+    "@solana/kit": "^6.1.0",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/wallet-adapter-base": "^0.9.27",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.39",
+    "@solana/wallet-adapter-wallets": "^0.19.37",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.34.3",
+    "nanoid": "^5.1.6",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260226.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
     "@types/react": "^19",
@@ -27,6 +44,7 @@
     "eslint": "^10",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.69.0"
   }
 }
