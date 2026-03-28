@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
 import { contributeSchema } from '../utils/validation';
+import { getParam } from '../utils/params';
 
 export function createContributionsRouter(prisma: PrismaClient, jwtSecret: string) {
   const router = Router();
@@ -14,7 +15,7 @@ export function createContributionsRouter(prisma: PrismaClient, jwtSecret: strin
   router.post('/:id/contribute', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = contributeSchema.parse(req.body);
-      const issueId = req.params.id;
+      const issueId = getParam(req, 'id');
       const userId = req.user!.userId;
 
       // Verify issue exists and is open

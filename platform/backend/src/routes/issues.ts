@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
 import { createIssueSchema } from '../utils/validation';
+import { getParam } from '../utils/params';
 
 export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
   const router = Router();
@@ -31,8 +32,9 @@ export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
    */
   router.get('/:id', async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, 'id');
       const issue = await prisma.issue.findUnique({
-        where: { id: req.params.id },
+        where: { id },
         include: {
           entity: true,
           contributions: {

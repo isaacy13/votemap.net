@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!platform/.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# platform build artifacts
+platform/backend/dist/
+platform/frontend/.expo/
+platform/frontend/dist/
+platform/frontend/web-build/
+platform/shared/dist/
+platform/contracts/target/

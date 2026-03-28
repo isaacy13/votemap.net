@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
 import { deliverableSchema } from '../utils/validation';
+import { getParam } from '../utils/params';
 
 export function createDeliverablesRouter(prisma: PrismaClient, jwtSecret: string) {
   const router = Router();
@@ -13,7 +14,7 @@ export function createDeliverablesRouter(prisma: PrismaClient, jwtSecret: string
   router.post('/:id/deliverable', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = deliverableSchema.parse(req.body);
-      const issueId = req.params.id;
+      const issueId = getParam(req, 'id');
 
       const issue = await prisma.issue.findUnique({
         where: { id: issueId },
