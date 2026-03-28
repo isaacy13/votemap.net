@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
+import { readLimiter, writeLimiter } from '../middleware/rateLimiter';
 import { createIssueSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
 
@@ -11,7 +12,7 @@ export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
   /**
    * GET /issues — Public listing of all issues (read-only, no auth required for browsing).
    */
-  router.get('/', async (_req: Request, res: Response) => {
+  router.get('/', readLimiter, async (_req: Request, res: Response) => {
     try {
       const issues = await prisma.issue.findMany({
         include: {
@@ -30,7 +31,7 @@ export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
   /**
    * GET /issues/:id — Public detail of a single issue with contributions, deliverables, etc.
    */
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', readLimiter, async (req: Request, res: Response) => {
     try {
       const id = getParam(req, 'id');
       const issue = await prisma.issue.findUnique({
@@ -71,7 +72,7 @@ export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
   /**
    * POST /issues — Create a new issue (write access required).
    */
-  router.post('/', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
+  router.post('/', writeLimiter, requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = createIssueSchema.parse(req.body);
 

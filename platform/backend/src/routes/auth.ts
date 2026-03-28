@@ -4,6 +4,7 @@ import { googleAuthSchema, appleAuthSchema, linkXSchema } from '../utils/validat
 import { generateAccessToken, generateRefreshToken } from '../utils/tokens';
 import type { JwtPayload } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
+import { authLimiter } from '../middleware/rateLimiter';
 
 export function createAuthRouter(prisma: PrismaClient, jwtSecret: string, jwtExpiresIn: string) {
   const router = Router();
@@ -11,7 +12,7 @@ export function createAuthRouter(prisma: PrismaClient, jwtSecret: string, jwtExp
   /**
    * POST /auth/google — Read-only login via Google ID token.
    */
-  router.post('/google', async (req: Request, res: Response) => {
+  router.post('/google', authLimiter, async (req: Request, res: Response) => {
     try {
       const body = googleAuthSchema.parse(req.body);
 
@@ -56,7 +57,7 @@ export function createAuthRouter(prisma: PrismaClient, jwtSecret: string, jwtExp
   /**
    * POST /auth/apple — Read-only login via Apple ID token.
    */
-  router.post('/apple', async (req: Request, res: Response) => {
+  router.post('/apple', authLimiter, async (req: Request, res: Response) => {
     try {
       const body = appleAuthSchema.parse(req.body);
 
@@ -98,7 +99,7 @@ export function createAuthRouter(prisma: PrismaClient, jwtSecret: string, jwtExp
   /**
    * POST /auth/link-x — Link X account and verify identity. Requires read-only auth.
    */
-  router.post('/link-x', requireAuth(jwtSecret), async (req: Request, res: Response) => {
+  router.post('/link-x', authLimiter, requireAuth(jwtSecret), async (req: Request, res: Response) => {
     try {
       const body = linkXSchema.parse(req.body);
       const userId = req.user!.userId;

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
+import { writeLimiter } from '../middleware/rateLimiter';
 import { contributeSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
 
@@ -12,7 +13,7 @@ export function createContributionsRouter(prisma: PrismaClient, jwtSecret: strin
    * POST /issues/:id/contribute — Contribute USDC to an issue (write access required).
    * Blocks if entity has not posted a monthly update in the last 30 days.
    */
-  router.post('/:id/contribute', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
+  router.post('/:id/contribute', writeLimiter, requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = contributeSchema.parse(req.body);
       const issueId = getParam(req, 'id');

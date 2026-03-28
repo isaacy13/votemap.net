@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
+import { writeLimiter } from '../middleware/rateLimiter';
 import { resolveSchema, pulloutVoteSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
 
@@ -11,7 +12,7 @@ export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string) 
   /**
    * POST /issues/:id/resolve — Individual resolution: approve or reject own contribution share.
    */
-  router.post('/:id/resolve', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
+  router.post('/:id/resolve', writeLimiter, requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = resolveSchema.parse(req.body);
       const userId = req.user!.userId;
@@ -78,7 +79,7 @@ export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string) 
    * POST /issues/:id/pullout-vote — Cast a collective pullout vote.
    * Triggers pullout when >50% users AND >50% USDC vote in favor.
    */
-  router.post('/:id/pullout-vote', requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
+  router.post('/:id/pullout-vote', writeLimiter, requireWriteAccess(jwtSecret), idempotency, async (req: Request, res: Response) => {
     try {
       const body = pulloutVoteSchema.parse(req.body);
       const issueId = getParam(req, 'id');
