@@ -6,7 +6,7 @@ import type { Issue } from '@votemap/shared';
 
 export default function IssuesScreen() {
   const router = useRouter();
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data: issuesData, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues'],
     queryFn: () => api.getIssues(),
   });
@@ -55,7 +55,7 @@ export default function IssuesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
       <FlatList
-        data={data?.issues ?? []}
+        data={issuesData?.issues ?? []}
         renderItem={renderIssue}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16 }}
