@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,6 +12,11 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple, isLoading, error, isAuthenticated } = useAuthStore();
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    AppleAuth.isAvailableAsync().then(setAppleAvailable);
+  }, []);
 
   // Google Auth setup
   const [request, response, promptAsync] = useGoogleAuth();
@@ -42,8 +47,7 @@ export default function LoginScreen() {
 
   const handleAppleLogin = async () => {
     try {
-      const isAvailable = await AppleAuth.isAvailableAsync();
-      if (isAvailable) {
+      if (appleAvailable) {
         const credential = await AppleAuth.signInAsync({
           requestedScopes: [
             AppleAuth.AppleAuthenticationScope.FULL_NAME,
