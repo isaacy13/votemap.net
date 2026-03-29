@@ -125,7 +125,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
  */
 export function useGoogleAuth() {
   return Google.useAuthRequest({
-    expoClientId: authConfig.google.expoClientId,
     iosClientId: authConfig.google.iosClientId,
     androidClientId: authConfig.google.androidClientId,
     webClientId: authConfig.google.webClientId,

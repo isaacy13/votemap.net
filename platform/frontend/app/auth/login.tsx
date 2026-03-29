@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Pressable, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuth from 'expo-apple-authentication';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
@@ -43,9 +44,7 @@ export default function LoginScreen() {
 
   const handleAppleLogin = async () => {
     try {
-      // Apple Authentication (iOS only, uses expo-apple-authentication)
       if (Platform.OS === 'ios') {
-        const AppleAuth = await import('expo-apple-authentication');
         const credential = await AppleAuth.signInAsync({
           requestedScopes: [
             AppleAuth.AppleAuthenticationScope.FULL_NAME,
@@ -57,7 +56,6 @@ export default function LoginScreen() {
           router.replace('/');
         }
       } else {
-        // On non-iOS, Apple Sign-In is handled via web flow
         useAuthStore.getState().setError('Apple Sign-In is only available on iOS devices');
       }
     } catch (err) {
@@ -107,7 +105,7 @@ export default function LoginScreen() {
           marginTop: 8,
           lineHeight: 22,
         }}>
-          Sign in to browse issues and track bounties
+          Sign in to contribute and vote on bounties
         </Text>
       </FadeInView>
 
@@ -195,10 +193,27 @@ export default function LoginScreen() {
         </FadeInView>
       </View>
 
+      {/* Skip / Browse without signing in */}
+      <FadeInView delay={400}>
+        <Pressable
+          onPress={() => router.replace('/')}
+          style={({ pressed }) => ({
+            marginTop: 20,
+            padding: 14,
+            alignItems: 'center',
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ color: colors.textMuted, fontSize: 15, fontWeight: '500' }}>
+            Browse without signing in →
+          </Text>
+        </Pressable>
+      </FadeInView>
+
       {/* Footer Note */}
       <FadeInView delay={500}>
         <View style={{
-          marginTop: 32,
+          marginTop: 20,
           padding: 16,
           backgroundColor: colors.surface,
           borderRadius: 12,

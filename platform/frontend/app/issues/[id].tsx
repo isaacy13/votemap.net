@@ -1,8 +1,10 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/auth';
+import { colors, FadeInView, GlowCard, PulsingDot } from '../../components/ui';
 
 export default function IssueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -17,133 +19,247 @@ export default function IssueDetailScreen() {
 
   if (isLoading || !issue) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#a0a0a0', fontSize: 16 }}>Loading...</Text>
+      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.purple} />
+        <Text style={{ color: colors.textSecondary, fontSize: 16, marginTop: 12 }}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#0a0a0a' }} contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#ffffff' }}>
-        {issue.title}
-      </Text>
-
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12,
-      }}>
-        <View style={{
-          backgroundColor: issue.status === 'open' ? '#22c55e' : '#eab308',
-          paddingHorizontal: 10,
-          paddingVertical: 4,
-          borderRadius: 8,
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.bg }}
+      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Title */}
+      <FadeInView delay={0}>
+        <Text style={{
+          fontSize: 28,
+          fontWeight: '800',
+          color: colors.text,
+          letterSpacing: -0.5,
+          lineHeight: 34,
         }}>
-          <Text style={{ color: '#000000', fontWeight: '600' }}>{issue.status.toUpperCase()}</Text>
-        </View>
-        <Text style={{ color: '#3b82f6', fontSize: 20, fontWeight: '700' }}>
-          ${issue.totalBountyUsdc} USDC
+          {issue.title}
         </Text>
-      </View>
+      </FadeInView>
 
+      {/* Status + Bounty Row */}
+      <FadeInView delay={100}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: issue.status === 'open' ? colors.green + '18' : colors.yellow + '18',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: issue.status === 'open' ? colors.green + '30' : colors.yellow + '30',
+          }}>
+            <PulsingDot color={issue.status === 'open' ? colors.green : colors.yellow} size={6} />
+            <Text style={{
+              color: issue.status === 'open' ? colors.green : colors.yellow,
+              fontWeight: '600',
+              fontSize: 13,
+              letterSpacing: 0.5,
+            }}>
+              {issue.status.toUpperCase()}
+            </Text>
+          </View>
+          <Text style={{
+            color: colors.blue,
+            fontSize: 22,
+            fontWeight: '800',
+            letterSpacing: -0.3,
+          }}>
+            ${issue.totalBountyUsdc} USDC
+          </Text>
+        </View>
+      </FadeInView>
+
+      {/* Entity */}
       {issue.entity && (
-        <Text style={{ color: '#a0a0a0', fontSize: 14, marginTop: 8 }}>
-          Entity: {issue.entity.name} ({issue.entity.type})
-        </Text>
+        <FadeInView delay={150}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: 12,
+            gap: 6,
+          }}>
+            <View style={{
+              backgroundColor: colors.surfaceLight,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
+            }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '500' }}>
+                {issue.entity.name}
+              </Text>
+            </View>
+            <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+              {issue.entity.type}
+            </Text>
+          </View>
+        </FadeInView>
       )}
 
-      <Text style={{ color: '#ffffff', fontSize: 16, marginTop: 20, lineHeight: 24 }}>
-        {issue.description}
-      </Text>
-
-      <View style={{ backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginTop: 20 }}>
-        <Text style={{ color: '#a0a0a0', fontSize: 14, fontWeight: '600' }}>SUCCESS CRITERIA</Text>
-        <Text style={{ color: '#ffffff', fontSize: 16, marginTop: 8 }}>
-          {issue.successCriteria}
+      {/* Description */}
+      <FadeInView delay={200}>
+        <Text style={{
+          color: colors.textSecondary,
+          fontSize: 16,
+          marginTop: 20,
+          lineHeight: 26,
+        }}>
+          {issue.description}
         </Text>
-      </View>
+      </FadeInView>
 
+      {/* Success Criteria */}
+      <FadeInView delay={300}>
+        <GlowCard style={{ marginTop: 20 }}>
+          <Text style={{
+            color: colors.textMuted,
+            fontSize: 11,
+            fontWeight: '700',
+            letterSpacing: 1.2,
+            textTransform: 'uppercase',
+          }}>
+            Success Criteria
+          </Text>
+          <Text style={{ color: colors.text, fontSize: 15, marginTop: 10, lineHeight: 22 }}>
+            {issue.successCriteria}
+          </Text>
+        </GlowCard>
+      </FadeInView>
+
+      {/* Target Date */}
       {issue.targetDate && (
-        <Text style={{ color: '#eab308', fontSize: 14, marginTop: 12 }}>
-          Target: {new Date(issue.targetDate).toLocaleDateString()}
-        </Text>
+        <FadeInView delay={350}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: 14,
+            gap: 6,
+          }}>
+            <Text style={{ fontSize: 14 }}>📅</Text>
+            <Text style={{ color: colors.yellow, fontSize: 14, fontWeight: '600' }}>
+              Target: {new Date(issue.targetDate).toLocaleDateString()}
+            </Text>
+          </View>
+        </FadeInView>
       )}
 
       {/* Contributions Section */}
       {issue.contributions && issue.contributions.length > 0 && (
-        <View style={{ marginTop: 24 }}>
-          <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '600' }}>
-            Contributions ({issue.contributions.length})
-          </Text>
-          {issue.contributions.map((c) => (
-            <View key={c.id} style={{
-              backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, marginTop: 8,
+        <FadeInView delay={400}>
+          <View style={{ marginTop: 28 }}>
+            <Text style={{
+              color: colors.text,
+              fontSize: 18,
+              fontWeight: '700',
+              letterSpacing: -0.3,
             }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#ffffff' }}>
-                  {c.user?.displayName ?? 'Anonymous'}
-                </Text>
-                <Text style={{ color: '#3b82f6', fontWeight: '600' }}>
-                  ${c.amountUsdc} USDC
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+              Contributions
+            </Text>
+            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
+              {issue.contributions.length} contributor{issue.contributions.length !== 1 ? 's' : ''}
+            </Text>
+            {issue.contributions.map((c, i) => (
+              <GlowCard key={c.id} style={{ marginTop: 10, padding: 14 }} delay={450 + i * 60}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>
+                    {c.user?.displayName ?? 'Anonymous'}
+                  </Text>
+                  <Text style={{ color: colors.blue, fontWeight: '700', fontSize: 15 }}>
+                    ${c.amountUsdc} USDC
+                  </Text>
+                </View>
+              </GlowCard>
+            ))}
+          </View>
+        </FadeInView>
       )}
 
       {/* Deliverables Section */}
       {issue.deliverables && issue.deliverables.length > 0 && (
-        <View style={{ marginTop: 24 }}>
-          <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '600' }}>
-            Deliverables ({issue.deliverables.length})
-          </Text>
-          {issue.deliverables.map((d) => (
-            <View key={d.id} style={{
-              backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, marginTop: 8,
+        <FadeInView delay={500}>
+          <View style={{ marginTop: 28 }}>
+            <Text style={{
+              color: colors.text,
+              fontSize: 18,
+              fontWeight: '700',
+              letterSpacing: -0.3,
             }}>
-              <Text style={{ color: '#ffffff' }}>{d.proofText}</Text>
-              <Text style={{ color: '#666666', fontSize: 12, marginTop: 4 }}>
-                {new Date(d.submittedAt).toLocaleDateString()}
-              </Text>
-            </View>
-          ))}
-        </View>
+              Deliverables
+            </Text>
+            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
+              {issue.deliverables.length} submission{issue.deliverables.length !== 1 ? 's' : ''}
+            </Text>
+            {issue.deliverables.map((d, i) => (
+              <GlowCard key={d.id} style={{ marginTop: 10, padding: 14 }} delay={550 + i * 60}>
+                <Text style={{ color: colors.text, fontSize: 14, lineHeight: 20 }}>{d.proofText}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>
+                  📎 {new Date(d.submittedAt).toLocaleDateString()}
+                </Text>
+              </GlowCard>
+            ))}
+          </View>
+        </FadeInView>
       )}
 
       {/* Action Buttons */}
-      {isWriteEnabled && issue.status === 'open' && (
-        <Pressable
-          onPress={() => {/* Navigate to contribute flow */}}
-          style={{
-            backgroundColor: '#3b82f6',
-            padding: 16,
-            borderRadius: 12,
-            alignItems: 'center',
-            marginTop: 24,
-          }}
-        >
-          <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '600' }}>
-            Contribute
-          </Text>
-        </Pressable>
-      )}
+      <FadeInView delay={600}>
+        <View style={{ marginTop: 28 }}>
+          {isWriteEnabled && issue.status === 'open' && (
+            <Pressable
+              onPress={() => {/* Navigate to contribute flow */}}
+              style={({ pressed }) => ({
+                overflow: 'hidden',
+                borderRadius: 16,
+                opacity: pressed ? 0.9 : 1,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
+              })}
+            >
+              <LinearGradient
+                colors={[colors.gradient.start, colors.gradient.middle]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  padding: 18,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>
+                  Contribute USDC
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          )}
 
-      {!isWriteEnabled && (
-        <Pressable
-          onPress={() => router.push('/auth/link-x')}
-          style={{
-            backgroundColor: '#333333',
-            padding: 16,
-            borderRadius: 12,
-            alignItems: 'center',
-            marginTop: 24,
-          }}
-        >
-          <Text style={{ color: '#a0a0a0', fontSize: 16 }}>
-            Link X account for write access
-          </Text>
-        </Pressable>
-      )}
+          {!isWriteEnabled && (
+            <Pressable
+              onPress={() => router.push('/auth/link-x')}
+              style={({ pressed }) => ({
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 16,
+                alignItems: 'center',
+                backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+              })}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600' }}>
+                Link X Account for Write Access
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </FadeInView>
     </ScrollView>
   );
 }

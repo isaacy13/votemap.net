@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, Dimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Dimensions, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -11,7 +11,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
+import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useAuthStore } from '../store/auth';
 import { colors, FadeInView, GlowCard } from '../components/ui';
 
@@ -88,15 +88,12 @@ function SparkField() {
     const result: { x: number; y: number; color: string; delay: number; id: number }[] = [];
     let id = 0;
     const w = SCREEN_WIDTH;
-    // Blue (left)
     for (let i = 0; i < 8; i++) {
       result.push({ id: id++, x: w * 0.15 + (Math.random() - 0.5) * w * 0.2, y: 40 + Math.random() * 40, color: colors.blue, delay: 2000 + Math.random() * 4000 });
     }
-    // Purple (center)
     for (let i = 0; i < 15; i++) {
       result.push({ id: id++, x: w * 0.5 + (Math.random() - 0.5) * w * 0.4, y: 30 + Math.random() * 60, color: colors.purple, delay: 1500 + Math.random() * 3500 });
     }
-    // Red (right)
     for (let i = 0; i < 8; i++) {
       result.push({ id: id++, x: w * 0.85 + (Math.random() - 0.5) * w * 0.2, y: 40 + Math.random() * 40, color: colors.red, delay: 2000 + Math.random() * 4000 });
     }
@@ -210,89 +207,92 @@ export default function HomeScreen() {
         </FadeInView>
       </View>
 
-      {/* Action Section */}
+      {/* Primary CTA - Browse Issues (always visible, no auth required) */}
       <View style={{ paddingHorizontal: 24, marginTop: 48 }}>
+        <FadeInView delay={600}>
+          <Pressable
+            onPress={() => router.push('/issues')}
+            style={({ pressed }) => ({
+              overflow: 'hidden',
+              borderRadius: 16,
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            })}
+          >
+            <LinearGradient
+              colors={[colors.gradient.start, colors.gradient.middle]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                padding: 18,
+                borderRadius: 16,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700', letterSpacing: 0.3 }}>
+                Browse Issues
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </FadeInView>
+
+        {/* Auth Section */}
         {!isAuthenticated ? (
-          <FadeInView delay={600}>
+          <FadeInView delay={700}>
             <Pressable
               onPress={() => router.push('/auth/login')}
               style={({ pressed }) => ({
-                overflow: 'hidden',
+                marginTop: 12,
                 borderRadius: 16,
-                opacity: pressed ? 0.9 : 1,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 16,
+                alignItems: 'center',
+                backgroundColor: pressed ? colors.surfaceHover : colors.surface,
               })}
             >
-              <LinearGradient
-                colors={[colors.gradient.start, colors.gradient.middle]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  padding: 18,
-                  borderRadius: 16,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700', letterSpacing: 0.3 }}>
-                  Get Started
-                </Text>
-              </LinearGradient>
+              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600' }}>
+                Sign In for Write Access
+              </Text>
             </Pressable>
-
             <Text style={{
               color: colors.textMuted,
               fontSize: 13,
               textAlign: 'center',
-              marginTop: 12,
+              marginTop: 8,
             }}>
-              Sign in with Google or Apple to browse issues
+              Sign in with Google or Apple, then link X to contribute
             </Text>
           </FadeInView>
         ) : (
           <>
-            <FadeInView delay={200}>
-              <GlowCard>
-                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Welcome back</Text>
-                <Text style={{
-                  color: colors.text,
-                  fontSize: 24,
-                  fontWeight: '700',
-                  marginTop: 4,
-                }}>
-                  {user?.displayName ?? 'Voter'}
-                </Text>
+            <FadeInView delay={700}>
+              <GlowCard style={{ marginTop: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Signed in as</Text>
+                    <Text style={{ color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 2 }}>
+                      {user?.displayName ?? 'Voter'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={signOut}
+                    style={({ pressed }) => ({
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 10,
+                      backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    })}
+                  >
+                    <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '500' }}>Sign Out</Text>
+                  </Pressable>
+                </View>
               </GlowCard>
             </FadeInView>
 
-            <FadeInView delay={400}>
-              <Pressable
-                onPress={() => router.push('/issues')}
-                style={({ pressed }) => ({
-                  overflow: 'hidden',
-                  borderRadius: 16,
-                  marginTop: 16,
-                  opacity: pressed ? 0.9 : 1,
-                  transform: [{ scale: pressed ? 0.98 : 1 }],
-                })}
-              >
-                <LinearGradient
-                  colors={[colors.gradient.start, colors.gradient.middle]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{
-                    padding: 18,
-                    borderRadius: 16,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>
-                    Browse Issues
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </FadeInView>
-
-            <FadeInView delay={500}>
+            <FadeInView delay={800}>
               <Pressable
                 onPress={() => router.push('/auth/link-x')}
                 style={({ pressed }) => ({
@@ -306,18 +306,7 @@ export default function HomeScreen() {
                 })}
               >
                 <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600' }}>
-                  Link X Account
-                </Text>
-              </Pressable>
-            </FadeInView>
-
-            <FadeInView delay={600}>
-              <Pressable
-                onPress={signOut}
-                style={{ marginTop: 24, alignItems: 'center', padding: 8 }}
-              >
-                <Text style={{ color: colors.textMuted, fontSize: 14 }}>
-                  Sign Out
+                  Link X Account for Write Access
                 </Text>
               </Pressable>
             </FadeInView>
@@ -327,82 +316,92 @@ export default function HomeScreen() {
 
       {/* Info Cards */}
       <View style={{ paddingHorizontal: 24, marginTop: 48 }}>
-        <FadeInView delay={800}>
+        <FadeInView delay={900}>
           <GlowCard style={{ marginBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
+                width: 40, height: 40, borderRadius: 12,
                 backgroundColor: colors.blue + '20',
-                alignItems: 'center',
-                justifyContent: 'center',
+                alignItems: 'center', justifyContent: 'center',
               }}>
                 <Text style={{ fontSize: 20 }}>🗳️</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>On-Chain Bounties</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
-                  USDC escrow with full transparency
-                </Text>
-              </View>
-            </View>
-          </GlowCard>
-        </FadeInView>
-
-        <FadeInView delay={900}>
-          <GlowCard style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: colors.purple + '20',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: 20 }}>🔒</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Individual Resolution</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
-                  You decide where your money goes
-                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>USDC escrow with full transparency</Text>
               </View>
             </View>
           </GlowCard>
         </FadeInView>
 
         <FadeInView delay={1000}>
+          <GlowCard style={{ marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{
+                width: 40, height: 40, borderRadius: 12,
+                backgroundColor: colors.purple + '20',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 20 }}>🔒</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Individual Resolution</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>You decide where your money goes</Text>
+              </View>
+            </View>
+          </GlowCard>
+        </FadeInView>
+
+        <FadeInView delay={1100}>
           <GlowCard>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
+                width: 40, height: 40, borderRadius: 12,
                 backgroundColor: colors.green + '20',
-                alignItems: 'center',
-                justifyContent: 'center',
+                alignItems: 'center', justifyContent: 'center',
               }}>
                 <Text style={{ fontSize: 20 }}>✨</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Open Source</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>
-                  Fully auditable, censorship-resistant
-                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 2 }}>Fully auditable, censorship-resistant</Text>
               </View>
             </View>
           </GlowCard>
         </FadeInView>
       </View>
 
+      {/* Social Links */}
+      <FadeInView delay={1200}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, marginTop: 40 }}>
+          <Pressable onPress={() => Linking.openURL('https://x.com/vote_map')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: colors.textMuted, fontSize: 24 }}>𝕏</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('https://instagram.com/vote_map')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: colors.textMuted, fontSize: 24 }}>📷</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('https://github.com/isaacy13/votemap.net')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: colors.textMuted, fontSize: 24 }}>⌨️</Text>
+          </Pressable>
+        </View>
+      </FadeInView>
+
       {/* Footer */}
-      <View style={{ alignItems: 'center', marginTop: 48, paddingBottom: 20 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-          Built by onexengineering
-        </Text>
-      </View>
+      <FadeInView delay={1300}>
+        <View style={{ alignItems: 'center', marginTop: 24, paddingBottom: 20, gap: 4 }}>
+          <Pressable onPress={() => Linking.openURL('mailto:support@votemap.net')}>
+            <Text style={{ color: colors.textMuted, fontSize: 12, textDecorationLine: 'underline' }}>
+              support@votemap.net
+            </Text>
+          </Pressable>
+          <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+            Built by onexengineering
+          </Text>
+        </View>
+      </FadeInView>
     </ScrollView>
   );
 }
