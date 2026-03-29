@@ -1,25 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuth from 'expo-apple-authentication';
+import * as AuthSession from 'expo-auth-session';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useAuthStore, useGoogleAuth } from '../../store/auth';
 import { colors, FadeInView } from '../../components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Apple OAuth discovery for web fallback
+const appleDiscovery = {
+  authorizationEndpoint: 'https://appleid.apple.com/auth/authorize',
+};
+
 export default function LoginScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple, isLoading, error, isAuthenticated } = useAuthStore();
-  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [appleNativeAvailable, setAppleNativeAvailable] = useState(false);
 
   useEffect(() => {
-    AppleAuth.isAvailableAsync().then(setAppleAvailable);
+    AppleAuth.isAvailableAsync().then(setAppleNativeAvailable);
   }, []);
 
   // Google Auth setup
   const [request, response, promptAsync] = useGoogleAuth();
+
+  // Apple web auth (fallback for Safari/macOS)
+  const appleRedirectUri = AuthSession.makeRedirectUri({ scheme: 'votemap' });
+  const [appleRequest, appleResponse, applePromptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: 'net.votemap.app',
+      redirectUri: appleRedirectUri,
+      responseType: AuthSession.ResponseType.Code,
+      scopes: ['name', 'email'],
+    },
+    appleDiscovery
+  );
 
   // Handle Google auth response
   useEffect(() => {
@@ -29,6 +47,15 @@ export default function LoginScreen() {
         .catch(() => {});
     }
   }, [response]);
+
+  // Handle Apple web auth response
+  useEffect(() => {
+    if (appleResponse?.type === 'success' && appleResponse.params?.id_token) {
+      signInWithApple(appleResponse.params.id_token)
+        .then(() => router.replace('/'))
+        .catch(() => {});
+    }
+  }, [appleResponse]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -47,7 +74,8 @@ export default function LoginScreen() {
 
   const handleAppleLogin = async () => {
     try {
-      if (appleAvailable) {
+      if (appleNativeAvailable) {
+        // Native Apple Sign-In (iOS/macOS native)
         const credential = await AppleAuth.signInAsync({
           requestedScopes: [
             AppleAuth.AppleAuthenticationScope.FULL_NAME,
@@ -58,6 +86,9 @@ export default function LoginScreen() {
           await signInWithApple(credential.identityToken);
           router.replace('/');
         }
+      } else if (Platform.OS === 'web') {
+        // Web fallback: use OAuth session (works in Safari on macOS)
+        await applePromptAsync();
       } else {
         useAuthStore.getState().setError('Apple Sign-In is not available on this device');
       }
