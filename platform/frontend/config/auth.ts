@@ -8,6 +8,9 @@ export const authConfig = {
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '',
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
   },
+  apple: {
+    serviceId: process.env.EXPO_PUBLIC_APPLE_SERVICE_ID ?? 'net.votemap.app',
+  },
   x: {
     clientId: process.env.EXPO_PUBLIC_X_CLIENT_ID ?? '',
   },

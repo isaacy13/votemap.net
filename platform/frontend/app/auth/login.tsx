@@ -6,6 +6,7 @@ import * as AppleAuth from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useAuthStore, useGoogleAuth } from '../../store/auth';
+import { authConfig } from '../../config/auth';
 import { colors, FadeInView } from '../../components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -31,7 +32,7 @@ export default function LoginScreen() {
   const appleRedirectUri = AuthSession.makeRedirectUri({ scheme: 'votemap' });
   const [appleRequest, appleResponse, applePromptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: 'net.votemap.app',
+      clientId: authConfig.apple.serviceId,
       redirectUri: appleRedirectUri,
       responseType: AuthSession.ResponseType.Code,
       scopes: ['name', 'email'],
