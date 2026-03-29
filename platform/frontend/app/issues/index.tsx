@@ -1,10 +1,9 @@
 import { View, Text, Pressable, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import { api } from '../../services/api';
-import { colors, FadeInView, GlowCard, FadeInDown, PulsingDot } from '../../components/ui';
+import { colors, FadeInView, FadeInDown, PulsingDot } from '../../components/ui';
 import type { Issue } from '@votemap/shared';
 
 export default function IssuesScreen() {

@@ -1,16 +1,11 @@
 import React from 'react';
-import { View, ViewStyle } from 'react-native';
+import { ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-  withDelay,
-  withSpring,
-  FadeIn,
   FadeInDown,
-  FadeInUp,
-  SlideInRight,
 } from 'react-native-reanimated';
 
 /** Shared color palette matching the NextJS landing page */
@@ -60,12 +55,10 @@ export function GlowCard({
   children,
   style,
   delay = 0,
-  onPress,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
   delay?: number;
-  onPress?: () => void;
 }) {
   return (
     <Animated.View
@@ -118,4 +111,4 @@ export function PulsingDot({ color = colors.green, size = 8 }: { color?: string;
   );
 }
 
-export { FadeIn, FadeInDown, FadeInUp, SlideInRight };
+export { FadeInDown };

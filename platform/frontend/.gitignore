@@ -4,4 +4,4 @@ dist/
 web-build/
 *.tsbuildinfo
 .env*
-node_modules/
+!.env.example

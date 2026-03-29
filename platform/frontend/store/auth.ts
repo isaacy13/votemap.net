@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
 import { api } from '../services/api';
 import { authConfig } from '../config/auth';
-
-WebBrowser.maybeCompleteAuthSession();
 
 interface User {
   id: string;

@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, Text, Pressable, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuth from 'expo-apple-authentication';
-import Animated from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useAuthStore, useGoogleAuth } from '../../store/auth';
 import { colors, FadeInView } from '../../components/ui';
@@ -44,7 +42,8 @@ export default function LoginScreen() {
 
   const handleAppleLogin = async () => {
     try {
-      if (Platform.OS === 'ios') {
+      const isAvailable = await AppleAuth.isAvailableAsync();
+      if (isAvailable) {
         const credential = await AppleAuth.signInAsync({
           requestedScopes: [
             AppleAuth.AppleAuthenticationScope.FULL_NAME,
@@ -56,7 +55,7 @@ export default function LoginScreen() {
           router.replace('/');
         }
       } else {
-        useAuthStore.getState().setError('Apple Sign-In is only available on iOS devices');
+        useAuthStore.getState().setError('Apple Sign-In is not available on this device');
       }
     } catch (err) {
       console.error('Apple login failed:', err);
