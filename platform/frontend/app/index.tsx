@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Dimensions, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -8,14 +8,12 @@ import Animated, {
   withRepeat,
   withSequence,
   withDelay,
-  Easing,
 } from 'react-native-reanimated';
 import Svg, {
   Text as SvgText,
   Defs,
   LinearGradient as SvgGradient,
   Stop,
-  Circle,
   Path,
 } from 'react-native-svg';
 import { useAuthStore } from '../store/auth';
@@ -23,15 +21,13 @@ import { colors, FadeInView } from '../components/ui';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/** Heading height in px — matches the SVG viewBox height of 180 */
-const HEADING_HEIGHT = 180;
-
 /** Gray color for social icons and footer text — matches NextJS Chakra gray.400 */
 const GRAY_400 = '#9ca3af';
 
 /* ── Spark particles ─────────────────────────────────────────────────
    Matches NextJS VotemapHeading: 15 blue (x≈250), 40 purple (x≈450), 15 red (x≈650)
-   in viewBox 0 0 900 180. Each particle drifts outward and fades. */
+   in viewBox 0 0 900 180. Each particle drifts outward and fades.
+   Sparks start after 6s delay matching NextJS (delay: 6 + spark.delay). */
 
 interface Spark {
   id: number;
@@ -77,7 +73,8 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
   const dy = useSharedValue(0);
 
   useEffect(() => {
-    const d = spark.delay * 1000; // seconds → ms
+    // 6s initial delay matches NextJS "delay: 6 + spark.delay"
+    const d = (6 + spark.delay) * 1000;
     const dur = spark.duration * 1000;
     opacity.value = withDelay(d, withRepeat(
       withSequence(withTiming(0.6, { duration: dur * 0.4 }), withTiming(0, { duration: dur * 0.6 })),
@@ -98,13 +95,15 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
     transform: [{ translateX: dx.value }, { translateY: dy.value }],
   }));
 
+  // Scale spark positions relative to screen width (viewBox is 0 0 900 180)
+  const headingHeight = 180;
   return (
     <Animated.View
       style={[
         {
           position: 'absolute',
           left: (spark.cx / 900) * SCREEN_WIDTH,
-          top: (spark.cy / 180) * HEADING_HEIGHT,
+          top: (spark.cy / 180) * headingHeight,
           width: spark.r * 2,
           height: spark.r * 2,
           borderRadius: spark.r,
@@ -117,68 +116,91 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
 }
 
 /* ── Heading ──────────────────────────────────────────────────────────
-   Matches NextJS: SVG viewBox="0 0 900 180", fontSize 140, fontWeight 800,
-   letterSpacing -0.05em, gradient fill, drop-shadow glow. */
+   Matches NextJS VotemapHeading exactly:
+   - SVG viewBox="0 0 900 180", fontSize 140px, fontWeight 800
+   - Wireframe stroke-drawing animation (strokeDasharray/offset over 6s)
+   - Gradient text fades in at 6s
+   - Drop-shadow glow filter on gradient text
+   - No separate oval/glow shape behind text */
 
-function VotemapHeading() {
+function VotemapHeading({ effectsEnabled = true }: { effectsEnabled?: boolean }) {
   const sparks = useMemo(generateSparks, []);
-  const glowOpacity = useSharedValue(0.4);
+
+  // Stroke-drawing animation: strokeDashoffset goes from 3000 → 0 over 6s
+  const strokeOffset = useSharedValue(3000);
+  const strokeOpacityVal = useSharedValue(0.8);
+  // Gradient text fades in at 6s
+  const gradientOpacity = useSharedValue(0);
 
   useEffect(() => {
-    glowOpacity.value = withRepeat(
-      withSequence(withTiming(0.7, { duration: 2000 }), withTiming(0.4, { duration: 2000 })),
-      -1,
-    );
+    // Draw stroke over 6s
+    strokeOffset.value = withTiming(0, { duration: 6000 });
+    // After ~5s, fade the stroke to low opacity
+    strokeOpacityVal.value = withDelay(5000, withTiming(0.3, { duration: 1500 }));
+    // Gradient text fades in at 6s
+    gradientOpacity.value = withDelay(6000, withTiming(1, { duration: 2000 }));
   }, []);
 
-  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+  const strokeStyle = useAnimatedStyle(() => ({ opacity: 1 }));
+  const gradientStyle = useAnimatedStyle(() => ({ opacity: gradientOpacity.value }));
 
   return (
     <View style={{ width: '100%', maxWidth: 1200, height: 180, alignItems: 'center', position: 'relative' }}>
-      {/* Spark particles */}
-      {sparks.map((s) => (
+      {/* Spark particles — delayed 6s like NextJS */}
+      {effectsEnabled && sparks.map((s) => (
         <AnimatedSpark key={s.id} spark={s} />
       ))}
 
-      {/* Glow behind text */}
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            top: 40,
-            width: Math.min(SCREEN_WIDTH * 0.5, 400),
-            maxWidth: 400,
-            height: 100,
-            borderRadius: 50,
-            alignSelf: 'center',
-            backgroundColor: 'rgba(139, 92, 246, 0.15)',
-          },
-          glowStyle,
-        ]}
-      />
+      {/* SVG with both text layers — matches NextJS exactly */}
+      <View style={{ width: '100%', height: '100%' }}>
+        {/* Gradient fill text — fades in at 6s */}
+        {effectsEnabled && (
+          <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, gradientStyle]}>
+            <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+              <Defs>
+                <SvgGradient id="headingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#3b82f6" />
+                  <Stop offset="50%" stopColor="#8b5cf6" />
+                  <Stop offset="100%" stopColor="#ef4444" />
+                </SvgGradient>
+              </Defs>
+              <SvgText
+                x="450"
+                y="90"
+                textAnchor="middle"
+                alignmentBaseline="central"
+                fill="url(#headingGrad)"
+                fontSize="140"
+                fontWeight="800"
+                letterSpacing={-7}
+              >
+                votemap
+              </SvgText>
+            </Svg>
+          </Animated.View>
+        )}
 
-      {/* SVG text — matches NextJS viewBox exactly */}
-      <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
-        <Defs>
-          <SvgGradient id="headingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#3b82f6" />
-            <Stop offset="50%" stopColor="#8b5cf6" />
-            <Stop offset="100%" stopColor="#ef4444" />
-          </SvgGradient>
-        </Defs>
-        <SvgText
-          x="50%"
-          y="50%"
-          textAnchor="middle"
-          alignmentBaseline="central"
-          fill="url(#headingGrad)"
-          fontSize="140"
-          fontWeight="800"
-          letterSpacing={-7}
-        >
-          votemap
-        </SvgText>
-      </Svg>
+        {/* Wireframe stroke text — draws on page load, then fades to subtle outline */}
+        <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+          <SvgText
+            x="450"
+            y="90"
+            textAnchor="middle"
+            alignmentBaseline="central"
+            fill="none"
+            stroke={colors.text}
+            strokeWidth={2}
+            strokeOpacity={0.3}
+            fontSize="140"
+            fontWeight="800"
+            letterSpacing={-7}
+            strokeDasharray="3000"
+            strokeDashoffset="0"
+          >
+            votemap
+          </SvgText>
+        </Svg>
+      </View>
     </View>
   );
 }
@@ -196,11 +218,8 @@ function XIcon({ size = 32, color = GRAY_400 }: { size?: number; color?: string 
 
 function ThreadsIcon({ size = 32, color = GRAY_400 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 192 192" fill="none">
-      <Path
-        d="M141.537 88.988a66.667 66.667 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.681 22.231-5.574 29.049-14.547 5.172-6.807 8.436-15.546 9.884-26.49 5.924 3.576 10.337 8.369 12.94 14.1 4.395 9.68 4.653 25.576-3.155 34.223-6.836 7.571-15.045 10.856-27.369 10.95-13.642-.104-23.961-4.487-30.662-13.03-6.337-8.083-9.617-19.575-9.746-34.149.129-14.574 3.409-26.066 9.746-34.149 6.701-8.543 17.02-12.926 30.662-13.03 13.793.107 24.228 4.573 31.012 13.269l13.632-10.088c-9.584-12.255-23.793-18.658-42.234-18.807h-.394c-18.087.147-32.1 6.498-41.668 18.877-8.507 11.01-12.893 25.88-13.037 44.235.144 18.355 4.53 33.225 13.037 44.235 9.568 12.379 23.581 18.73 41.668 18.877h.394c16.048-.112 28.012-4.849 37.522-14.874 12.252-12.923 12.007-28.634 6.542-40.697-3.906-8.612-10.614-15.603-19.523-20.325zm-48.886 31.19c-10.434.574-21.264-4.104-21.828-14.676-.415-7.783 5.502-16.464 24.493-17.557 2.146-.123 4.244-.184 6.296-.184 6.28 0 12.158.687 17.445 1.993-1.987 26.03-14.952 29.846-26.406 30.424z"
-        fill={color}
-      />
+    <Svg width={size} height={size} viewBox="0 0 448 512" fill={color}>
+      <Path d="M331.5 235.7c2.2 .9 4.2 1.9 6.3 2.8c29.2 14.1 50.6 35.2 61.8 61.4c15.7 36.5 17.2 95.4-30.4 147.2c-36.7 39.7-81.2 59.3-132.6 60.5c-73 1.6-130.8-32.2-167-97.6C34.2 345.6 18 272.1 22 191.2c5.6-113.7 65.7-188.5 169.3-193.4c8.2-.4 16.3-.4 24.3 .1c76 4 130.7 41.8 163.1 112.6c3.1 6.8 6 13.8 8.4 20.8l-66.2 19.2c-3.5-11.6-7.6-22.4-14-32.2c-22.5-34.7-59.3-51.6-106.7-49c-72.4 3.8-120.5 61.5-124.7 149.5c-3.1 64.1 7.3 120.1 39.7 165.5c29.7 41.6 75.6 56.2 128 49.4c29.3-3.8 54.7-17.5 74.8-40.3c28.2-32 36-70.4 22.1-115.2c-6.7-21.6-21.6-38.3-43.4-48.5c-3.4 24.1-9.6 48.2-22.3 68.5c-20.8 33.1-52.2 51.3-89 55.2c-31 3.3-59.5-4.2-81.3-24.2c-28.7-26.3-36-65.4-20.9-103.7c18.5-47 61.6-72.5 113.3-70.7c17.8 .6 34.8 5.2 49.9 14.2zM194.9 327.3c12.3 13.2 31.7 15.9 47.5 10.8c20.2-6.5 33.7-22.3 41.3-44.5c-21.2-10.2-43.8-14.3-66.9-11.4c-24.7 3.1-39 17.4-21.9 45.1z" />
     </Svg>
   );
 }
@@ -213,169 +232,285 @@ function InstagramIcon({ size = 32, color = GRAY_400 }: { size?: number; color?:
   );
 }
 
+/* ── Footer SVG icons ─────────────────────────────────────────────────
+   Matches NextJS Footer: FaMagic and FaSun/FaMoon toggle buttons */
+
+function MagicWandIcon({ size = 16, color = GRAY_400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 512 512" fill={color}>
+      <Path d="M224 96l16-32 32-16-32-16-16-32-16 32-32 16 32 16 16 32zM80 160l26.7-53.3L160 80l-53.3-26.7L80 0 53.3 53.3 0 80l53.3 26.7L80 160zm352 128l-26.7 53.3L352 368l53.3 26.7L432 448l26.7-53.3L512 368l-53.3-26.7L432 288zm70.7-208l-48.7-48.7c-6.3-6.3-16.4-6.3-22.6 0L12.7 450c-6.3 6.3-6.3 16.4 0 22.6l48.7 48.7c6.3 6.3 16.4 6.3 22.6 0L502.7 102.6c6.3-6.3 6.3-16.4 0-22.6zM91.4 478L34 420.6 227.3 227.3 284.7 284.7 91.4 478z" />
+    </Svg>
+  );
+}
+
+function SunIcon({ size = 16, color = GRAY_400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 512 512" fill={color}>
+      <Path d="M256 160c-52.9 0-96 43.1-96 96s43.1 96 96 96 96-43.1 96-96-43.1-96-96-96zm246.4 80.5l-94.7-47.3 33.5-100.4c4.5-13.6-8.4-26.5-21.9-21.9l-100.4 33.5-47.4-94.8c-6.4-12.8-24.6-12.8-31 0l-47.3 94.7L92.7 70.8c-13.6-4.5-26.5 8.4-21.9 21.9l33.5 100.4-94.7 47.4c-12.8 6.4-12.8 24.6 0 31l94.7 47.3-33.5 100.5c-4.5 13.6 8.4 26.5 21.9 21.9l100.4-33.5 47.3 94.7c6.4 12.8 24.6 12.8 31 0l47.3-94.7 100.4 33.5c13.6 4.5 26.5-8.4 21.9-21.9l-33.5-100.4 94.7-47.3c13-6.5 13-24.7.2-31.1zm-155.9 106c-49.9 49.9-131.1 49.9-181 0-49.9-49.9-49.9-131.1 0-181 49.9-49.9 131.1-49.9 181 0 49.9 49.9 49.9 131.1 0 181z" />
+    </Svg>
+  );
+}
+
+function MoonIcon({ size = 16, color = GRAY_400 }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 512 512" fill={color}>
+      <Path d="M283.2 512c78.9 0 151-42.4 189.8-110.8 3.8-6.7-.7-14.9-8.4-14.3-108.4 8.5-207.4-74.2-207.4-183.7 0-68.9 37.8-132.2 98.5-165.6 6.1-3.4 5.9-12.2-.4-15.3C330.8 8.4 307.3 0 283.2 0 131.3 0 8 123.3 8 275.2S131.3 512 283.2 512z" />
+    </Svg>
+  );
+}
+
+/* ── Hoverable social link wrapper ────────────────────────────────────
+   Provides hover + press state for web (Pressable hovered state).
+   On hover: color changes + scale(1.2), matching NextJS _hover behavior. */
+
+function HoverableSocialLink({
+  href,
+  hoverColor,
+  children,
+}: {
+  href: string;
+  hoverColor: string;
+  children: (color: string, scale: number) => React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const currentColor = hovered ? hoverColor : GRAY_400;
+  const scale = hovered ? 1.2 : 1;
+
+  return (
+    <Pressable
+      onPress={() => Linking.openURL(href)}
+      // @ts-ignore — onHoverIn/onHoverOut supported on web
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      style={{ transform: [{ scale }] }}
+    >
+      {children(currentColor, scale)}
+    </Pressable>
+  );
+}
+
+/* ── Hoverable footer link ────────────────────────────────────────── */
+
+function HoverableFooterLink({
+  href,
+  label,
+  onPressOverride,
+}: {
+  href: string;
+  label: string;
+  onPressOverride?: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <Pressable
+      onPress={onPressOverride ?? (() => Linking.openURL(href))}
+      // @ts-ignore — onHoverIn/onHoverOut supported on web
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+    >
+      <Text style={{
+        color: hovered ? '#3b82f6' : GRAY_400,
+        fontSize: 15,
+        fontWeight: '500',
+        textDecorationLine: 'underline',
+      }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 /* ── Home Screen ──────────────────────────────────────────────────── */
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, signOut } = useAuthStore();
+  const [effectsEnabled, setEffectsEnabled] = useState(true);
+  const [darkMode, setDarkMode] = useState(true); // always dark for now (matching NextJS dark theme default)
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 16 }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        minHeight: '85vh' as any,
+      }}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Hero section (VotemapHeading + HeroContent) ── */}
-      <View style={{ alignItems: 'center', width: '100%', gap: 0 }}>
-        <VotemapHeading />
+      {/* ── Hero section (VotemapHeading + HeroContent) — centered with gap 0 like NextJS ── */}
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        gap: 0,
+      }}>
+        <View style={{ alignItems: 'center', width: '100%', gap: 0 }}>
+          <VotemapHeading effectsEnabled={effectsEnabled} />
 
-        {/* "democratize everything" — matches NextJS: fontSize 3xl–6xl, bold */}
-        <FadeInView delay={200}>
-          <Text style={{
-            fontSize: 36,
-            fontWeight: '800',
-            color: colors.text,
-            textAlign: 'center',
-            marginTop: -8,
-            letterSpacing: -0.5,
-          }}>
-            democratize everything
-          </Text>
-        </FadeInView>
+          {/* "democratize everything" — matches NextJS: fontSize 3xl–6xl, bold, mt -8 */}
+          <FadeInView delay={200}>
+            <Text style={{
+              fontSize: 36,
+              fontWeight: '800',
+              color: colors.text,
+              textAlign: 'center',
+              marginTop: -8,
+              letterSpacing: -0.5,
+            }}>
+              democratize everything
+            </Text>
+          </FadeInView>
 
-        {/* "vote for the future you want to see" — matches NextJS: fontSize xl–3xl, gray.300 */}
-        <FadeInView delay={400}>
-          <Text style={{
-            fontSize: 22,
-            color: '#d1d5db',
-            textAlign: 'center',
-            marginTop: 4,
-            lineHeight: 30,
-            maxWidth: 600,
-          }}>
-            vote for the future you want to see
-          </Text>
+          {/* "vote for the future you want to see" — matches NextJS: fontSize xl–3xl, gray.300 */}
+          <FadeInView delay={400}>
+            <Text style={{
+              fontSize: 22,
+              color: '#d1d5db',
+              textAlign: 'center',
+              marginTop: 4,
+              lineHeight: 30,
+              maxWidth: 600,
+            }}>
+              vote for the future you want to see
+            </Text>
+          </FadeInView>
+
+          {/* ── CTA Buttons — matches NextJS "Build Now" pill style (mt 8 = 32px) ── */}
+          <FadeInView delay={600}>
+            <View style={{ flexDirection: 'row', gap: 24, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Pressable
+                onPress={() => router.push('/issues')}
+                style={({ pressed, hovered }: any) => ({
+                  backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 9999,
+                  paddingVertical: 16,
+                  paddingHorizontal: 40,
+                  height: 64,
+                  justifyContent: 'center' as const,
+                  transform: [{ translateY: (hovered || pressed) ? -4 : 0 }],
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
+                  shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
+                  shadowRadius: (hovered || pressed) ? 20 : 4,
+                  elevation: (hovered || pressed) ? 8 : 2,
+                })}
+              >
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: '600' }}>
+                  🗳️  Browse Issues
+                </Text>
+              </Pressable>
+
+              {!isAuthenticated ? (
+                <Pressable
+                  onPress={() => router.push('/auth/login')}
+                  style={({ pressed, hovered }: any) => ({
+                    backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 9999,
+                    paddingVertical: 16,
+                    paddingHorizontal: 40,
+                    height: 64,
+                    justifyContent: 'center' as const,
+                    transform: [{ translateY: (hovered || pressed) ? -4 : 0 }],
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
+                    shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
+                    shadowRadius: (hovered || pressed) ? 20 : 4,
+                    elevation: (hovered || pressed) ? 8 : 2,
+                  })}
+                >
+                  <Text style={{ color: colors.text, fontSize: 20, fontWeight: '600' }}>
+                    Sign In
+                  </Text>
+                </Pressable>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: 64 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 15 }}>
+                    {user?.displayName ?? 'Voter'}
+                  </Text>
+                  <Pressable onPress={signOut} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                    <Text style={{ color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' }}>
+                      Sign Out
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          </FadeInView>
+        </View>
+
+        {/* ── Social Links — matches NextJS SocialLinks: gap 8 (32px), pt 8 (32px) ── */}
+        <FadeInView delay={800}>
+          <View style={{ flexDirection: 'row', gap: 32, paddingTop: 32 }}>
+            <HoverableSocialLink href="https://x.com/vote_map" hoverColor="#ffffff">
+              {(color) => <XIcon size={32} color={color} />}
+            </HoverableSocialLink>
+            <HoverableSocialLink href="https://threads.com/@vote_map" hoverColor="#ffffff">
+              {(color) => <ThreadsIcon size={32} color={color} />}
+            </HoverableSocialLink>
+            <HoverableSocialLink href="https://instagram.com/vote_map" hoverColor="#ec4899">
+              {(color) => <InstagramIcon size={32} color={color} />}
+            </HoverableSocialLink>
+          </View>
         </FadeInView>
       </View>
 
-      {/* ── CTA Buttons — matches NextJS "Build Now" pill style ── */}
-      <FadeInView delay={600}>
-        <View style={{ flexDirection: 'row', gap: 16, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Pressable
-            onPress={() => router.push('/issues')}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? colors.surfaceHover : colors.surface,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 9999,
-              paddingVertical: 16,
-              paddingHorizontal: 40,
-              transform: [{ translateY: pressed ? -2 : 0 }],
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: pressed ? 8 : 2 },
-              shadowOpacity: pressed ? 0.3 : 0.1,
-              shadowRadius: pressed ? 16 : 4,
-              elevation: pressed ? 8 : 2,
-            })}
-          >
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: '600' }}>
-              🗳️  Browse Issues
-            </Text>
-          </Pressable>
-
-          {!isAuthenticated ? (
-            <Pressable
-              onPress={() => router.push('/auth/login')}
-              style={({ pressed }) => ({
-                backgroundColor: pressed ? colors.surfaceHover : colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 9999,
-                paddingVertical: 16,
-                paddingHorizontal: 40,
-                transform: [{ translateY: pressed ? -2 : 0 }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: pressed ? 8 : 2 },
-                shadowOpacity: pressed ? 0.3 : 0.1,
-                shadowRadius: pressed ? 16 : 4,
-                elevation: pressed ? 8 : 2,
-              })}
-            >
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '600' }}>
-                Sign In
-              </Text>
-            </Pressable>
-          ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 15 }}>
-                {user?.displayName ?? 'Voter'}
-              </Text>
-              <Pressable onPress={signOut} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' }}>
-                  Sign Out
-                </Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </FadeInView>
-
-      {/* ── Social Links — matches NextJS SocialLinks (X, Threads, Instagram) ── */}
-      <FadeInView delay={800}>
-        <View style={{ flexDirection: 'row', gap: 32, marginTop: 64 }}>
-          <Pressable
-            onPress={() => Linking.openURL('https://x.com/vote_map')}
-            style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
-          >
-            <XIcon size={32} color={GRAY_400} />
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://threads.com/@vote_map')}
-            style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
-          >
-            <ThreadsIcon size={32} color={GRAY_400} />
-          </Pressable>
-          <Pressable
-            onPress={() => Linking.openURL('https://instagram.com/vote_map')}
-            style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
-          >
-            <InstagramIcon size={32} color={GRAY_400} />
-          </Pressable>
-        </View>
-      </FadeInView>
-
-      {/* ── Footer — matches NextJS Footer ── */}
+      {/* ── Footer — matches NextJS Footer: mt auto, py 12, gap 8, with toggle buttons ── */}
       <FadeInView delay={900}>
         <View style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
           justifyContent: 'center',
           alignItems: 'center',
-          marginTop: 48,
-          paddingBottom: 24,
+          paddingVertical: 48,
           gap: 8,
         }}>
-          <Pressable onPress={() => Linking.openURL('mailto:support@votemap.net')}>
-            <Text style={{ color: GRAY_400, fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
-              support@votemap.net
-            </Text>
-          </Pressable>
+          <HoverableFooterLink href="mailto:support@votemap.net" label="support@votemap.net" />
           <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
-          <Text style={{ color: GRAY_400, fontSize: 15 }}>
-            Built by{' '}
-            <Text
-              onPress={() => Linking.openURL('https://onexengineering.com')}
-              style={{ fontWeight: '500', textDecorationLine: 'underline' }}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ color: GRAY_400, fontSize: 15 }}>Built by </Text>
+            <HoverableFooterLink href="https://onexengineering.com" label="onexengineering" />
+          </View>
+          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <HoverableFooterLink href="https://x.com/isaac_yeang" label="@isaac_yeang" />
+          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            {/* Magic wand toggle — matches NextJS FaMagic button */}
+            <Pressable
+              onPress={() => setEffectsEnabled(!effectsEnabled)}
+              style={({ pressed }) => ({
+                padding: 8,
+                borderRadius: 9999,
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
-              onexengineering
-            </Text>
-          </Text>
-          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
-          <Pressable onPress={() => Linking.openURL('https://x.com/isaac_yeang')}>
-            <Text style={{ color: GRAY_400, fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
-              @isaac_yeang
-            </Text>
-          </Pressable>
+              <MagicWandIcon
+                size={16}
+                color={effectsEnabled ? '#a855f7' : GRAY_400}
+              />
+            </Pressable>
+            {/* Light/dark mode toggle — matches NextJS FaMoon/FaSun button */}
+            <Pressable
+              onPress={() => setDarkMode(!darkMode)}
+              style={({ pressed }) => ({
+                padding: 8,
+                borderRadius: 9999,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              {darkMode
+                ? <SunIcon size={16} color={GRAY_400} />
+                : <MoonIcon size={16} color={GRAY_400} />
+              }
+            </Pressable>
+          </View>
         </View>
       </FadeInView>
     </ScrollView>
