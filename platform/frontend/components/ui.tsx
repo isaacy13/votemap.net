@@ -46,13 +46,6 @@ export const lightColors = {
   textMuted: '#a0aec0',
 };
 
-/** Returns the correct color set for the current theme */
-export function themeColors(darkMode: boolean) {
-  return darkMode
-    ? colors
-    : { ...colors, ...lightColors };
-}
-
 /** Animated fade-in wrapper */
 export function FadeInView({
   children,
