@@ -8,6 +8,8 @@ import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 
 import { useAuthStore, useGoogleAuth } from '../../store/auth';
 import { authConfig } from '../../config/auth';
 import { colors, FadeInView } from '../../components/ui';
+import { useTheme } from '../../context/theme';
+import { ThemeToggle } from '../../components/ThemeToggle';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -20,6 +22,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple, isLoading, error, isAuthenticated } = useAuthStore();
   const [appleNativeAvailable, setAppleNativeAvailable] = useState(false);
+  const { darkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, textMuted: themeMuted } = useTheme();
 
   useEffect(() => {
     AppleAuth.isAvailableAsync().then(setAppleNativeAvailable);
@@ -99,7 +102,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, padding: 24, justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: bgColor, padding: 24, justifyContent: 'center' }}>
       {/* Logo */}
       <FadeInView delay={0} style={{ alignItems: 'center', marginBottom: 40 }}>
         <Svg width={200} height={50} viewBox="0 0 200 50">
@@ -127,7 +130,7 @@ export default function LoginScreen() {
         <Text style={{
           fontSize: 28,
           fontWeight: '700',
-          color: colors.text,
+          color: textColor,
           textAlign: 'center',
           letterSpacing: -0.5,
         }}>
@@ -135,7 +138,7 @@ export default function LoginScreen() {
         </Text>
         <Text style={{
           fontSize: 16,
-          color: colors.textSecondary,
+          color: subtitleColor,
           textAlign: 'center',
           marginTop: 8,
           lineHeight: 22,
@@ -169,7 +172,9 @@ export default function LoginScreen() {
             onPress={handleGoogleLogin}
             disabled={isLoading}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? '#f0f0f0' : '#ffffff',
+              backgroundColor: darkMode
+                ? (pressed ? '#f0f0f0' : '#ffffff')
+                : (pressed ? '#e2e8f0' : '#ffffff'),
               padding: 16,
               borderRadius: 14,
               flexDirection: 'row',
@@ -182,6 +187,8 @@ export default function LoginScreen() {
               shadowRadius: 8,
               elevation: 3,
               opacity: isLoading ? 0.6 : 1,
+              borderWidth: darkMode ? 0 : 1,
+              borderColor: borderColor,
             })}
           >
             {isLoading ? (
@@ -202,7 +209,9 @@ export default function LoginScreen() {
             onPress={handleAppleLogin}
             disabled={isLoading}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+              backgroundColor: darkMode
+                ? (pressed ? colors.surfaceHover : colors.surface)
+                : (pressed ? '#e2e8f0' : '#1a202c'),
               padding: 16,
               borderRadius: 14,
               flexDirection: 'row',
@@ -210,7 +219,7 @@ export default function LoginScreen() {
               justifyContent: 'center',
               gap: 10,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: darkMode ? colors.border : '#1a202c',
               opacity: isLoading ? 0.6 : 1,
             })}
           >
@@ -239,7 +248,7 @@ export default function LoginScreen() {
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <Text style={{ color: colors.textMuted, fontSize: 15, fontWeight: '500' }}>
+          <Text style={{ color: themeMuted, fontSize: 15, fontWeight: '500' }}>
             Browse without signing in →
           </Text>
         </Pressable>
@@ -250,17 +259,20 @@ export default function LoginScreen() {
         <View style={{
           marginTop: 20,
           padding: 16,
-          backgroundColor: colors.surface,
+          backgroundColor: surfaceBg,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: borderColor,
         }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
+          <Text style={{ color: subtitleColor, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
             Read-only access granted on sign-in.{'\n'}
             <Text style={{ color: colors.purple }}>Link your X account</Text> for write access.
           </Text>
         </View>
       </FadeInView>
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
     </View>
   );
 }

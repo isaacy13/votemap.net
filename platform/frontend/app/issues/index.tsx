@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import Animated from 'react-native-reanimated';
 import { api } from '../../services/api';
 import { colors, FadeInView, FadeInDown, PulsingDot } from '../../components/ui';
+import { useTheme } from '../../context/theme';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import type { Issue } from '@votemap/shared';
 
 export default function IssuesScreen() {
   const router = useRouter();
+  const { darkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, textMuted: themeMuted } = useTheme();
   const { data: issuesData, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['issues'],
     queryFn: () => api.getIssues(),
@@ -18,12 +21,14 @@ export default function IssuesScreen() {
       <Pressable
         onPress={() => router.push(`/issues/${item.id}`)}
         style={({ pressed }) => ({
-          backgroundColor: pressed ? colors.surfaceHover : colors.surface,
+          backgroundColor: pressed
+            ? (darkMode ? colors.surfaceHover : '#e2e8f0')
+            : surfaceBg,
           borderRadius: 16,
           padding: 18,
           marginBottom: 12,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: borderColor,
           shadowColor: colors.purple,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.06,
@@ -35,7 +40,7 @@ export default function IssuesScreen() {
         {/* Header Row */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Text style={{
-            color: colors.text,
+            color: textColor,
             fontSize: 18,
             fontWeight: '700',
             flex: 1,
@@ -69,7 +74,7 @@ export default function IssuesScreen() {
 
         {/* Description */}
         <Text style={{
-          color: colors.textSecondary,
+          color: subtitleColor,
           fontSize: 14,
           marginTop: 10,
           lineHeight: 20,
@@ -85,7 +90,7 @@ export default function IssuesScreen() {
           marginTop: 14,
           paddingTop: 12,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: borderColor,
         }}>
           <Text style={{
             color: colors.blue,
@@ -97,12 +102,12 @@ export default function IssuesScreen() {
           </Text>
           {item.entity && (
             <View style={{
-              backgroundColor: colors.surfaceLight,
+              backgroundColor: darkMode ? colors.surfaceLight : '#edf2f7',
               paddingHorizontal: 10,
               paddingVertical: 4,
               borderRadius: 8,
             }}>
-              <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '500' }}>
+              <Text style={{ color: themeMuted, fontSize: 13, fontWeight: '500' }}>
                 {item.entity.name}
               </Text>
             </View>
@@ -113,7 +118,7 @@ export default function IssuesScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: bgColor }}>
       <FlatList
         data={issuesData?.issues ?? []}
         renderItem={renderIssue}
@@ -130,7 +135,7 @@ export default function IssuesScreen() {
         ListHeaderComponent={
           <FadeInView delay={0} style={{ marginBottom: 16 }}>
             <Text style={{
-              color: colors.text,
+              color: subtitleColor,
               fontSize: 13,
               fontWeight: '500',
               textTransform: 'uppercase',
@@ -147,17 +152,17 @@ export default function IssuesScreen() {
               {isLoading ? (
                 <>
                   <ActivityIndicator size="large" color={colors.purple} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 16, marginTop: 8 }}>
+                  <Text style={{ color: subtitleColor, fontSize: 16, marginTop: 8 }}>
                     Loading issues...
                   </Text>
                 </>
               ) : (
                 <>
                   <Text style={{ fontSize: 48 }}>🗳️</Text>
-                  <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}>
+                  <Text style={{ color: textColor, fontSize: 20, fontWeight: '700' }}>
                     No issues yet
                   </Text>
-                  <Text style={{ color: colors.textMuted, fontSize: 14, textAlign: 'center', maxWidth: 260 }}>
+                  <Text style={{ color: themeMuted, fontSize: 14, textAlign: 'center', maxWidth: 260 }}>
                     Issues will appear here once they are created. Sign in and link your X account to create one.
                   </Text>
                 </>
@@ -165,6 +170,7 @@ export default function IssuesScreen() {
             </View>
           </FadeInView>
         }
+        ListFooterComponent={<ThemeToggle />}
       />
     </View>
   );

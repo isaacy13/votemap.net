@@ -7,6 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../../store/auth';
 import { authConfig } from '../../config/auth';
 import { colors, FadeInView, GlowCard } from '../../components/ui';
+import { useTheme } from '../../context/theme';
+import { ThemeToggle } from '../../components/ThemeToggle';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,6 +20,7 @@ const discovery = {
 export default function LinkXScreen() {
   const router = useRouter();
   const { linkXAccount, isXLinked, isLoading, error } = useAuthStore();
+  const { darkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, textMuted: themeMuted } = useTheme();
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'votemap' });
 
@@ -48,12 +51,12 @@ export default function LinkXScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, padding: 24, justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: bgColor, padding: 24, justifyContent: 'center' }}>
       <FadeInView delay={0}>
         <Text style={{
           fontSize: 28,
           fontWeight: '700',
-          color: colors.text,
+          color: textColor,
           textAlign: 'center',
           letterSpacing: -0.5,
         }}>
@@ -61,7 +64,7 @@ export default function LinkXScreen() {
         </Text>
         <Text style={{
           fontSize: 16,
-          color: colors.textSecondary,
+          color: subtitleColor,
           textAlign: 'center',
           marginTop: 8,
           lineHeight: 22,
@@ -89,7 +92,7 @@ export default function LinkXScreen() {
 
       {isXLinked ? (
         <FadeInView delay={200}>
-          <GlowCard style={{ marginTop: 32 }}>
+          <GlowCard style={{ marginTop: 32 }} surfaceColor={surfaceBg} borderColorOverride={borderColor}>
             <View style={{ alignItems: 'center', gap: 12 }}>
               <View style={{
                 width: 56,
@@ -104,7 +107,7 @@ export default function LinkXScreen() {
               <Text style={{ color: colors.green, fontSize: 20, fontWeight: '700' }}>
                 Verified
               </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'center' }}>
+              <Text style={{ color: subtitleColor, fontSize: 14, textAlign: 'center' }}>
                 Your X account is linked and identity verified.{'\n'}You now have full write access.
               </Text>
             </View>
@@ -113,7 +116,7 @@ export default function LinkXScreen() {
       ) : (
         <View style={{ marginTop: 32, gap: 16 }}>
           <FadeInView delay={200}>
-            <GlowCard>
+            <GlowCard surfaceColor={surfaceBg} borderColorOverride={borderColor}>
               <View style={{ gap: 16 }}>
                 {[
                   { icon: '📝', title: 'Create Issues', desc: 'Propose new bounties for entities' },
@@ -123,8 +126,8 @@ export default function LinkXScreen() {
                   <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <Text style={{ fontSize: 20 }}>{item.icon}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>{item.title}</Text>
-                      <Text style={{ color: colors.textMuted, fontSize: 13 }}>{item.desc}</Text>
+                      <Text style={{ color: textColor, fontSize: 15, fontWeight: '600' }}>{item.title}</Text>
+                      <Text style={{ color: themeMuted, fontSize: 13 }}>{item.desc}</Text>
                     </View>
                   </View>
                 ))}
@@ -144,7 +147,7 @@ export default function LinkXScreen() {
               })}
             >
               <LinearGradient
-                colors={[colors.surface, colors.surfaceHover]}
+                colors={darkMode ? [colors.surface, colors.surfaceHover] : ['#1a202c', '#2d3748']}
                 style={{
                   padding: 16,
                   borderRadius: 14,
@@ -153,15 +156,15 @@ export default function LinkXScreen() {
                   justifyContent: 'center',
                   gap: 10,
                   borderWidth: 1,
-                  borderColor: colors.borderLight,
+                  borderColor: darkMode ? colors.borderLight : '#1a202c',
                 }}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <>
-                    <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>𝕏</Text>
-                    <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>
+                    <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '800' }}>𝕏</Text>
+                    <Text style={{ color: '#ffffff', fontSize: 17, fontWeight: '600' }}>
                       Link X Account
                     </Text>
                   </>
@@ -172,7 +175,7 @@ export default function LinkXScreen() {
 
           <FadeInView delay={500}>
             <Text style={{
-              color: colors.textMuted,
+              color: themeMuted,
               fontSize: 12,
               textAlign: 'center',
               lineHeight: 18,
@@ -182,6 +185,9 @@ export default function LinkXScreen() {
           </FadeInView>
         </View>
       )}
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
     </View>
   );
 }

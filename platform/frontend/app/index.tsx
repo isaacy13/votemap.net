@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Dimensions, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -19,6 +19,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useAuthStore } from '../store/auth';
 import { colors, FadeInView } from '../components/ui';
+import { useTheme } from '../context/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -368,69 +369,13 @@ function HoverableFooterLink({
   );
 }
 
-/* ── Dark mode persistence ─────────────────────────────────────────────
-   On web, persist to localStorage (matching NextJS next-themes behavior).
-   Also syncs body/html background so the React Native wrapper doesn't
-   show a stale dark background when in light mode.
-   On native, falls back to in-memory state (would use AsyncStorage for
-   full persistence — out of scope for this change). */
-
-function useDarkMode(): [boolean, (v: boolean) => void] {
-  const [darkMode, setDarkModeState] = useState(() => {
-    if (Platform.OS === 'web') {
-      try {
-        const stored = localStorage.getItem('votemap-theme');
-        if (stored === 'light') return false;
-        if (stored === 'dark') return true;
-      } catch {}
-    }
-    return true; // default dark
-  });
-
-  /** Sync the document background with the theme — prevents the React Native
-   *  wrapper and body from showing a stale dark/light color when toggling. */
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const bg = darkMode ? '#0a0a0a' : '#ffffff';
-    document.documentElement.style.backgroundColor = bg;
-    document.body.style.backgroundColor = bg;
-    // Also update any React Native root wrappers that have hardcoded bg
-    const rootViews = document.querySelectorAll('#root > div, #root > div > div');
-    rootViews.forEach((el) => {
-      if (el instanceof HTMLElement && el.style.backgroundColor) {
-        el.style.backgroundColor = bg;
-      }
-    });
-  }, [darkMode]);
-
-  const setDarkMode = useCallback((v: boolean) => {
-    setDarkModeState(v);
-    if (Platform.OS === 'web') {
-      try {
-        localStorage.setItem('votemap-theme', v ? 'dark' : 'light');
-      } catch {}
-    }
-  }, []);
-
-  return [darkMode, setDarkMode];
-}
-
 /* ── Home Screen ──────────────────────────────────────────────────── */
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, signOut } = useAuthStore();
   const [effectsEnabled, setEffectsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useDarkMode();
-
-  /** Toggle dark/light mode — changes background and text colors */
-  const bgColor = darkMode ? colors.bg : '#ffffff';
-  const textColor = darkMode ? colors.text : '#1a202c';
-  const subtitleColor = darkMode ? '#d1d5db' : '#718096';
-  const surfaceBg = darkMode ? colors.surface : '#f7fafc';
-  const borderColor = darkMode ? colors.border : '#e2e8f0';
-  /** Footer gray — matches Chakra gray.400 (dark) / gray.500 (light) */
-  const footerGray = darkMode ? '#a0aec0' : '#718096';
+  const { darkMode, setDarkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, footerGray } = useTheme();
 
   return (
     <ScrollView

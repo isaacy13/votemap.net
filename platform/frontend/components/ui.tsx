@@ -8,7 +8,7 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 
-/** Shared color palette matching the NextJS landing page */
+/** Shared color palette — dark theme (default) */
 export const colors = {
   bg: '#0a0a0a',
   surface: '#111118',
@@ -33,6 +33,26 @@ export const colors = {
   },
 };
 
+/** Light theme overrides */
+export const lightColors = {
+  bg: '#ffffff',
+  surface: '#f7fafc',
+  surfaceLight: '#edf2f7',
+  surfaceHover: '#e2e8f0',
+  border: '#e2e8f0',
+  borderLight: '#cbd5e0',
+  text: '#1a202c',
+  textSecondary: '#718096',
+  textMuted: '#a0aec0',
+};
+
+/** Returns the correct color set for the current theme */
+export function themeColors(darkMode: boolean) {
+  return darkMode
+    ? colors
+    : { ...colors, ...lightColors };
+}
+
 /** Animated fade-in wrapper */
 export function FadeInView({
   children,
@@ -50,25 +70,29 @@ export function FadeInView({
   );
 }
 
-/** Animated card with subtle glow border */
+/** Animated card with subtle glow border — supports theme-aware colors */
 export function GlowCard({
   children,
   style,
   delay = 0,
+  surfaceColor,
+  borderColorOverride,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
   delay?: number;
+  surfaceColor?: string;
+  borderColorOverride?: string;
 }) {
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).duration(500).springify()}
       style={[
         {
-          backgroundColor: colors.surface,
+          backgroundColor: surfaceColor ?? colors.surface,
           borderRadius: 16,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: borderColorOverride ?? colors.border,
           padding: 20,
           shadowColor: colors.purple,
           shadowOffset: { width: 0, height: 2 },
