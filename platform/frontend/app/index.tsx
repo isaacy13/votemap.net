@@ -23,6 +23,12 @@ import { colors, FadeInView } from '../components/ui';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/** Heading height in px — matches the SVG viewBox height of 180 */
+const HEADING_HEIGHT = 180;
+
+/** Gray color for social icons and footer text — matches NextJS Chakra gray.400 */
+const GRAY_400 = '#9ca3af';
+
 /* ── Spark particles ─────────────────────────────────────────────────
    Matches NextJS VotemapHeading: 15 blue (x≈250), 40 purple (x≈450), 15 red (x≈650)
    in viewBox 0 0 900 180. Each particle drifts outward and fades. */
@@ -98,7 +104,7 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
         {
           position: 'absolute',
           left: (spark.cx / 900) * SCREEN_WIDTH,
-          top: (spark.cy / 180) * 180,
+          top: (spark.cy / 180) * HEADING_HEIGHT,
           width: spark.r * 2,
           height: spark.r * 2,
           borderRadius: spark.r,
@@ -140,7 +146,7 @@ function VotemapHeading() {
           {
             position: 'absolute',
             top: 40,
-            width: SCREEN_WIDTH * 0.5,
+            width: Math.min(SCREEN_WIDTH * 0.5, 400),
             maxWidth: 400,
             height: 100,
             borderRadius: 50,
@@ -152,7 +158,7 @@ function VotemapHeading() {
       />
 
       {/* SVG text — matches NextJS viewBox exactly */}
-      <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' } as any}>
+      <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
         <Defs>
           <SvgGradient id="headingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#3b82f6" />
@@ -180,7 +186,7 @@ function VotemapHeading() {
 /* ── Social link SVG icons ────────────────────────────────────────────
    Matches NextJS: FaXTwitter, FaThreads, FaInstagram from react-icons/fa6 */
 
-function XIcon({ size = 32, color = '#9ca3af' }: { size?: number; color?: string }) {
+function XIcon({ size = 32, color = GRAY_400 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 512 512" fill={color}>
       <Path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
@@ -188,7 +194,7 @@ function XIcon({ size = 32, color = '#9ca3af' }: { size?: number; color?: string
   );
 }
 
-function ThreadsIcon({ size = 32, color = '#9ca3af' }: { size?: number; color?: string }) {
+function ThreadsIcon({ size = 32, color = GRAY_400 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 192 192" fill="none">
       <Path
@@ -199,7 +205,7 @@ function ThreadsIcon({ size = 32, color = '#9ca3af' }: { size?: number; color?: 
   );
 }
 
-function InstagramIcon({ size = 32, color = '#9ca3af' }: { size?: number; color?: string }) {
+function InstagramIcon({ size = 32, color = GRAY_400 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 448 512" fill={color}>
       <Path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
@@ -321,19 +327,19 @@ export default function HomeScreen() {
             onPress={() => Linking.openURL('https://x.com/vote_map')}
             style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
           >
-            <XIcon size={32} color="#9ca3af" />
+            <XIcon size={32} color={GRAY_400} />
           </Pressable>
           <Pressable
             onPress={() => Linking.openURL('https://threads.com/@vote_map')}
             style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
           >
-            <ThreadsIcon size={32} color="#9ca3af" />
+            <ThreadsIcon size={32} color={GRAY_400} />
           </Pressable>
           <Pressable
             onPress={() => Linking.openURL('https://instagram.com/vote_map')}
             style={({ pressed }) => ({ opacity: pressed ? 1 : 0.5, transform: [{ scale: pressed ? 1.2 : 1 }] })}
           >
-            <InstagramIcon size={32} color="#9ca3af" />
+            <InstagramIcon size={32} color={GRAY_400} />
           </Pressable>
         </View>
       </FadeInView>
@@ -350,12 +356,12 @@ export default function HomeScreen() {
           gap: 8,
         }}>
           <Pressable onPress={() => Linking.openURL('mailto:support@votemap.net')}>
-            <Text style={{ color: '#9ca3af', fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
+            <Text style={{ color: GRAY_400, fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
               support@votemap.net
             </Text>
           </Pressable>
-          <Text style={{ color: '#9ca3af', fontSize: 15 }}>•</Text>
-          <Text style={{ color: '#9ca3af', fontSize: 15 }}>
+          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <Text style={{ color: GRAY_400, fontSize: 15 }}>
             Built by{' '}
             <Text
               onPress={() => Linking.openURL('https://onexengineering.com')}
@@ -364,9 +370,9 @@ export default function HomeScreen() {
               onexengineering
             </Text>
           </Text>
-          <Text style={{ color: '#9ca3af', fontSize: 15 }}>•</Text>
+          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
           <Pressable onPress={() => Linking.openURL('https://x.com/isaac_yeang')}>
-            <Text style={{ color: '#9ca3af', fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
+            <Text style={{ color: GRAY_400, fontSize: 15, fontWeight: '500', textDecorationLine: 'underline' }}>
               @isaac_yeang
             </Text>
           </Pressable>
