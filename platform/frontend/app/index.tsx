@@ -370,6 +370,8 @@ function HoverableFooterLink({
 
 /* ── Dark mode persistence ─────────────────────────────────────────────
    On web, persist to localStorage (matching NextJS next-themes behavior).
+   Also syncs body/html background so the React Native wrapper doesn't
+   show a stale dark background when in light mode.
    On native, falls back to in-memory state (would use AsyncStorage for
    full persistence — out of scope for this change). */
 
@@ -384,6 +386,22 @@ function useDarkMode(): [boolean, (v: boolean) => void] {
     }
     return true; // default dark
   });
+
+  /** Sync the document background with the theme — prevents the React Native
+   *  wrapper and body from showing a stale dark/light color when toggling. */
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const bg = darkMode ? '#0a0a0a' : '#ffffff';
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+    // Also update any React Native root wrappers that have hardcoded bg
+    const rootViews = document.querySelectorAll('#root > div, #root > div > div');
+    rootViews.forEach((el) => {
+      if (el instanceof HTMLElement && el.style.backgroundColor) {
+        el.style.backgroundColor = bg;
+      }
+    });
+  }, [darkMode]);
 
   const setDarkMode = useCallback((v: boolean) => {
     setDarkModeState(v);
