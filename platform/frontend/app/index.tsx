@@ -140,10 +140,10 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
    - System font stack matching Geist Sans visual weight */
 
 /** CSS keyframes injected into <head> for the stroke-draw animation on web.
- *  Matches NextJS VotemapHeading framer-motion animation:
- *  - strokeDashoffset: 3000 → 0 over 6s (draws the outline)
- *  - strokeOpacity starts at 0.8, ends at 0.3 (dark) / 0.2 (light)
- *  - stroke uses currentColor so it adapts to light/dark theme
+ *  Matches NextJS VotemapHeading framer-motion animation exactly:
+ *  - strokeDashoffset: 3000 → 0 over 6s easeInOut (separate animation)
+ *  - strokeOpacity: 0.8 → final over 1.5s with 5s delay (separate animation)
+ *  - stroke uses theme-aware color (currentColor equivalent)
  *  - Gradient text fades in at the 6s mark */
 function useWebStrokeAnimation() {
   const injected = useRef(false);
@@ -152,15 +152,21 @@ function useWebStrokeAnimation() {
     injected.current = true;
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes votemap-stroke-draw {
-        0% { stroke-dashoffset: 3000; stroke-opacity: 0.8; }
-        95% { stroke-opacity: 0.8; }
-        100% { stroke-dashoffset: 0; stroke-opacity: 0.3; }
+      @keyframes votemap-dash {
+        0% { stroke-dashoffset: 3000; }
+        100% { stroke-dashoffset: 0; }
       }
-      @keyframes votemap-stroke-draw-light {
-        0% { stroke-dashoffset: 3000; stroke-opacity: 0.8; }
-        95% { stroke-opacity: 0.8; }
-        100% { stroke-dashoffset: 0; stroke-opacity: 0.2; }
+      @keyframes votemap-opacity-dark {
+        0% { stroke-opacity: 0.8; }
+        100% { stroke-opacity: 0.3; }
+      }
+      @keyframes votemap-opacity-light {
+        0% { stroke-opacity: 0.8; }
+        100% { stroke-opacity: 0.2; }
+      }
+      @keyframes votemap-appear {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
       }
       @keyframes votemap-gradient-fade {
         0% { opacity: 0; }
@@ -169,12 +175,22 @@ function useWebStrokeAnimation() {
       .votemap-stroke-dark {
         stroke-dasharray: 3000;
         stroke-dashoffset: 3000;
-        animation: votemap-stroke-draw 6s ease-in-out forwards;
+        stroke-opacity: 0.8;
+        opacity: 0;
+        animation:
+          votemap-appear 0.5s ease-out forwards,
+          votemap-dash 6s ease-in-out forwards,
+          votemap-opacity-dark 1.5s ease-out 5s forwards;
       }
       .votemap-stroke-light {
         stroke-dasharray: 3000;
         stroke-dashoffset: 3000;
-        animation: votemap-stroke-draw-light 6s ease-in-out forwards;
+        stroke-opacity: 0.8;
+        opacity: 0;
+        animation:
+          votemap-appear 0.5s ease-out forwards,
+          votemap-dash 6s ease-in-out forwards,
+          votemap-opacity-light 1.5s ease-out 5s forwards;
       }
       .votemap-gradient {
         opacity: 0;
@@ -264,12 +280,13 @@ function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEna
         )}
 
         {/* Wireframe stroke text — draws on page load via CSS animation on web.
-            Uses theme-aware color (matches NextJS "currentColor") and separate
-            animation classes for dark/light stroke-opacity end values. */}
+            Uses theme-aware color (matches NextJS fill="currentColor" + fillOpacity=0)
+            with separate animation classes for dark/light stroke-opacity end values. */}
         <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
           <SvgText
             {...textProps}
-            fill="none"
+            fill={strokeColor}
+            fillOpacity={0}
             stroke={strokeColor}
             strokeWidth={2}
             {...(isWeb
@@ -328,9 +345,10 @@ function HoverableFooterLink({
   darkMode?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  /** Links use slightly brighter base color than surrounding text — matching
-   *  NextJS Footer where links have fontWeight="medium" + underline. */
-  const baseColor = darkMode ? '#d1d5db' : '#4a5568';
+  /** Links use the footer's gray color — matching NextJS Footer where links
+   *  have fontWeight="medium" + textDecoration="underline" and inherit the
+   *  gray.500 (light) / gray.400 (dark) color. Underline + weight distinction. */
+  const footerGray = darkMode ? '#a0aec0' : '#718096';
 
   return (
     <Pressable
@@ -338,7 +356,7 @@ function HoverableFooterLink({
       {...(hoverProps(setHovered) as any)}
     >
       <Text style={{
-        color: hovered ? '#3b82f6' : baseColor,
+        color: hovered ? '#3b82f6' : footerGray,
         fontSize: 15,
         fontWeight: '500',
         textDecorationLine: 'underline',
@@ -393,6 +411,8 @@ export default function HomeScreen() {
   const subtitleColor = darkMode ? '#d1d5db' : '#718096';
   const surfaceBg = darkMode ? colors.surface : '#f7fafc';
   const borderColor = darkMode ? colors.border : '#e2e8f0';
+  /** Footer gray — matches Chakra gray.400 (dark) / gray.500 (light) */
+  const footerGray = darkMode ? '#a0aec0' : '#718096';
 
   return (
     <ScrollView
@@ -538,14 +558,14 @@ export default function HomeScreen() {
           gap: 8,
         }}>
           <HoverableFooterLink href="mailto:support@votemap.net" label="support@votemap.net" darkMode={darkMode} />
-          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <Text style={{ color: footerGray, fontSize: 15 }}>•</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: GRAY_400, fontSize: 15 }}>Built by </Text>
+            <Text style={{ color: footerGray, fontSize: 15 }}>Built by </Text>
             <HoverableFooterLink href="https://onexengineering.com" label="onexengineering" darkMode={darkMode} />
           </View>
-          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <Text style={{ color: footerGray, fontSize: 15 }}>•</Text>
           <HoverableFooterLink href="https://x.com/isaac_yeang" label="@isaac_yeang" darkMode={darkMode} />
-          <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
+          <Text style={{ color: footerGray, fontSize: 15 }}>•</Text>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             {/* Magic wand toggle — FontAwesome "magic" matching NextJS FaMagic */}
             <Pressable
@@ -559,7 +579,7 @@ export default function HomeScreen() {
               <FontAwesome
                 name="magic"
                 size={16}
-                color={effectsEnabled ? '#a855f7' : GRAY_400}
+                color={effectsEnabled ? '#a855f7' : footerGray}
               />
             </Pressable>
             {/* Light/dark mode toggle — FontAwesome sun/moon matching NextJS FaSun/FaMoon */}
@@ -574,7 +594,7 @@ export default function HomeScreen() {
               <FontAwesome
                 name={darkMode ? 'sun-o' : 'moon-o'}
                 size={16}
-                color={GRAY_400}
+                color={footerGray}
               />
             </Pressable>
           </View>
