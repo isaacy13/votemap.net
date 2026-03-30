@@ -30,6 +30,16 @@ const hoverProps = Platform.OS === 'web' ? (
   })
 ) : () => ({});
 
+/** Web-only SVG className prop — typed as Record for spread compatibility.
+ *  react-native-svg types don't include className, but the web renderer supports it. */
+const webClassName = (name: string): Record<string, string> =>
+  Platform.OS === 'web' ? { className: name } : {};
+
+/** Web-only CSS transition style — no-op on native */
+const webTransition = Platform.OS === 'web'
+  ? { transition: 'all 0.2s' } as Record<string, string>
+  : {};
+
 /** Gray color for social icons and footer text — matches NextJS Chakra gray.400 */
 const GRAY_400 = '#9ca3af';
 
@@ -215,7 +225,7 @@ function VotemapHeading({ effectsEnabled = true }: { effectsEnabled?: boolean })
                 <SvgText
                   {...textProps}
                   fill="url(#headingGrad)"
-                  {...{ className: 'votemap-gradient' } as Record<string, string>}
+                  {...webClassName('votemap-gradient')}
                 >
                   votemap
                 </SvgText>
@@ -247,7 +257,7 @@ function VotemapHeading({ effectsEnabled = true }: { effectsEnabled?: boolean })
             stroke={colors.text}
             strokeWidth={2}
             {...(isWeb
-              ? { className: 'votemap-stroke' } as Record<string, string>
+              ? webClassName('votemap-stroke')
               : { strokeOpacity: 0.3, strokeDasharray: '3000', strokeDashoffset: '0' }
             )}
           >
@@ -281,7 +291,7 @@ function HoverableSocialLink({
     <Pressable
       onPress={() => Linking.openURL(href)}
       {...(hoverProps(setHovered) as any)}
-      style={{ transform: [{ scale }], transition: 'all 0.2s' } as any}
+      style={{ transform: [{ scale }], ...webTransition }}
     >
       {children(currentColor)}
     </Pressable>
