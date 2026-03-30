@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Dimensions, Linking } from 'react-native';
+import { View, Text, Pressable, ScrollView, Dimensions, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -19,7 +19,15 @@ import Svg, {
 import { useAuthStore } from '../store/auth';
 import { colors, FadeInView } from '../components/ui';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+/** Web-only hover props for Pressable (supported by react-native-web) */
+const hoverProps = Platform.OS === 'web' ? (
+  (setHovered: (h: boolean) => void) => ({
+    onHoverIn: () => setHovered(true),
+    onHoverOut: () => setHovered(false),
+  })
+) : () => ({});
 
 /** Gray color for social icons and footer text — matches NextJS Chakra gray.400 */
 const GRAY_400 = '#9ca3af';
@@ -279,9 +287,7 @@ function HoverableSocialLink({
   return (
     <Pressable
       onPress={() => Linking.openURL(href)}
-      // @ts-ignore — onHoverIn/onHoverOut supported on web
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
+      {...(hoverProps(setHovered) as any)}
       style={{ transform: [{ scale }] }}
     >
       {children(currentColor, scale)}
@@ -305,9 +311,7 @@ function HoverableFooterLink({
   return (
     <Pressable
       onPress={onPressOverride ?? (() => Linking.openURL(href))}
-      // @ts-ignore — onHoverIn/onHoverOut supported on web
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
+      {...(hoverProps(setHovered) as any)}
     >
       <Text style={{
         color: hovered ? '#3b82f6' : GRAY_400,
@@ -327,7 +331,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, signOut } = useAuthStore();
   const [effectsEnabled, setEffectsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(true); // always dark for now (matching NextJS dark theme default)
+  const [darkMode, setDarkMode] = useState(true); // Toggle icon state — visual-only until full theme support is added
 
   return (
     <ScrollView
@@ -336,7 +340,7 @@ export default function HomeScreen() {
         flexGrow: 1,
         alignItems: 'center',
         paddingHorizontal: 16,
-        minHeight: '85vh' as any,
+        minHeight: SCREEN_HEIGHT * 0.85,
       }}
       showsVerticalScrollIndicator={false}
     >
@@ -384,7 +388,7 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', gap: 24, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               <Pressable
                 onPress={() => router.push('/issues')}
-                style={({ pressed, hovered }: any) => ({
+                style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
                   backgroundColor: pressed ? colors.surfaceHover : colors.surface,
                   borderWidth: 1,
                   borderColor: colors.border,
@@ -409,7 +413,7 @@ export default function HomeScreen() {
               {!isAuthenticated ? (
                 <Pressable
                   onPress={() => router.push('/auth/login')}
-                  style={({ pressed, hovered }: any) => ({
+                  style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
                     backgroundColor: pressed ? colors.surfaceHover : colors.surface,
                     borderWidth: 1,
                     borderColor: colors.border,
