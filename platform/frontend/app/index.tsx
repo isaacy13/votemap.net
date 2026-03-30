@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Dimensions, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -140,8 +140,11 @@ function AnimatedSpark({ spark }: { spark: Spark }) {
    - System font stack matching Geist Sans visual weight */
 
 /** CSS keyframes injected into <head> for the stroke-draw animation on web.
- *  strokeDashoffset: 3000 → 0 over 6s, then stroke fades to 0.3 opacity.
- *  This matches NextJS framer-motion strokeDashoffset animation. */
+ *  Matches NextJS VotemapHeading framer-motion animation:
+ *  - strokeDashoffset: 3000 → 0 over 6s (draws the outline)
+ *  - strokeOpacity starts at 0.8, ends at 0.3 (dark) / 0.2 (light)
+ *  - stroke uses currentColor so it adapts to light/dark theme
+ *  - Gradient text fades in at the 6s mark */
 function useWebStrokeAnimation() {
   const injected = useRef(false);
   useEffect(() => {
@@ -150,19 +153,28 @@ function useWebStrokeAnimation() {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes votemap-stroke-draw {
-        0% { stroke-dashoffset: 3000; opacity: 0; stroke-opacity: 0.8; }
-        8% { opacity: 1; }
-        90% { stroke-opacity: 0.8; }
+        0% { stroke-dashoffset: 3000; stroke-opacity: 0.8; }
+        95% { stroke-opacity: 0.8; }
         100% { stroke-dashoffset: 0; stroke-opacity: 0.3; }
+      }
+      @keyframes votemap-stroke-draw-light {
+        0% { stroke-dashoffset: 3000; stroke-opacity: 0.8; }
+        95% { stroke-opacity: 0.8; }
+        100% { stroke-dashoffset: 0; stroke-opacity: 0.2; }
       }
       @keyframes votemap-gradient-fade {
         0% { opacity: 0; }
         100% { opacity: 1; }
       }
-      .votemap-stroke {
+      .votemap-stroke-dark {
         stroke-dasharray: 3000;
         stroke-dashoffset: 3000;
         animation: votemap-stroke-draw 6s ease-in-out forwards;
+      }
+      .votemap-stroke-light {
+        stroke-dasharray: 3000;
+        stroke-dashoffset: 3000;
+        animation: votemap-stroke-draw-light 6s ease-in-out forwards;
       }
       .votemap-gradient {
         opacity: 0;
@@ -173,10 +185,12 @@ function useWebStrokeAnimation() {
   }, []);
 }
 
-function VotemapHeading({ effectsEnabled = true }: { effectsEnabled?: boolean }) {
+function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEnabled?: boolean; darkMode?: boolean }) {
   const sparks = useMemo(generateSparks, []);
   const gradientOpacity = useSharedValue(0);
   const isWeb = Platform.OS === 'web';
+  /** Stroke color follows the theme — matches NextJS "currentColor" approach */
+  const strokeColor = darkMode ? '#ffffff' : '#1a202c';
 
   useWebStrokeAnimation();
 
@@ -249,16 +263,18 @@ function VotemapHeading({ effectsEnabled = true }: { effectsEnabled?: boolean })
           )
         )}
 
-        {/* Wireframe stroke text — draws on page load via CSS animation on web */}
+        {/* Wireframe stroke text — draws on page load via CSS animation on web.
+            Uses theme-aware color (matches NextJS "currentColor") and separate
+            animation classes for dark/light stroke-opacity end values. */}
         <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
           <SvgText
             {...textProps}
             fill="none"
-            stroke={colors.text}
+            stroke={strokeColor}
             strokeWidth={2}
             {...(isWeb
-              ? webClassName('votemap-stroke')
-              : { strokeOpacity: 0.3, strokeDasharray: '3000', strokeDashoffset: '0' }
+              ? webClassName(darkMode ? 'votemap-stroke-dark' : 'votemap-stroke-light')
+              : { strokeOpacity: darkMode ? 0.3 : 0.2, strokeDasharray: '3000', strokeDashoffset: '0' }
             )}
           >
             votemap
@@ -304,12 +320,17 @@ function HoverableFooterLink({
   href,
   label,
   onPressOverride,
+  darkMode = true,
 }: {
   href: string;
   label: string;
   onPressOverride?: () => void;
+  darkMode?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  /** Links use slightly brighter base color than surrounding text — matching
+   *  NextJS Footer where links have fontWeight="medium" + underline. */
+  const baseColor = darkMode ? '#d1d5db' : '#4a5568';
 
   return (
     <Pressable
@@ -317,15 +338,45 @@ function HoverableFooterLink({
       {...(hoverProps(setHovered) as any)}
     >
       <Text style={{
-        color: hovered ? '#3b82f6' : GRAY_400,
+        color: hovered ? '#3b82f6' : baseColor,
         fontSize: 15,
         fontWeight: '500',
         textDecorationLine: 'underline',
+        ...webTransition,
       }}>
         {label}
       </Text>
     </Pressable>
   );
+}
+
+/* ── Dark mode persistence ─────────────────────────────────────────────
+   On web, persist to localStorage (matching NextJS next-themes behavior).
+   On native, falls back to in-memory state (would use AsyncStorage for
+   full persistence — out of scope for this change). */
+
+function useDarkMode(): [boolean, (v: boolean) => void] {
+  const [darkMode, setDarkModeState] = useState(() => {
+    if (Platform.OS === 'web') {
+      try {
+        const stored = localStorage.getItem('votemap-theme');
+        if (stored === 'light') return false;
+        if (stored === 'dark') return true;
+      } catch {}
+    }
+    return true; // default dark
+  });
+
+  const setDarkMode = useCallback((v: boolean) => {
+    setDarkModeState(v);
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.setItem('votemap-theme', v ? 'dark' : 'light');
+      } catch {}
+    }
+  }, []);
+
+  return [darkMode, setDarkMode];
 }
 
 /* ── Home Screen ──────────────────────────────────────────────────── */
@@ -334,7 +385,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, signOut } = useAuthStore();
   const [effectsEnabled, setEffectsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useDarkMode();
 
   /** Toggle dark/light mode — changes background and text colors */
   const bgColor = darkMode ? colors.bg : '#ffffff';
@@ -363,7 +414,7 @@ export default function HomeScreen() {
         gap: 0,
       }}>
         <View style={{ alignItems: 'center', width: '100%', gap: 0 }}>
-          <VotemapHeading effectsEnabled={effectsEnabled} />
+          <VotemapHeading effectsEnabled={effectsEnabled} darkMode={darkMode} />
 
           {/* "democratize everything" — matches NextJS HeroContent */}
           <FadeInView delay={200}>
@@ -486,14 +537,14 @@ export default function HomeScreen() {
           paddingVertical: 48,
           gap: 8,
         }}>
-          <HoverableFooterLink href="mailto:support@votemap.net" label="support@votemap.net" />
+          <HoverableFooterLink href="mailto:support@votemap.net" label="support@votemap.net" darkMode={darkMode} />
           <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ color: GRAY_400, fontSize: 15 }}>Built by </Text>
-            <HoverableFooterLink href="https://onexengineering.com" label="onexengineering" />
+            <HoverableFooterLink href="https://onexengineering.com" label="onexengineering" darkMode={darkMode} />
           </View>
           <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
-          <HoverableFooterLink href="https://x.com/isaac_yeang" label="@isaac_yeang" />
+          <HoverableFooterLink href="https://x.com/isaac_yeang" label="@isaac_yeang" darkMode={darkMode} />
           <Text style={{ color: GRAY_400, fontSize: 15 }}>•</Text>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             {/* Magic wand toggle — FontAwesome "magic" matching NextJS FaMagic */}
