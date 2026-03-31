@@ -18,7 +18,7 @@ import Svg, {
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useAuthStore } from '../store/auth';
-import { colors, FadeInView } from '../components/ui';
+import { colors, lightColors, FadeInView } from '../components/ui';
 import { useTheme } from '../context/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -464,7 +464,7 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => router.push('/issues')}
                 style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                  backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                  backgroundColor: pressed ? (darkMode ? colors.surfaceHover : lightColors.surfaceHover) : surfaceBg,
                   borderWidth: 1,
                   borderColor: borderColor,
                   borderRadius: 9999,
@@ -486,7 +486,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => router.push('/auth/login')}
                   style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                    backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                    backgroundColor: pressed ? (darkMode ? colors.surfaceHover : lightColors.surfaceHover) : surfaceBg,
                     borderWidth: 1,
                     borderColor: borderColor,
                     borderRadius: 9999,

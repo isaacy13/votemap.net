@@ -7,7 +7,7 @@ import * as AuthSession from 'expo-auth-session';
 import Svg, { Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useAuthStore, useGoogleAuth } from '../../store/auth';
 import { authConfig } from '../../config/auth';
-import { colors, FadeInView } from '../../components/ui';
+import { colors, lightColors, FadeInView } from '../../components/ui';
 import { useTheme } from '../../context/theme';
 import { ThemeToggle } from '../../components/ThemeToggle';
 
@@ -307,7 +307,7 @@ export default function LoginScreen() {
               onPress={handleGoogleLogin}
               disabled={isLoading}
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : lightColors.surfaceHover) : surfaceBg,
                 borderWidth: 1,
                 borderColor: borderColor,
                 borderRadius: 9999,
@@ -339,7 +339,7 @@ export default function LoginScreen() {
               onPress={handleAppleLogin}
               disabled={isLoading}
               style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : lightColors.surfaceHover) : surfaceBg,
                 borderWidth: 1,
                 borderColor: borderColor,
                 borderRadius: 9999,
