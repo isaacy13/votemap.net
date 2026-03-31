@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  email              String?  @unique
+  provider           String   // 'google' | 'apple'
+  providerId         String   @unique
+  xUserId            String?  @unique
+  xHandle            String?
+  xVerifiedType      String?  // 'blue' | 'business' | 'government' | null
+  isIdentityVerified Boolean  @default(false)
+  displayName        String?
+  showName           Boolean  @default(true)
+  reliabilityScore   Int      @default(100)
+  createdAt          DateTime @default(now())
+
+  contributions  Contribution[]
+  pulloutVotes   PulloutVote[]
+  resolutionDecisions ResolutionDecision[]
+}
+
+model Entity {
+  id                String    @id @default(uuid())
+  name              String
+  type              String    // politician | government | company | nonprofit | creator | sports_team | small_business
+  verified          Boolean   @default(false)
+  walletAddress     String
+  lastMonthlyUpdate DateTime?
+
+  issues Issue[]
+}
+
+model Issue {
+  id              String    @id @default(uuid())
+  entityId        String
+  entity          Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  successCriteria String
+  targetDate      DateTime?
+  status          String    @default("open") // open | claimed | resolved | cancelled | pullout_triggered
+  totalBountyUsdc Decimal   @default(0)
+  createdAt       DateTime  @default(now())
+
+  contributions Contribution[]
+  deliverables  Deliverable[]
+  pulloutVotes  PulloutVote[]
+  escrows       Escrow[]
+
+  @@index([entityId])
+}
+
+model Contribution {
+  id                 String    @id @default(uuid())
+  issueId            String
+  issue              Issue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  amountUsdc         Decimal
+  txHash             String    @unique
+  redeemableAsCredit Boolean   @default(false)
+  resolutionDecision String?   // pending | approved | rejected
+  createdAt          DateTime  @default(now())
+
+  resolutionDecisions ResolutionDecision[]
+
+  @@index([issueId, userId])
+}
+
+model ResolutionDecision {
+  id             String       @id @default(uuid())
+  contributionId String
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  decision       String       // approve | reject
+  decidedAt      DateTime     @default(now())
+}
+
+model Deliverable {
+  id            String   @id @default(uuid())
+  issueId       String
+  issue         Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  proofText     String
+  proofFiles    String[] // S3-compatible URLs
+  proofTxHashes String[] // on-chain transaction hashes
+  submittedAt   DateTime @default(now())
+}
+
+model Escrow {
+  id              String  @id @default(uuid())
+  issueId         String
+  issue           Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  totalUsdc       Decimal
+  yieldEarnedUsdc Decimal @default(0)
+  status          String  @default("active")
+}
+
+model PulloutVote {
+  id           String   @id @default(uuid())
+  issueId      String
+  issue        Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  amountWeight Decimal
+  createdAt    DateTime @default(now())
+
+  @@index([issueId, userId])
+}

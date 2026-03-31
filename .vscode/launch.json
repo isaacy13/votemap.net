@@ -10,6 +10,7 @@
                 "run",
                 "dev"
             ],
+            "cwd": "${workspaceFolder}/landing",
             "console": "integratedTerminal",
             "skipFiles": [
                 "<node_internals>/**"
@@ -19,10 +20,72 @@
             "name": "Next.js: debug full",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
-            "args": [
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
                 "dev"
             ],
+            "cwd": "${workspaceFolder}/landing",
+            "console": "integratedTerminal",
+            "serverReadyAction": {
+                "action": "debugWithChrome",
+                "killOnServerStop": true,
+                "pattern": "- Local:.+(https?://.+)"
+            },
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Next.js: debug client",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/landing"
+        },
+        {
+            "name": "Expo: start web",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "expo",
+                "start",
+                "--web"
+            ],
+            "cwd": "${workspaceFolder}/platform/frontend",
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Expo: start iOS",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "expo",
+                "start",
+                "--ios"
+            ],
+            "cwd": "${workspaceFolder}/platform/frontend",
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Expo: start Android",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "expo",
+                "start",
+                "--android"
+            ],
+            "cwd": "${workspaceFolder}/platform/frontend",
             "console": "integratedTerminal",
             "skipFiles": [
                 "<node_internals>/**"
