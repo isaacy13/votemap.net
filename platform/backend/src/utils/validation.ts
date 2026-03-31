@@ -41,3 +41,9 @@ export const deliverableSchema = z.object({
   proofFiles: z.array(z.string().url()).default([]),
   proofTxHashes: z.array(z.string()).default([]),
 });
+
+export const createEntitySchema = z.object({
+  name: z.string().min(1).max(500),
+  type: z.enum(['politician', 'government', 'company', 'nonprofit', 'creator', 'sports_team', 'small_business']),
+  walletAddress: z.string().min(1),
+});

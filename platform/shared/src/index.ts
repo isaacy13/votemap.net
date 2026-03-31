@@ -119,6 +119,12 @@ export interface DeliverableRequest {
   proofTxHashes?: string[];
 }
 
+export interface CreateEntityRequest {
+  name: string;
+  type: EntityType;
+  walletAddress: string;
+}
+
 export interface PulloutStats {
   userVotePercent: number;
   usdcVotePercent: number;

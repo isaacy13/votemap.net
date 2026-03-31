@@ -11,6 +11,7 @@ import { createIssuesRouter } from './routes/issues';
 import { createContributionsRouter } from './routes/contributions';
 import { createResolutionRouter } from './routes/resolution';
 import { createDeliverablesRouter } from './routes/deliverables';
+import { createEntitiesRouter } from './routes/entities';
 import { createHealthRouter } from './routes/health';
 
 async function main() {
@@ -57,10 +58,11 @@ async function main() {
 
   // Routes
   app.use('/auth', createAuthRouter(prisma, env.JWT_SECRET, env.JWT_EXPIRES_IN));
-  app.use('/issues', createIssuesRouter(prisma, env.JWT_SECRET));
-  app.use('/issues', createContributionsRouter(prisma, env.JWT_SECRET));
-  app.use('/issues', createResolutionRouter(prisma, env.JWT_SECRET));
-  app.use('/issues', createDeliverablesRouter(prisma, env.JWT_SECRET));
+  app.use('/issues', createIssuesRouter(prisma, env.JWT_SECRET, io));
+  app.use('/issues', createContributionsRouter(prisma, env.JWT_SECRET, io));
+  app.use('/issues', createResolutionRouter(prisma, env.JWT_SECRET, io));
+  app.use('/issues', createDeliverablesRouter(prisma, env.JWT_SECRET, io));
+  app.use('/entities', createEntitiesRouter(prisma, env.JWT_SECRET, io));
   app.use('/health', createHealthRouter(prisma));
 
   // Start server

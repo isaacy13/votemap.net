@@ -5,8 +5,9 @@ import { idempotency } from '../middleware/idempotency';
 import { writeLimiter } from '../middleware/rateLimiter';
 import { contributeSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
+import type { Server as SocketServer } from 'socket.io';
 
-export function createContributionsRouter(prisma: PrismaClient, jwtSecret: string) {
+export function createContributionsRouter(prisma: PrismaClient, jwtSecret: string, io: SocketServer) {
   const router = Router();
 
   /**
@@ -60,6 +61,8 @@ export function createContributionsRouter(prisma: PrismaClient, jwtSecret: strin
           data: { totalBountyUsdc: { increment: body.amountUsdc } },
         }),
       ]);
+
+      io.to(`/issue/${issueId}`).emit('contribution', { issueId, contributionId: contribution.id });
 
       res.status(201).json({ contribution });
     } catch (error) {

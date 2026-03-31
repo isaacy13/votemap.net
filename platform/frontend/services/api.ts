@@ -1,8 +1,10 @@
 import type {
   Issue,
+  Entity,
   AuthResponse,
   LinkXResponse,
   CreateIssueRequest,
+  CreateEntityRequest,
   ContributeRequest,
   ResolveRequest,
   PulloutVoteRequest,
@@ -63,6 +65,20 @@ export const api = {
 
   createIssue: (data: CreateIssueRequest, token: string) =>
     request<{ issue: Issue }>('/issues', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  // Entities
+  getEntities: () =>
+    request<{ entities: Entity[] }>('/entities'),
+
+  getEntity: (id: string) =>
+    request<{ entity: Entity }>(`/entities/${id}`),
+
+  createEntity: (data: CreateEntityRequest, token: string) =>
+    request<{ entity: Entity }>('/entities', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: authHeaders(token),

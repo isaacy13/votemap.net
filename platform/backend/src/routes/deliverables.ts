@@ -5,8 +5,9 @@ import { idempotency } from '../middleware/idempotency';
 import { writeLimiter } from '../middleware/rateLimiter';
 import { deliverableSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
+import type { Server as SocketServer } from 'socket.io';
 
-export function createDeliverablesRouter(prisma: PrismaClient, jwtSecret: string) {
+export function createDeliverablesRouter(prisma: PrismaClient, jwtSecret: string, io: SocketServer) {
   const router = Router();
 
   /**
@@ -53,6 +54,8 @@ export function createDeliverablesRouter(prisma: PrismaClient, jwtSecret: string
           data: { status: 'claimed' },
         });
       }
+
+      io.to(`/issue/${issueId}`).emit('deliverable', { issueId, deliverableId: deliverable.id });
 
       res.status(201).json({ deliverable });
     } catch (error) {

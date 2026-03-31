@@ -5,8 +5,9 @@ import { idempotency } from '../middleware/idempotency';
 import { readLimiter, writeLimiter } from '../middleware/rateLimiter';
 import { createIssueSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
+import type { Server as SocketServer } from 'socket.io';
 
-export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
+export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string, io: SocketServer) {
   const router = Router();
 
   /**
@@ -92,6 +93,8 @@ export function createIssuesRouter(prisma: PrismaClient, jwtSecret: string) {
           targetDate: body.targetDate ? new Date(body.targetDate) : null,
         },
       });
+
+      io.emit('issue-created', { issueId: issue.id });
 
       res.status(201).json({ issue });
     } catch (error) {

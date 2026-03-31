@@ -5,8 +5,9 @@ import { idempotency } from '../middleware/idempotency';
 import { writeLimiter } from '../middleware/rateLimiter';
 import { resolveSchema, pulloutVoteSchema } from '../utils/validation';
 import { getParam } from '../utils/params';
+import type { Server as SocketServer } from 'socket.io';
 
-export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string) {
+export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string, io: SocketServer) {
   const router = Router();
 
   /**
@@ -67,6 +68,9 @@ export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string) 
         where: { id: userId },
         data: { reliabilityScore: { increment: scoreChange } },
       });
+
+      const issueId = contribution.issue.id;
+      io.to(`/issue/${issueId}`).emit('resolution', { issueId, contributionId: body.contributionId, decision: body.decision });
 
       res.json({ decision });
     } catch (error) {
@@ -132,7 +136,10 @@ export function createResolutionRouter(prisma: PrismaClient, jwtSecret: string) 
           where: { id: issueId },
           data: { status: 'pullout_triggered' },
         });
+        io.to(`/issue/${issueId}`).emit('pullout-triggered', { issueId });
       }
+
+      io.to(`/issue/${issueId}`).emit('pullout-vote', { issueId, voteId: vote.id });
 
       res.status(201).json({
         vote,
