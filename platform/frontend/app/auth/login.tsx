@@ -202,41 +202,24 @@ export default function LoginScreen() {
         <FadeInView delay={0} style={{ width: '100%', alignItems: 'center' }}>
           <View style={{ width: '100%', maxWidth: 480, height: 120, position: 'relative' }}>
             {/* Gradient fill text */}
-            {isWeb ? (
-              <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
-                <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
-                  <Defs>
-                    <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <Stop offset="0%" stopColor="#3b82f6" />
-                      <Stop offset="50%" stopColor="#8b5cf6" />
-                      <Stop offset="100%" stopColor="#ef4444" />
-                    </SvgGradient>
-                  </Defs>
-                  <SvgText
-                    {...textProps}
-                    fill="url(#loginGrad)"
-                    {...webClassName('votemap-gradient')}
-                  >
-                    votemap
-                  </SvgText>
-                </Svg>
-              </View>
-            ) : (
-              <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
-                <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
-                  <Defs>
-                    <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <Stop offset="0%" stopColor="#3b82f6" />
-                      <Stop offset="50%" stopColor="#8b5cf6" />
-                      <Stop offset="100%" stopColor="#ef4444" />
-                    </SvgGradient>
-                  </Defs>
-                  <SvgText {...textProps} fill="url(#loginGrad)">
-                    votemap
-                  </SvgText>
-                </Svg>
-              </View>
-            )}
+            <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
+              <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+                <Defs>
+                  <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <Stop offset="0%" stopColor={colors.gradient.start} />
+                    <Stop offset="50%" stopColor={colors.gradient.middle} />
+                    <Stop offset="100%" stopColor={colors.gradient.end} />
+                  </SvgGradient>
+                </Defs>
+                <SvgText
+                  {...textProps}
+                  fill="url(#loginGrad)"
+                  {...(isWeb ? webClassName('votemap-gradient') : {})}
+                >
+                  votemap
+                </SvgText>
+              </Svg>
+            </View>
             {/* Wireframe stroke text — draws on load via CSS animation */}
             <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
               <SvgText
