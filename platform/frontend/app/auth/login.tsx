@@ -24,6 +24,23 @@ const appleDiscovery = {
 const webClassName = (name: string): Record<string, string> =>
   Platform.OS === 'web' ? { className: name } : {};
 
+/** Web-only CSS transition style — no-op on native */
+const webTransition = Platform.OS === 'web'
+  ? { transition: 'all 0.2s' } as Record<string, string>
+  : {};
+
+/** Pill-button shadow — uses CSS boxShadow on web for smooth transitions */
+const pillShadow = (hovered: boolean): Record<string, any> =>
+  Platform.OS === 'web'
+    ? { boxShadow: hovered ? '0 12px 20px rgba(0,0,0,0.25)' : '0 2px 4px rgba(0,0,0,0.08)' }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: hovered ? 12 : 2 },
+        shadowOpacity: hovered ? 0.3 : 0.1,
+        shadowRadius: hovered ? 20 : 4,
+        elevation: hovered ? 8 : 2,
+      };
+
 /** Inject stroke-drawing CSS keyframes on web (same as home page) */
 function useWebStrokeAnimation() {
   const injected = useRef(false);
@@ -200,7 +217,7 @@ export default function LoginScreen() {
 
         {/* ── Votemap heading — same as home page ── */}
         <FadeInView delay={0} style={{ width: '100%', alignItems: 'center' }}>
-          <View style={{ width: '100%', maxWidth: 480, height: 120, position: 'relative' }}>
+          <View style={{ width: '100%', maxWidth: 560, height: 160, position: 'relative' }}>
             {/* Gradient fill text */}
             <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
               <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
@@ -242,12 +259,12 @@ export default function LoginScreen() {
         {/* ── Title text ── */}
         <FadeInView delay={200}>
           <Text style={{
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: '800',
             color: textColor,
             textAlign: 'center',
             letterSpacing: -0.5,
-            marginTop: 8,
+            marginTop: 4,
           }}>
             Sign in to get started
           </Text>
@@ -257,7 +274,7 @@ export default function LoginScreen() {
             fontSize: 18,
             color: subtitleColor,
             textAlign: 'center',
-            marginTop: 8,
+            marginTop: 6,
             lineHeight: 26,
           }}>
             contribute and vote on bounties
@@ -284,7 +301,7 @@ export default function LoginScreen() {
         )}
 
         {/* ── Auth Buttons — capsule/pill style matching home CTA ── */}
-        <View style={{ marginTop: 40, gap: 16, width: '100%', maxWidth: 380, alignSelf: 'center' }}>
+        <View style={{ marginTop: 36, gap: 14, width: '100%', maxWidth: 400, alignSelf: 'center' }}>
           <FadeInView delay={400}>
             <Pressable
               onPress={handleGoogleLogin}
@@ -296,24 +313,21 @@ export default function LoginScreen() {
                 borderRadius: 9999,
                 paddingVertical: 16,
                 paddingHorizontal: 40,
-                height: 64,
+                height: 60,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
                 opacity: isLoading ? 0.6 : 1,
-                transform: [{ translateY: (hovered || pressed) ? -2 : 0 }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
-                shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
-                shadowRadius: (hovered || pressed) ? 20 : 4,
-                elevation: (hovered || pressed) ? 8 : 2,
+                transform: [{ translateY: hovered ? -2 : 0 }],
+                ...pillShadow(!!hovered),
+                ...webTransition,
               })}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={textColor} />
               ) : (
-                <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
+                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
                   Continue with Google
                 </Text>
               )}
@@ -331,24 +345,21 @@ export default function LoginScreen() {
                 borderRadius: 9999,
                 paddingVertical: 16,
                 paddingHorizontal: 40,
-                height: 64,
+                height: 60,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
                 opacity: isLoading ? 0.6 : 1,
-                transform: [{ translateY: (hovered || pressed) ? -2 : 0 }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
-                shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
-                shadowRadius: (hovered || pressed) ? 20 : 4,
-                elevation: (hovered || pressed) ? 8 : 2,
+                transform: [{ translateY: hovered ? -2 : 0 }],
+                ...pillShadow(!!hovered),
+                ...webTransition,
               })}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={textColor} />
               ) : (
-                <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
+                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
                    Continue with Apple
                 </Text>
               )}
@@ -361,14 +372,14 @@ export default function LoginScreen() {
           <Pressable
             onPress={() => router.replace('/')}
             style={({ pressed }) => ({
-              marginTop: 32,
-              paddingVertical: 14,
+              marginTop: 28,
+              paddingVertical: 12,
               paddingHorizontal: 28,
               alignItems: 'center',
               opacity: pressed ? 0.6 : 1,
             })}
           >
-            <Text style={{ color: subtitleColor, fontSize: 16, fontWeight: '500' }}>
+            <Text style={{ color: subtitleColor, fontSize: 15, fontWeight: '500' }}>
               Browse without signing in →
             </Text>
           </Pressable>
@@ -378,17 +389,17 @@ export default function LoginScreen() {
         <FadeInView delay={700}>
           <Text style={{
             color: themeMuted,
-            fontSize: 14,
+            fontSize: 13,
             textAlign: 'center',
-            marginTop: 40,
-            lineHeight: 22,
+            marginTop: 32,
+            lineHeight: 20,
           }}>
             Read-only access on sign-in · <Text style={{ color: colors.purple }}>Link X</Text> for write access
           </Text>
         </FadeInView>
 
         {/* Theme Toggle */}
-        <View style={{ marginTop: 24 }}>
+        <View style={{ marginTop: 20 }}>
           <ThemeToggle />
         </View>
       </View>

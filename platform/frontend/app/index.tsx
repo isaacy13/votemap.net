@@ -23,6 +23,10 @@ import { useTheme } from '../context/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+/** Track whether the initial home animation has already played.
+ *  When true, skip entrance animations on re-mount (e.g. navigating back). */
+let _homeAnimPlayed = false;
+
 /** Web-only hover props for Pressable (supported by react-native-web) */
 const hoverProps = Platform.OS === 'web' ? (
   (setHovered: (h: boolean) => void) => ({
@@ -40,6 +44,19 @@ const webClassName = (name: string): Record<string, string> =>
 const webTransition = Platform.OS === 'web'
   ? { transition: 'all 0.2s' } as Record<string, string>
   : {};
+
+/** Pill-button shadow style — uses CSS boxShadow on web for smooth transitions,
+ *  falls back to RN shadow* props on native. */
+const pillShadow = (hovered: boolean): Record<string, any> =>
+  Platform.OS === 'web'
+    ? { boxShadow: hovered ? '0 12px 20px rgba(0,0,0,0.25)' : '0 2px 4px rgba(0,0,0,0.08)' }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: hovered ? 12 : 2 },
+        shadowOpacity: hovered ? 0.3 : 0.1,
+        shadowRadius: hovered ? 20 : 4,
+        elevation: hovered ? 8 : 2,
+      };
 
 /** Gray color for social icons and footer text — matches NextJS Chakra gray.400 */
 const GRAY_400 = '#9ca3af';
@@ -87,13 +104,13 @@ function generateSparks(): Spark[] {
   ];
 }
 
-function AnimatedSpark({ spark }: { spark: Spark }) {
+function AnimatedSpark({ spark, initialDelay = 6 }: { spark: Spark; initialDelay?: number }) {
   const opacity = useSharedValue(0);
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
 
   useEffect(() => {
-    const d = (6 + spark.delay) * 1000;
+    const d = (initialDelay + spark.delay) * 1000;
     const dur = spark.duration * 1000;
     opacity.value = withDelay(d, withRepeat(
       withSequence(withTiming(0.6, { duration: dur * 0.4 }), withTiming(0, { duration: dur * 0.6 })),
@@ -205,9 +222,9 @@ function useWebStrokeAnimation() {
   }, []);
 }
 
-function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEnabled?: boolean; darkMode?: boolean }) {
+function VotemapHeading({ effectsEnabled = true, darkMode = true, skipAnimation = false }: { effectsEnabled?: boolean; darkMode?: boolean; skipAnimation?: boolean }) {
   const sparks = useMemo(generateSparks, []);
-  const gradientOpacity = useSharedValue(0);
+  const gradientOpacity = useSharedValue(skipAnimation ? 1 : 0);
   const isWeb = Platform.OS === 'web';
   /** Stroke color follows the theme — matches NextJS "currentColor" approach */
   const strokeColor = darkMode ? '#ffffff' : '#1a202c';
@@ -215,7 +232,7 @@ function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEna
   useWebStrokeAnimation();
 
   useEffect(() => {
-    if (!isWeb) {
+    if (!isWeb && !skipAnimation) {
       gradientOpacity.value = withDelay(6000, withTiming(1, { duration: 2000 }));
     }
   }, []);
@@ -240,7 +257,7 @@ function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEna
   return (
     <View style={{ width: '100%', maxWidth: 1200, height: 180, alignItems: 'center', position: 'relative' }}>
       {effectsEnabled && sparks.map((s) => (
-        <AnimatedSpark key={s.id} spark={s} />
+        <AnimatedSpark key={s.id} spark={s} initialDelay={skipAnimation ? 0 : 6} />
       ))}
 
       <View style={{ width: '100%', height: '100%' }}>
@@ -259,7 +276,7 @@ function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEna
                 <SvgText
                   {...textProps}
                   fill="url(#headingGrad)"
-                  {...webClassName('votemap-gradient')}
+                  {...(skipAnimation ? {} : webClassName('votemap-gradient'))}
                 >
                   votemap
                 </SvgText>
@@ -294,9 +311,12 @@ function VotemapHeading({ effectsEnabled = true, darkMode = true }: { effectsEna
             stroke={strokeColor}
             strokeWidth={2}
             {...(isWeb
-              ? webClassName(darkMode ? 'votemap-stroke-dark' : 'votemap-stroke-light')
+              ? (skipAnimation
+                  ? {} // final state: no animation classes, use inline attrs below
+                  : webClassName(darkMode ? 'votemap-stroke-dark' : 'votemap-stroke-light'))
               : { strokeOpacity: darkMode ? 0.3 : 0.2, strokeDasharray: '3000', strokeDashoffset: '0' }
             )}
+            {...(isWeb && skipAnimation ? { strokeOpacity: darkMode ? 0.3 : 0.2, strokeDasharray: '3000', strokeDashoffset: '0' } : {})}
           >
             votemap
           </SvgText>
@@ -349,10 +369,9 @@ function HoverableFooterLink({
   darkMode?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  /** Links use the footer's gray color — matching NextJS Footer where links
-   *  have fontWeight="medium" + textDecoration="underline" and inherit the
-   *  gray.500 (light) / gray.400 (dark) color. Underline + weight distinction. */
-  const footerGray = darkMode ? '#a0aec0' : '#718096';
+  /** Links use a brighter/more distinct color from surrounding footer text,
+   *  making them clearly identifiable as interactive. On hover → blue. */
+  const linkColor = darkMode ? '#e2e8f0' : '#4a5568';
 
   return (
     <Pressable
@@ -360,7 +379,7 @@ function HoverableFooterLink({
       {...(hoverProps(setHovered) as any)}
     >
       <Text style={{
-        color: hovered ? '#3b82f6' : footerGray,
+        color: hovered ? '#3b82f6' : linkColor,
         fontSize: 15,
         fontWeight: '500',
         textDecorationLine: 'underline',
@@ -379,6 +398,15 @@ export default function HomeScreen() {
   const { isAuthenticated, user, signOut } = useAuthStore();
   const [effectsEnabled, setEffectsEnabled] = useState(true);
   const { darkMode, setDarkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, footerGray } = useTheme();
+
+  /** Skip entrance animations if the user has already seen them this session */
+  const skipAnim = _homeAnimPlayed;
+  useEffect(() => { _homeAnimPlayed = true; }, []);
+
+  /** Wrapper: skips FadeInView animation on return visits */
+  const Wrap = skipAnim
+    ? ({ children, style }: { children: React.ReactNode; delay?: number; style?: any }) => <View style={style}>{children}</View>
+    : FadeInView;
 
   return (
     <ScrollView
@@ -400,10 +428,10 @@ export default function HomeScreen() {
         gap: 0,
       }}>
         <View style={{ alignItems: 'center', width: '100%', gap: 0 }}>
-          <VotemapHeading effectsEnabled={effectsEnabled} darkMode={darkMode} />
+          <VotemapHeading effectsEnabled={effectsEnabled} darkMode={darkMode} skipAnimation={skipAnim} />
 
           {/* "democratize everything" — matches NextJS HeroContent */}
-          <FadeInView delay={200}>
+          <Wrap delay={200}>
             <Text style={{
               fontSize: 36,
               fontWeight: '800',
@@ -414,10 +442,10 @@ export default function HomeScreen() {
             }}>
               democratize everything
             </Text>
-          </FadeInView>
+          </Wrap>
 
           {/* "vote for the future you want to see" */}
-          <FadeInView delay={400}>
+          <Wrap delay={400}>
             <Text style={{
               fontSize: 22,
               color: subtitleColor,
@@ -428,15 +456,15 @@ export default function HomeScreen() {
             }}>
               vote for the future you want to see
             </Text>
-          </FadeInView>
+          </Wrap>
 
           {/* ── CTA Buttons — pill style matching NextJS ── */}
-          <FadeInView delay={600}>
+          <Wrap delay={600}>
             <View style={{ flexDirection: 'row', gap: 24, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               <Pressable
                 onPress={() => router.push('/issues')}
                 style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                  backgroundColor: pressed ? colors.surfaceHover : surfaceBg,
+                  backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
                   borderWidth: 1,
                   borderColor: borderColor,
                   borderRadius: 9999,
@@ -444,12 +472,9 @@ export default function HomeScreen() {
                   paddingHorizontal: 40,
                   height: 64,
                   justifyContent: 'center' as const,
-                  transform: [{ translateY: (hovered || pressed) ? -4 : 0 }],
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
-                  shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
-                  shadowRadius: (hovered || pressed) ? 20 : 4,
-                  elevation: (hovered || pressed) ? 8 : 2,
+                  transform: [{ translateY: hovered ? -4 : 0 }],
+                  ...pillShadow(!!hovered),
+                  ...webTransition,
                 })}
               >
                 <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
@@ -461,7 +486,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => router.push('/auth/login')}
                   style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                    backgroundColor: pressed ? colors.surfaceHover : surfaceBg,
+                    backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
                     borderWidth: 1,
                     borderColor: borderColor,
                     borderRadius: 9999,
@@ -469,12 +494,9 @@ export default function HomeScreen() {
                     paddingHorizontal: 40,
                     height: 64,
                     justifyContent: 'center' as const,
-                    transform: [{ translateY: (hovered || pressed) ? -4 : 0 }],
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
-                    shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
-                    shadowRadius: (hovered || pressed) ? 20 : 4,
-                    elevation: (hovered || pressed) ? 8 : 2,
+                    transform: [{ translateY: hovered ? -4 : 0 }],
+                    ...pillShadow(!!hovered),
+                    ...webTransition,
                   })}
                 >
                   <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
@@ -494,11 +516,11 @@ export default function HomeScreen() {
                 </View>
               )}
             </View>
-          </FadeInView>
+          </Wrap>
         </View>
 
         {/* ── Social Links — @expo/vector-icons FontAwesome6 (brands) ── */}
-        <FadeInView delay={800}>
+        <Wrap delay={800}>
           <View style={{ flexDirection: 'row', gap: 32, paddingTop: 32 }}>
             <HoverableSocialLink href="https://x.com/vote_map" hoverColor={darkMode ? '#ffffff' : '#000000'}>
               {(color) => <FontAwesome6 name="x-twitter" size={32} color={color} iconStyle="brand" />}
@@ -510,11 +532,11 @@ export default function HomeScreen() {
               {(color) => <FontAwesome name="instagram" size={32} color={color} />}
             </HoverableSocialLink>
           </View>
-        </FadeInView>
+        </Wrap>
       </View>
 
       {/* ── Footer — matching NextJS Footer ── */}
-      <FadeInView delay={900}>
+      <Wrap delay={900}>
         <View style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
@@ -565,7 +587,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-      </FadeInView>
+      </Wrap>
     </ScrollView>
   );
 }
