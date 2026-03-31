@@ -30,8 +30,8 @@ function StackNavigation() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/login" options={{ title: 'Sign In', presentation: 'modal' }} />
-        <Stack.Screen name="auth/link-x" options={{ title: 'Link X', presentation: 'modal' }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="auth/link-x" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="issues/index" options={{ title: 'Issues' }} />
         <Stack.Screen name="issues/[id]" options={{ title: 'Issue Detail' }} />
       </Stack>

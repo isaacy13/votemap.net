@@ -102,177 +102,177 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bgColor, padding: 24, justifyContent: 'center' }}>
-      {/* Logo */}
-      <FadeInView delay={0} style={{ alignItems: 'center', marginBottom: 40 }}>
-        <Svg width={200} height={50} viewBox="0 0 200 50">
-          <Defs>
-            <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={colors.gradient.start} />
-              <Stop offset="50%" stopColor={colors.gradient.middle} />
-              <Stop offset="100%" stopColor={colors.gradient.end} />
-            </SvgGradient>
-          </Defs>
-          <SvgText
-            x="100"
-            y="36"
-            textAnchor="middle"
-            fill="url(#loginGrad)"
-            fontSize="36"
-            fontWeight="800"
-          >
-            votemap
-          </SvgText>
-        </Svg>
-      </FadeInView>
-
-      <FadeInView delay={100}>
-        <Text style={{
-          fontSize: 28,
-          fontWeight: '700',
-          color: textColor,
-          textAlign: 'center',
-          letterSpacing: -0.5,
-        }}>
-          Welcome
-        </Text>
-        <Text style={{
-          fontSize: 16,
-          color: subtitleColor,
-          textAlign: 'center',
-          marginTop: 8,
-          lineHeight: 22,
-        }}>
-          Sign in to contribute and vote on bounties
-        </Text>
-      </FadeInView>
-
-      {/* Error Message */}
-      {error && (
-        <FadeInView delay={0}>
-          <View style={{
-            backgroundColor: colors.red + '15',
-            borderRadius: 12,
-            padding: 12,
-            marginTop: 20,
-            borderWidth: 1,
-            borderColor: colors.red + '30',
-          }}>
-            <Text style={{ color: colors.red, fontSize: 14, textAlign: 'center' }}>
-              {error}
-            </Text>
-          </View>
+    <View style={{ flex: 1, backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <View style={{ width: '100%', maxWidth: 420, alignItems: 'center' }}>
+        {/* Logo */}
+        <FadeInView delay={0} style={{ alignItems: 'center', marginBottom: 16 }}>
+          <Svg width={280} height={70} viewBox="0 0 900 180">
+            <Defs>
+              <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor={colors.gradient.start} />
+                <Stop offset="50%" stopColor={colors.gradient.middle} />
+                <Stop offset="100%" stopColor={colors.gradient.end} />
+              </SvgGradient>
+            </Defs>
+            <SvgText
+              x="450"
+              y="140"
+              textAnchor="middle"
+              fill="url(#loginGrad)"
+              fontSize="140"
+              fontWeight="800"
+              letterSpacing={-7}
+            >
+              votemap
+            </SvgText>
+          </Svg>
         </FadeInView>
-      )}
 
-      {/* Auth Buttons */}
-      <View style={{ marginTop: 36, gap: 14 }}>
-        <FadeInView delay={200}>
-          <Pressable
-            onPress={handleGoogleLogin}
-            disabled={isLoading}
-            style={({ pressed }) => ({
-              backgroundColor: darkMode
-                ? (pressed ? '#f0f0f0' : '#ffffff')
-                : (pressed ? '#e2e8f0' : '#ffffff'),
-              padding: 16,
-              borderRadius: 14,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
-              opacity: isLoading ? 0.6 : 1,
-              borderWidth: darkMode ? 0 : 1,
-              borderColor: borderColor,
-            })}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#000000" />
-            ) : (
-              <>
-                <Text style={{ fontSize: 20 }}>G</Text>
-                <Text style={{ color: '#000000', fontSize: 17, fontWeight: '600' }}>
+        <FadeInView delay={100}>
+          <Text style={{
+            fontSize: 22,
+            fontWeight: '700',
+            color: textColor,
+            textAlign: 'center',
+            letterSpacing: -0.3,
+          }}>
+            Sign in to get started
+          </Text>
+          <Text style={{
+            fontSize: 16,
+            color: subtitleColor,
+            textAlign: 'center',
+            marginTop: 6,
+            lineHeight: 22,
+          }}>
+            contribute and vote on bounties
+          </Text>
+        </FadeInView>
+
+        {/* Error Message */}
+        {error && (
+          <FadeInView delay={0}>
+            <View style={{
+              backgroundColor: colors.red + '15',
+              borderRadius: 9999,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              marginTop: 20,
+              borderWidth: 1,
+              borderColor: colors.red + '30',
+            }}>
+              <Text style={{ color: colors.red, fontSize: 14, textAlign: 'center' }}>
+                {error}
+              </Text>
+            </View>
+          </FadeInView>
+        )}
+
+        {/* Auth Buttons — capsule/pill style matching home page */}
+        <View style={{ marginTop: 32, gap: 12, width: '100%' }}>
+          <FadeInView delay={200}>
+            <Pressable
+              onPress={handleGoogleLogin}
+              disabled={isLoading}
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                borderWidth: 1,
+                borderColor: borderColor,
+                borderRadius: 9999,
+                paddingVertical: 16,
+                paddingHorizontal: 32,
+                height: 58,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                opacity: isLoading ? 0.6 : 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: pressed ? 8 : 2 },
+                shadowOpacity: pressed ? 0.2 : 0.08,
+                shadowRadius: pressed ? 16 : 4,
+                elevation: pressed ? 6 : 2,
+              })}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={textColor} />
+              ) : (
+                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
                   Continue with Google
                 </Text>
-              </>
-            )}
-          </Pressable>
-        </FadeInView>
+              )}
+            </Pressable>
+          </FadeInView>
 
-        <FadeInView delay={300}>
+          <FadeInView delay={300}>
+            <Pressable
+              onPress={handleAppleLogin}
+              disabled={isLoading}
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                borderWidth: 1,
+                borderColor: borderColor,
+                borderRadius: 9999,
+                paddingVertical: 16,
+                paddingHorizontal: 32,
+                height: 58,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                opacity: isLoading ? 0.6 : 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: pressed ? 8 : 2 },
+                shadowOpacity: pressed ? 0.2 : 0.08,
+                shadowRadius: pressed ? 16 : 4,
+                elevation: pressed ? 6 : 2,
+              })}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={textColor} />
+              ) : (
+                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
+                   Continue with Apple
+                </Text>
+              )}
+            </Pressable>
+          </FadeInView>
+        </View>
+
+        {/* Browse without signing in */}
+        <FadeInView delay={400}>
           <Pressable
-            onPress={handleAppleLogin}
-            disabled={isLoading}
+            onPress={() => router.replace('/')}
             style={({ pressed }) => ({
-              backgroundColor: darkMode
-                ? (pressed ? colors.surfaceHover : colors.surface)
-                : (pressed ? '#e2e8f0' : '#1a202c'),
-              padding: 16,
-              borderRadius: 14,
-              flexDirection: 'row',
+              marginTop: 24,
+              paddingVertical: 12,
+              paddingHorizontal: 24,
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              borderWidth: 1,
-              borderColor: darkMode ? colors.border : '#1a202c',
-              opacity: isLoading ? 0.6 : 1,
+              opacity: pressed ? 0.6 : 1,
             })}
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <>
-                <Text style={{ color: '#ffffff', fontSize: 20 }}></Text>
-                <Text style={{ color: '#ffffff', fontSize: 17, fontWeight: '600' }}>
-                  Continue with Apple
-                </Text>
-              </>
-            )}
+            <Text style={{ color: subtitleColor, fontSize: 15, fontWeight: '500' }}>
+              Browse without signing in →
+            </Text>
           </Pressable>
         </FadeInView>
+
+        {/* Info note */}
+        <FadeInView delay={500}>
+          <Text style={{
+            color: themeMuted,
+            fontSize: 13,
+            textAlign: 'center',
+            marginTop: 32,
+            lineHeight: 20,
+          }}>
+            Read-only access on sign-in · <Text style={{ color: colors.purple }}>Link X</Text> for write access
+          </Text>
+        </FadeInView>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
       </View>
-
-      {/* Skip / Browse without signing in */}
-      <FadeInView delay={400}>
-        <Pressable
-          onPress={() => router.replace('/')}
-          style={({ pressed }) => ({
-            marginTop: 20,
-            padding: 14,
-            alignItems: 'center',
-            opacity: pressed ? 0.6 : 1,
-          })}
-        >
-          <Text style={{ color: themeMuted, fontSize: 15, fontWeight: '500' }}>
-            Browse without signing in →
-          </Text>
-        </Pressable>
-      </FadeInView>
-
-      {/* Footer Note */}
-      <FadeInView delay={500}>
-        <View style={{
-          marginTop: 20,
-          padding: 16,
-          backgroundColor: surfaceBg,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: borderColor,
-        }}>
-          <Text style={{ color: subtitleColor, fontSize: 13, textAlign: 'center', lineHeight: 20 }}>
-            Read-only access granted on sign-in.{'\n'}
-            <Text style={{ color: colors.purple }}>Link your X account</Text> for write access.
-          </Text>
-        </View>
-      </FadeInView>
-
-      {/* Theme Toggle */}
-      <ThemeToggle />
     </View>
   );
 }

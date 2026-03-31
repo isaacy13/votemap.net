@@ -3,10 +3,9 @@ import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../../store/auth';
 import { authConfig } from '../../config/auth';
-import { colors, FadeInView, GlowCard } from '../../components/ui';
+import { colors, FadeInView } from '../../components/ui';
 import { useTheme } from '../../context/theme';
 import { ThemeToggle } from '../../components/ThemeToggle';
 
@@ -51,49 +50,50 @@ export default function LinkXScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bgColor, padding: 24, justifyContent: 'center' }}>
-      <FadeInView delay={0}>
-        <Text style={{
-          fontSize: 28,
-          fontWeight: '700',
-          color: textColor,
-          textAlign: 'center',
-          letterSpacing: -0.5,
-        }}>
-          Link X Account
-        </Text>
-        <Text style={{
-          fontSize: 16,
-          color: subtitleColor,
-          textAlign: 'center',
-          marginTop: 8,
-          lineHeight: 22,
-        }}>
-          Required for write access
-        </Text>
-      </FadeInView>
-
-      {error && (
+    <View style={{ flex: 1, backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <View style={{ width: '100%', maxWidth: 420, alignItems: 'center' }}>
         <FadeInView delay={0}>
-          <View style={{
-            backgroundColor: colors.red + '15',
-            borderRadius: 12,
-            padding: 12,
-            marginTop: 20,
-            borderWidth: 1,
-            borderColor: colors.red + '30',
+          <Text style={{
+            fontSize: 22,
+            fontWeight: '700',
+            color: textColor,
+            textAlign: 'center',
+            letterSpacing: -0.3,
           }}>
-            <Text style={{ color: colors.red, fontSize: 14, textAlign: 'center' }}>
-              {error}
-            </Text>
-          </View>
+            Link X Account
+          </Text>
+          <Text style={{
+            fontSize: 16,
+            color: subtitleColor,
+            textAlign: 'center',
+            marginTop: 6,
+            lineHeight: 22,
+          }}>
+            required for write access
+          </Text>
         </FadeInView>
-      )}
 
-      {isXLinked ? (
-        <FadeInView delay={200}>
-          <GlowCard style={{ marginTop: 32 }} surfaceColor={surfaceBg} borderColorOverride={borderColor}>
-            <View style={{ alignItems: 'center', gap: 12 }}>
+        {error && (
+          <FadeInView delay={0}>
+            <View style={{
+              backgroundColor: colors.red + '15',
+              borderRadius: 9999,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              marginTop: 20,
+              borderWidth: 1,
+              borderColor: colors.red + '30',
+            }}>
+              <Text style={{ color: colors.red, fontSize: 14, textAlign: 'center' }}>
+                {error}
+              </Text>
+            </View>
+          </FadeInView>
+        )}
+
+        {isXLinked ? (
+          <FadeInView delay={200}>
+            <View style={{ alignItems: 'center', gap: 12, marginTop: 32 }}>
               <View style={{
                 width: 56,
                 height: 56,
@@ -107,17 +107,15 @@ export default function LinkXScreen() {
               <Text style={{ color: colors.green, fontSize: 20, fontWeight: '700' }}>
                 Verified
               </Text>
-              <Text style={{ color: subtitleColor, fontSize: 14, textAlign: 'center' }}>
+              <Text style={{ color: subtitleColor, fontSize: 14, textAlign: 'center', lineHeight: 20 }}>
                 Your X account is linked and identity verified.{'\n'}You now have full write access.
               </Text>
             </View>
-          </GlowCard>
-        </FadeInView>
-      ) : (
-        <View style={{ marginTop: 32, gap: 16 }}>
-          <FadeInView delay={200}>
-            <GlowCard surfaceColor={surfaceBg} borderColorOverride={borderColor}>
-              <View style={{ gap: 16 }}>
+          </FadeInView>
+        ) : (
+          <View style={{ marginTop: 32, gap: 16, width: '100%', alignItems: 'center' }}>
+            <FadeInView delay={200}>
+              <View style={{ gap: 16, width: '100%' }}>
                 {[
                   { icon: '📝', title: 'Create Issues', desc: 'Propose new bounties for entities' },
                   { icon: '💰', title: 'Contribute', desc: 'Fund bounties with USDC' },
@@ -132,62 +130,60 @@ export default function LinkXScreen() {
                   </View>
                 ))}
               </View>
-            </GlowCard>
-          </FadeInView>
+            </FadeInView>
 
-          <FadeInView delay={400}>
-            <Pressable
-              onPress={handleLinkX}
-              disabled={isLoading || !request}
-              style={({ pressed }) => ({
-                overflow: 'hidden',
-                borderRadius: 14,
-                opacity: isLoading ? 0.6 : pressed ? 0.9 : 1,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
-              })}
-            >
-              <LinearGradient
-                colors={darkMode ? [colors.surface, colors.surfaceHover] : ['#1a202c', '#2d3748']}
-                style={{
-                  padding: 16,
-                  borderRadius: 14,
+            <FadeInView delay={400}>
+              <Pressable
+                onPress={handleLinkX}
+                disabled={isLoading || !request}
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
+                  borderWidth: 1,
+                  borderColor: borderColor,
+                  borderRadius: 9999,
+                  paddingVertical: 16,
+                  paddingHorizontal: 40,
+                  height: 58,
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 10,
-                  borderWidth: 1,
-                  borderColor: darkMode ? colors.borderLight : '#1a202c',
-                }}
+                  opacity: isLoading ? 0.6 : 1,
+                  width: '100%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: pressed ? 8 : 2 },
+                  shadowOpacity: pressed ? 0.2 : 0.08,
+                  shadowRadius: pressed ? 16 : 4,
+                  elevation: pressed ? 6 : 2,
+                })}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
+                  <ActivityIndicator size="small" color={textColor} />
                 ) : (
-                  <>
-                    <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '800' }}>𝕏</Text>
-                    <Text style={{ color: '#ffffff', fontSize: 17, fontWeight: '600' }}>
-                      Link X Account
-                    </Text>
-                  </>
+                  <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
+                    𝕏  Link X Account
+                  </Text>
                 )}
-              </LinearGradient>
-            </Pressable>
-          </FadeInView>
+              </Pressable>
+            </FadeInView>
 
-          <FadeInView delay={500}>
-            <Text style={{
-              color: themeMuted,
-              fontSize: 12,
-              textAlign: 'center',
-              lineHeight: 18,
-            }}>
-              Identity verified via X API{'\n'}(gold/blue checkmark or ID verification)
-            </Text>
-          </FadeInView>
-        </View>
-      )}
+            <FadeInView delay={500}>
+              <Text style={{
+                color: themeMuted,
+                fontSize: 13,
+                textAlign: 'center',
+                marginTop: 8,
+                lineHeight: 20,
+              }}>
+                Identity verified via X API · gold/blue checkmark or ID verification
+              </Text>
+            </FadeInView>
+          </View>
+        )}
 
-      {/* Theme Toggle */}
-      <ThemeToggle />
+        {/* Theme Toggle */}
+        <ThemeToggle />
+      </View>
     </View>
   );
 }
