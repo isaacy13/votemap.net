@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { ZodError } from 'zod';
 import { requireWriteAccess } from '../middleware/auth';
 import { idempotency } from '../middleware/idempotency';
 import { readLimiter, writeLimiter } from '../middleware/rateLimiter';
@@ -82,6 +83,10 @@ export function createEntitiesRouter(prisma: PrismaClient, jwtSecret: string, io
       res.status(201).json({ entity });
     } catch (error) {
       console.error('Create entity error:', error);
+      if (error instanceof ZodError) {
+        res.status(400).json({ error: 'Invalid entity data', details: error.flatten().fieldErrors });
+        return;
+      }
       res.status(400).json({ error: 'Failed to create entity' });
     }
   });
