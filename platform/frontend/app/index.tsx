@@ -151,7 +151,10 @@ function useWebStrokeAnimation() {
   useEffect(() => {
     if (Platform.OS !== 'web' || injected.current) return;
     injected.current = true;
+    // Skip if already injected (login page may have added them first)
+    if (document.querySelector('style[data-votemap-stroke]')) return;
     const style = document.createElement('style');
+    style.setAttribute('data-votemap-stroke', '1');
     style.textContent = `
       @keyframes votemap-dash {
         0% { stroke-dashoffset: 3000; }

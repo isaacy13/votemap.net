@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Platform, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, ScrollView, Platform, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuth from 'expo-apple-authentication';
@@ -13,16 +13,86 @@ import { ThemeToggle } from '../../components/ThemeToggle';
 
 WebBrowser.maybeCompleteAuthSession();
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 // Apple OAuth discovery for web fallback
 const appleDiscovery = {
   authorizationEndpoint: 'https://appleid.apple.com/auth/authorize',
 };
+
+/** Web-only SVG className prop */
+const webClassName = (name: string): Record<string, string> =>
+  Platform.OS === 'web' ? { className: name } : {};
+
+/** Inject stroke-drawing CSS keyframes on web (same as home page) */
+function useWebStrokeAnimation() {
+  const injected = useRef(false);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || injected.current) return;
+    injected.current = true;
+    // Only inject if not already present (home page may have added them)
+    if (document.querySelector('style[data-votemap-stroke]')) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-votemap-stroke', '1');
+    style.textContent = `
+      @keyframes votemap-dash {
+        0% { stroke-dashoffset: 3000; }
+        100% { stroke-dashoffset: 0; }
+      }
+      @keyframes votemap-opacity-dark {
+        0% { stroke-opacity: 0.8; }
+        100% { stroke-opacity: 0.3; }
+      }
+      @keyframes votemap-opacity-light {
+        0% { stroke-opacity: 0.8; }
+        100% { stroke-opacity: 0.2; }
+      }
+      @keyframes votemap-appear {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+      @keyframes votemap-gradient-fade {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+      .votemap-stroke-dark {
+        stroke-dasharray: 3000;
+        stroke-dashoffset: 3000;
+        stroke-opacity: 0.8;
+        opacity: 0;
+        animation:
+          votemap-appear 0.5s ease-out forwards,
+          votemap-dash 6s ease-in-out forwards,
+          votemap-opacity-dark 1.5s ease-out 5s forwards;
+      }
+      .votemap-stroke-light {
+        stroke-dasharray: 3000;
+        stroke-dashoffset: 3000;
+        stroke-opacity: 0.8;
+        opacity: 0;
+        animation:
+          votemap-appear 0.5s ease-out forwards,
+          votemap-dash 6s ease-in-out forwards,
+          votemap-opacity-light 1.5s ease-out 5s forwards;
+      }
+      .votemap-gradient {
+        opacity: 0;
+        animation: votemap-gradient-fade 2s ease-out 6s forwards;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+}
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple, isLoading, error, isAuthenticated } = useAuthStore();
   const [appleNativeAvailable, setAppleNativeAvailable] = useState(false);
   const { darkMode, bgColor, textColor, subtitleColor, surfaceBg, borderColor, textMuted: themeMuted } = useTheme();
+  const isWeb = Platform.OS === 'web';
+  const strokeColor = darkMode ? '#ffffff' : '#1a202c';
+
+  useWebStrokeAnimation();
 
   useEffect(() => {
     AppleAuth.isAvailableAsync().then(setAppleNativeAvailable);
@@ -79,7 +149,6 @@ export default function LoginScreen() {
   const handleAppleLogin = async () => {
     try {
       if (appleNativeAvailable) {
-        // Native Apple Sign-In (iOS/macOS native)
         const credential = await AppleAuth.signInAsync({
           requestedScopes: [
             AppleAuth.AppleAuthenticationScope.FULL_NAME,
@@ -90,8 +159,7 @@ export default function LoginScreen() {
           await signInWithApple(credential.identityToken);
           router.replace('/');
         }
-      } else if (Platform.OS === 'web') {
-        // Web fallback: use OAuth session (works in Safari on macOS)
+      } else if (isWeb) {
         await applePromptAsync();
       } else {
         useAuthStore.getState().setError('Apple Sign-In is not available on this device');
@@ -101,49 +169,113 @@ export default function LoginScreen() {
     }
   };
 
+  /** SVG text props matching the home page VotemapHeading exactly */
+  const textProps = {
+    x: '450',
+    y: '90',
+    textAnchor: 'middle' as const,
+    alignmentBaseline: 'central' as const,
+    fontSize: '140',
+    fontWeight: '800' as const,
+    letterSpacing: -7,
+    fontFamily: Platform.select({
+      web: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      default: undefined,
+    }),
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      <View style={{ width: '100%', maxWidth: 420, alignItems: 'center' }}>
-        {/* Logo */}
-        <FadeInView delay={0} style={{ alignItems: 'center', marginBottom: 16 }}>
-          <Svg width={280} height={70} viewBox="0 0 900 180">
-            <Defs>
-              <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <Stop offset="0%" stopColor={colors.gradient.start} />
-                <Stop offset="50%" stopColor={colors.gradient.middle} />
-                <Stop offset="100%" stopColor={colors.gradient.end} />
-              </SvgGradient>
-            </Defs>
-            <SvgText
-              x="450"
-              y="140"
-              textAnchor="middle"
-              fill="url(#loginGrad)"
-              fontSize="140"
-              fontWeight="800"
-              letterSpacing={-7}
-            >
-              votemap
-            </SvgText>
-          </Svg>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: bgColor }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+        minHeight: SCREEN_HEIGHT * 0.85,
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={{ width: '100%', maxWidth: 480, alignItems: 'center' }}>
+
+        {/* ── Votemap heading — same as home page ── */}
+        <FadeInView delay={0} style={{ width: '100%', alignItems: 'center' }}>
+          <View style={{ width: '100%', maxWidth: 480, height: 120, position: 'relative' }}>
+            {/* Gradient fill text */}
+            {isWeb ? (
+              <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
+                <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+                  <Defs>
+                    <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <Stop offset="0%" stopColor="#3b82f6" />
+                      <Stop offset="50%" stopColor="#8b5cf6" />
+                      <Stop offset="100%" stopColor="#ef4444" />
+                    </SvgGradient>
+                  </Defs>
+                  <SvgText
+                    {...textProps}
+                    fill="url(#loginGrad)"
+                    {...webClassName('votemap-gradient')}
+                  >
+                    votemap
+                  </SvgText>
+                </Svg>
+              </View>
+            ) : (
+              <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
+                <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+                  <Defs>
+                    <SvgGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <Stop offset="0%" stopColor="#3b82f6" />
+                      <Stop offset="50%" stopColor="#8b5cf6" />
+                      <Stop offset="100%" stopColor="#ef4444" />
+                    </SvgGradient>
+                  </Defs>
+                  <SvgText {...textProps} fill="url(#loginGrad)">
+                    votemap
+                  </SvgText>
+                </Svg>
+              </View>
+            )}
+            {/* Wireframe stroke text — draws on load via CSS animation */}
+            <Svg width="100%" height="100%" viewBox="0 0 900 180" style={{ overflow: 'visible' }}>
+              <SvgText
+                {...textProps}
+                fill={strokeColor}
+                fillOpacity={0}
+                stroke={strokeColor}
+                strokeWidth={2}
+                {...(isWeb
+                  ? webClassName(darkMode ? 'votemap-stroke-dark' : 'votemap-stroke-light')
+                  : { strokeOpacity: darkMode ? 0.3 : 0.2, strokeDasharray: '3000', strokeDashoffset: '0' }
+                )}
+              >
+                votemap
+              </SvgText>
+            </Svg>
+          </View>
         </FadeInView>
 
-        <FadeInView delay={100}>
+        {/* ── Title text ── */}
+        <FadeInView delay={200}>
           <Text style={{
-            fontSize: 22,
-            fontWeight: '700',
+            fontSize: 28,
+            fontWeight: '800',
             color: textColor,
             textAlign: 'center',
-            letterSpacing: -0.3,
+            letterSpacing: -0.5,
+            marginTop: 8,
           }}>
             Sign in to get started
           </Text>
+        </FadeInView>
+        <FadeInView delay={300}>
           <Text style={{
-            fontSize: 16,
+            fontSize: 18,
             color: subtitleColor,
             textAlign: 'center',
-            marginTop: 6,
-            lineHeight: 22,
+            marginTop: 8,
+            lineHeight: 26,
           }}>
             contribute and vote on bounties
           </Text>
@@ -168,70 +300,72 @@ export default function LoginScreen() {
           </FadeInView>
         )}
 
-        {/* Auth Buttons — capsule/pill style matching home page */}
-        <View style={{ marginTop: 32, gap: 12, width: '100%' }}>
-          <FadeInView delay={200}>
+        {/* ── Auth Buttons — capsule/pill style matching home CTA ── */}
+        <View style={{ marginTop: 40, gap: 16, width: '100%', maxWidth: 380, alignSelf: 'center' }}>
+          <FadeInView delay={400}>
             <Pressable
               onPress={handleGoogleLogin}
               disabled={isLoading}
-              style={({ pressed }) => ({
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
                 backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
                 borderWidth: 1,
                 borderColor: borderColor,
                 borderRadius: 9999,
                 paddingVertical: 16,
-                paddingHorizontal: 32,
-                height: 58,
+                paddingHorizontal: 40,
+                height: 64,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
                 opacity: isLoading ? 0.6 : 1,
+                transform: [{ translateY: (hovered || pressed) ? -2 : 0 }],
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: pressed ? 8 : 2 },
-                shadowOpacity: pressed ? 0.2 : 0.08,
-                shadowRadius: pressed ? 16 : 4,
-                elevation: pressed ? 6 : 2,
+                shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
+                shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
+                shadowRadius: (hovered || pressed) ? 20 : 4,
+                elevation: (hovered || pressed) ? 8 : 2,
               })}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={textColor} />
               ) : (
-                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
+                <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
                   Continue with Google
                 </Text>
               )}
             </Pressable>
           </FadeInView>
 
-          <FadeInView delay={300}>
+          <FadeInView delay={500}>
             <Pressable
               onPress={handleAppleLogin}
               disabled={isLoading}
-              style={({ pressed }) => ({
+              style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
                 backgroundColor: pressed ? (darkMode ? colors.surfaceHover : '#e2e8f0') : surfaceBg,
                 borderWidth: 1,
                 borderColor: borderColor,
                 borderRadius: 9999,
                 paddingVertical: 16,
-                paddingHorizontal: 32,
-                height: 58,
+                paddingHorizontal: 40,
+                height: 64,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
                 opacity: isLoading ? 0.6 : 1,
+                transform: [{ translateY: (hovered || pressed) ? -2 : 0 }],
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: pressed ? 8 : 2 },
-                shadowOpacity: pressed ? 0.2 : 0.08,
-                shadowRadius: pressed ? 16 : 4,
-                elevation: pressed ? 6 : 2,
+                shadowOffset: { width: 0, height: (hovered || pressed) ? 12 : 2 },
+                shadowOpacity: (hovered || pressed) ? 0.3 : 0.1,
+                shadowRadius: (hovered || pressed) ? 20 : 4,
+                elevation: (hovered || pressed) ? 8 : 2,
               })}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={textColor} />
               ) : (
-                <Text style={{ color: textColor, fontSize: 18, fontWeight: '600' }}>
+                <Text style={{ color: textColor, fontSize: 20, fontWeight: '600' }}>
                    Continue with Apple
                 </Text>
               )}
@@ -240,39 +374,41 @@ export default function LoginScreen() {
         </View>
 
         {/* Browse without signing in */}
-        <FadeInView delay={400}>
+        <FadeInView delay={600}>
           <Pressable
             onPress={() => router.replace('/')}
             style={({ pressed }) => ({
-              marginTop: 24,
-              paddingVertical: 12,
-              paddingHorizontal: 24,
+              marginTop: 32,
+              paddingVertical: 14,
+              paddingHorizontal: 28,
               alignItems: 'center',
               opacity: pressed ? 0.6 : 1,
             })}
           >
-            <Text style={{ color: subtitleColor, fontSize: 15, fontWeight: '500' }}>
+            <Text style={{ color: subtitleColor, fontSize: 16, fontWeight: '500' }}>
               Browse without signing in →
             </Text>
           </Pressable>
         </FadeInView>
 
         {/* Info note */}
-        <FadeInView delay={500}>
+        <FadeInView delay={700}>
           <Text style={{
             color: themeMuted,
-            fontSize: 13,
+            fontSize: 14,
             textAlign: 'center',
-            marginTop: 32,
-            lineHeight: 20,
+            marginTop: 40,
+            lineHeight: 22,
           }}>
             Read-only access on sign-in · <Text style={{ color: colors.purple }}>Link X</Text> for write access
           </Text>
         </FadeInView>
 
         {/* Theme Toggle */}
-        <ThemeToggle />
+        <View style={{ marginTop: 24 }}>
+          <ThemeToggle />
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
