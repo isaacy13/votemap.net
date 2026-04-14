@@ -30,7 +30,7 @@ export const VideoEmbed = () => {
             >
                 <iframe
                     src="https://www.youtube-nocookie.com/embed/FsibeD8Ygfk"
-                    title="votemap"
+                    title="votemap introduction video"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     style={{
