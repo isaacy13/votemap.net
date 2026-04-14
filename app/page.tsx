@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { HeroContent } from '@/components/landing/HeroContent'
 import { SocialLinks } from '@/components/landing/SocialLinks'
+import { VideoEmbed } from '@/components/landing/VideoEmbed'
 import { Footer } from '@/components/landing/Footer'
 
 export default function Home() {
@@ -18,6 +19,8 @@ export default function Home() {
             <VotemapHeading effectsEnabled={effectsEnabled} />
             <HeroContent />
           </Stack>
+
+          <VideoEmbed />
 
           <SocialLinks />
         </VStack>
