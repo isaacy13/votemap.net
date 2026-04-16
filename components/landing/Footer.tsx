@@ -3,6 +3,7 @@
 import { Flex, Link, Text, IconButton } from '@chakra-ui/react'
 import { FaMoon, FaSun, FaMagic } from 'react-icons/fa'
 import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 interface FooterProps {
     effectsEnabled?: boolean
@@ -11,6 +12,9 @@ interface FooterProps {
 
 export const Footer = ({ effectsEnabled = true, toggleEffects }: FooterProps) => {
     const { resolvedTheme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => setMounted(true), [])
 
     const toggleColorMode = () => {
         setTheme(resolvedTheme === 'light' ? 'dark' : 'light')
@@ -69,7 +73,7 @@ export const Footer = ({ effectsEnabled = true, toggleEffects }: FooterProps) =>
                     _dark={{ color: 'gray.400' }}
                     _hover={{ color: 'blue.500', bg: 'transparent' }}
                 >
-                    {resolvedTheme === 'light' ? <FaMoon /> : <FaSun />}
+                    {mounted && (resolvedTheme === 'light' ? <FaMoon /> : <FaSun />)}
                 </IconButton>
             </Flex>
         </Flex>
