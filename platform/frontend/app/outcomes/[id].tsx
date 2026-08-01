@@ -1,29 +1,14 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/auth';
-import { beginVoteSession, waitForVoteSessionConfirm } from '../../services/biometrics';
+import { prepareVote, type PhoneGate } from '../../services/voteFlow';
 import { colors, FadeInView, GlowCard, PulsingDot } from '../../components/ui';
+import { PhoneConfirmModal } from '../../components/PhoneConfirmModal';
 import { useTheme } from '../../context/theme';
 import { ThemeToggle } from '../../components/ThemeToggle';
-
-async function ensureVoteSession(
-  token: string,
-  action: 'stake' | 'resolve' | 'deliverable',
-  payload: Record<string, unknown>
-) {
-  const session = await beginVoteSession(token, action, payload);
-  if (session.needsPhoneConfirm) {
-    Alert.alert(
-      'Confirm on your phone',
-      `Open the VoteMap app and Face ID confirm.\n\nDeep link:\n${session.deepLink}\n\nOr open: /vote-confirm/${session.voteSessionId}`
-    );
-    await waitForVoteSessionConfirm(token, session.voteSessionId);
-  }
-  return session.voteSessionId;
-}
 
 export default function OutcomeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +23,8 @@ export default function OutcomeDetailScreen() {
   const [proofText, setProofText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneGate, setPhoneGate] = useState<PhoneGate | null>(null);
+  const [pendingAction, setPendingAction] = useState<null | (() => Promise<void>)>(null);
 
   const { data: outcome, isLoading } = useQuery({
     queryKey: ['outcome', id],
@@ -57,6 +44,39 @@ export default function OutcomeDetailScreen() {
     return true;
   };
 
+  const withVoteSession = async (
+    action: 'stake' | 'resolve' | 'deliverable',
+    payload: Record<string, unknown>,
+    run: (voteSessionId: string) => Promise<void>
+  ): Promise<'done' | 'waiting_phone'> => {
+    if (!accessToken) return 'done';
+    const { voteSessionId, phoneGate: gate } = await prepareVote(accessToken, action, payload);
+    if (gate) {
+      setPhoneGate(gate);
+      setPendingAction(() => async () => run(voteSessionId));
+      return 'waiting_phone';
+    }
+    await run(voteSessionId);
+    return 'done';
+  };
+
+  const onPhoneConfirmed = useCallback(async () => {
+    const action = pendingAction;
+    setPhoneGate(null);
+    setPendingAction(null);
+    if (!action) return;
+    setBusy(true);
+    try {
+      await action();
+      await qc.invalidateQueries({ queryKey: ['outcome', id] });
+      await qc.invalidateQueries({ queryKey: ['ledger'] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Action failed');
+    } finally {
+      setBusy(false);
+    }
+  }, [pendingAction, qc, id]);
+
   const onStake = async () => {
     if (!requireAuthPath() || !accessToken || !id) return;
     setBusy(true);
@@ -64,17 +84,18 @@ export default function OutcomeDetailScreen() {
     try {
       const deadlineAt = new Date(Date.now() + Number(deadlineDays) * 86400000).toISOString();
       const amountUsdc = Number(amount);
-      const voteSessionId = await ensureVoteSession(accessToken, 'stake', {
-        outcomeId: id,
-        amountUsdc,
-        deadlineAt,
-      });
-      await api.createStake(id, { amountUsdc, deadlineAt, voteSessionId }, accessToken);
-      await qc.invalidateQueries({ queryKey: ['outcome', id] });
-      await qc.invalidateQueries({ queryKey: ['ledger'] });
+      const status = await withVoteSession(
+        'stake',
+        { outcomeId: id, amountUsdc, deadlineAt },
+        async (voteSessionId) => {
+          await api.createStake(id, { amountUsdc, deadlineAt, voteSessionId }, accessToken);
+          await qc.invalidateQueries({ queryKey: ['outcome', id] });
+          await qc.invalidateQueries({ queryKey: ['ledger'] });
+        }
+      );
+      if (status === 'done') setBusy(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Stake failed');
-    } finally {
       setBusy(false);
     }
   };
@@ -84,15 +105,17 @@ export default function OutcomeDetailScreen() {
     setBusy(true);
     setError(null);
     try {
-      const voteSessionId = await ensureVoteSession(accessToken, 'deliverable', {
-        outcomeId: id,
-        proofText,
-      });
-      await api.submitDeliverable(id, { proofText, voteSessionId }, accessToken);
-      await qc.invalidateQueries({ queryKey: ['outcome', id] });
+      const status = await withVoteSession(
+        'deliverable',
+        { outcomeId: id, proofText },
+        async (voteSessionId) => {
+          await api.submitDeliverable(id, { proofText, voteSessionId }, accessToken);
+          await qc.invalidateQueries({ queryKey: ['outcome', id] });
+        }
+      );
+      if (status === 'done') setBusy(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Deliverable failed');
-    } finally {
       setBusy(false);
     }
   };
@@ -102,17 +125,18 @@ export default function OutcomeDetailScreen() {
     setBusy(true);
     setError(null);
     try {
-      const voteSessionId = await ensureVoteSession(accessToken, 'resolve', {
-        outcomeId: id,
-        stakeId,
-        decision,
-      });
-      await api.resolveStake(id, { stakeId, decision, voteSessionId }, accessToken);
-      await qc.invalidateQueries({ queryKey: ['outcome', id] });
-      await qc.invalidateQueries({ queryKey: ['ledger'] });
+      const status = await withVoteSession(
+        'resolve',
+        { outcomeId: id, stakeId, decision },
+        async (voteSessionId) => {
+          await api.resolveStake(id, { stakeId, decision, voteSessionId }, accessToken);
+          await qc.invalidateQueries({ queryKey: ['outcome', id] });
+          await qc.invalidateQueries({ queryKey: ['ledger'] });
+        }
+      );
+      if (status === 'done') setBusy(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Resolve failed');
-    } finally {
       setBusy(false);
     }
   };
@@ -130,6 +154,21 @@ export default function OutcomeDetailScreen() {
       style={{ flex: 1, backgroundColor: bgColor }}
       contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
     >
+      {accessToken && phoneGate && (
+        <PhoneConfirmModal
+          visible
+          sessionId={phoneGate.sessionId}
+          deepLink={phoneGate.deepLink}
+          token={accessToken}
+          onConfirmed={onPhoneConfirmed}
+          onCancel={() => {
+            setPhoneGate(null);
+            setPendingAction(null);
+            setBusy(false);
+          }}
+        />
+      )}
+
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Pressable onPress={() => router.back()}>
           <Text style={{ color: colors.blue }}>← Back</Text>
@@ -180,7 +219,7 @@ export default function OutcomeDetailScreen() {
 
       {Platform.OS === 'web' && (
         <Text style={{ color: colors.yellow, marginTop: 16, fontSize: 13 }}>
-          On web, staking waits for Face ID confirmation in the VoteMap mobile app.
+          On web, voting shows a QR / deep link — Face ID on your phone unlocks the action here.
         </Text>
       )}
 
