@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 export interface JwtPayload {
   userId: string;
   provider: string;
-  xUserId?: string;
   isIdentityVerified: boolean;
   isWriteEnabled: boolean;
 }
@@ -18,9 +17,6 @@ declare global {
   }
 }
 
-/**
- * Middleware: Requires a valid JWT (read-only access).
- */
 export function requireAuth(jwtSecret: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
@@ -40,16 +36,15 @@ export function requireAuth(jwtSecret: string) {
   };
 }
 
-/**
- * Middleware: Requires write access (X account linked + identity verified).
- */
+/** Write access requires authenticated + ZKPassport (or mock) identity verification. */
 export function requireWriteAccess(jwtSecret: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const authMiddleware = requireAuth(jwtSecret);
     authMiddleware(req, res, () => {
-      if (!req.user?.xUserId || !req.user?.isIdentityVerified) {
+      if (!req.user?.isIdentityVerified) {
         res.status(403).json({
-          error: 'Write access requires a linked and verified X account',
+          error: 'Write access requires ZKPassport identity verification',
+          code: 'IDENTITY_REQUIRED',
         });
         return;
       }

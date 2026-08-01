@@ -2,13 +2,15 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useEffect } from 'react';
 import { ThemeProvider, useTheme } from '../context/theme';
+import { useAuthStore } from '../store/auth';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      retry: 3,
+      retry: 2,
     },
   },
 });
@@ -31,9 +33,13 @@ function StackNavigation() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="auth/link-x" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="issues/index" options={{ title: 'Issues' }} />
-        <Stack.Screen name="issues/[id]" options={{ title: 'Issue Detail' }} />
+        <Stack.Screen name="auth/verify" options={{ title: 'Verify identity' }} />
+        <Stack.Screen name="outcomes/index" options={{ title: 'Outcomes' }} />
+        <Stack.Screen name="outcomes/[id]" options={{ title: 'Outcome' }} />
+        <Stack.Screen name="entities/index" options={{ title: 'Entities' }} />
+        <Stack.Screen name="entities/[id]" options={{ title: 'Entity' }} />
+        <Stack.Screen name="ledger/index" options={{ title: 'Ledger' }} />
+        <Stack.Screen name="vote-confirm/[id]" options={{ title: 'Confirm vote' }} />
       </Stack>
     </>
   );
@@ -49,6 +55,11 @@ export default function RootLayout() {
 
 function LayoutInner() {
   const { bgColor } = useTheme();
+  const hydrate = useAuthStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>

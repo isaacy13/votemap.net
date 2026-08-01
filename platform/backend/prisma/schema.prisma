@@ -8,109 +8,182 @@ datasource db {
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  email              String?  @unique
-  provider           String   // 'google' | 'apple'
-  providerId         String   @unique
-  xUserId            String?  @unique
-  xHandle            String?
-  xVerifiedType      String?  // 'blue' | 'business' | 'government' | null
-  isIdentityVerified Boolean  @default(false)
-  displayName        String?
-  showName           Boolean  @default(true)
-  reliabilityScore   Int      @default(100)
-  createdAt          DateTime @default(now())
+  id                   String    @id @default(uuid())
+  email                String?   @unique
+  provider             String // google | apple | dev
+  providerId           String    @unique
+  displayName          String?
+  showName             Boolean   @default(true)
+  bio                  String?
+  ageBand              String?
+  region               String?
+  tier                 String    @default("bronze")
+  reliabilityScore     Int       @default(100)
+  isIdentityVerified   Boolean   @default(false)
+  zkPassportNullifier  String?   @unique
+  verificationProvider String? // zkpassport | mock
+  lastVerifiedAt       DateTime?
+  createdAt            DateTime  @default(now())
 
-  contributions  Contribution[]
-  pulloutVotes   PulloutVote[]
-  resolutionDecisions ResolutionDecision[]
+  stakes               Stake[]
+  donations            Donation[]
+  resolutionDecisions  ResolutionDecision[]
+  voteSessions         VoteSession[]
+  ownedEntities        Entity[]              @relation("EntityOwner")
+  ledgerEntries        LedgerEntry[]
 }
 
 model Entity {
   id                String    @id @default(uuid())
   name              String
-  type              String    // politician | government | company | nonprofit | creator | sports_team | small_business
+  slug              String?   @unique
+  type              String // politician | government | company | nonprofit | creator | sports_team | small_business | church
   verified          Boolean   @default(false)
   walletAddress     String
+  bio               String?
+  avatarUrl         String?
+  ownerUserId       String?
+  owner             User?     @relation("EntityOwner", fields: [ownerUserId], references: [id])
   lastMonthlyUpdate DateTime?
+  createdAt         DateTime  @default(now())
 
-  issues Issue[]
+  outcomes Outcome[]
+  links    EntityLink[]
+  donations Donation[]
+  ledgerEntries LedgerEntry[]
 }
 
-model Issue {
-  id              String    @id @default(uuid())
-  entityId        String
-  entity          Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title           String
-  description     String
-  successCriteria String
-  targetDate      DateTime?
-  status          String    @default("open") // open | claimed | resolved | cancelled | pullout_triggered
-  totalBountyUsdc Decimal   @default(0)
-  createdAt       DateTime  @default(now())
-
-  contributions Contribution[]
-  deliverables  Deliverable[]
-  pulloutVotes  PulloutVote[]
-  escrows       Escrow[]
+model EntityLink {
+  id        String @id @default(uuid())
+  entityId  String
+  entity    Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  label     String
+  url       String
+  sortOrder Int    @default(0)
 
   @@index([entityId])
 }
 
-model Contribution {
-  id                 String    @id @default(uuid())
-  issueId            String
-  issue              Issue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  userId             String
-  user               User      @relation(fields: [userId], references: [id])
-  amountUsdc         Decimal
-  txHash             String    @unique
-  redeemableAsCredit Boolean   @default(false)
-  resolutionDecision String?   // pending | approved | rejected
-  createdAt          DateTime  @default(now())
+model Outcome {
+  id               String    @id @default(uuid())
+  entityId         String?
+  entity           Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  title            String
+  description      String
+  successCriteria  String
+  status           String    @default("open") // open | delivery_submitted | partially_resolved | resolved | expired
+  totalBountyUsdc  Decimal   @default(0) @db.Decimal(20, 6)
+  defaultSplitJson String?
+  createdAt        DateTime  @default(now())
+
+  stakes        Stake[]
+  deliverables  Deliverable[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([entityId])
+  @@index([status])
+}
+
+model Stake {
+  id             String    @id @default(uuid())
+  outcomeId      String
+  outcome        Outcome   @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  amountUsdc     Decimal   @db.Decimal(20, 6)
+  deadlineAt     DateTime
+  status         String    @default("active") // active | released | refunded
+  txHash         String?   @unique
+  releasedAt     DateTime?
+  refundedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
   resolutionDecisions ResolutionDecision[]
+  ledgerEntries       LedgerEntry[]
 
-  @@index([issueId, userId])
+  @@index([outcomeId, userId])
+  @@index([status, deadlineAt])
+}
+
+model Donation {
+  id         String   @id @default(uuid())
+  entityId   String
+  entity     Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  amountUsdc Decimal  @db.Decimal(20, 6)
+  memo       String?
+  txHash     String?  @unique
+  createdAt  DateTime @default(now())
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([entityId])
+  @@index([userId])
 }
 
 model ResolutionDecision {
-  id             String       @id @default(uuid())
-  contributionId String
-  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  decision       String       // approve | reject
-  decidedAt      DateTime     @default(now())
+  id        String   @id @default(uuid())
+  stakeId   String
+  stake     Stake    @relation(fields: [stakeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  decision  String // approve | reject
+  decidedAt DateTime @default(now())
+
+  @@index([stakeId])
 }
 
 model Deliverable {
   id            String   @id @default(uuid())
-  issueId       String
-  issue         Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  outcomeId     String
+  outcome       Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
   proofText     String
-  proofFiles    String[] // S3-compatible URLs
-  proofTxHashes String[] // on-chain transaction hashes
+  proofFiles    String[]
+  proofTxHashes String[]
   submittedAt   DateTime @default(now())
+  submittedById String?
+
+  @@index([outcomeId])
 }
 
-model Escrow {
-  id              String  @id @default(uuid())
-  issueId         String
-  issue           Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  totalUsdc       Decimal
-  yieldEarnedUsdc Decimal @default(0)
-  status          String  @default("active")
+model LedgerEntry {
+  id         String   @id @default(uuid())
+  type       String // stake_lock | release | refund | deadline_refund | donation | adjust
+  amountUsdc Decimal  @db.Decimal(20, 6)
+  memo       String?
+  txHash     String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  entityId   String?
+  entity     Entity?  @relation(fields: [entityId], references: [id])
+  outcomeId  String?
+  outcome    Outcome? @relation(fields: [outcomeId], references: [id])
+  stakeId    String?
+  stake      Stake?   @relation(fields: [stakeId], references: [id])
+  donationId String?
+  donation   Donation? @relation(fields: [donationId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([type])
+  @@index([outcomeId])
+  @@index([entityId])
 }
 
-model PulloutVote {
-  id           String   @id @default(uuid())
-  issueId      String
-  issue        Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  amountWeight Decimal
-  createdAt    DateTime @default(now())
+/// Short-lived Face ID confirmation bridge (web ↔ phone).
+model VoteSession {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String // stake | donate | resolve | deliverable
+  payloadHash String
+  status      String    @default("pending") // pending | confirmed | consumed | expired
+  expiresAt   DateTime
+  confirmedAt DateTime?
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
 
-  @@index([issueId, userId])
+  @@index([userId, status])
+  @@index([expiresAt])
 }

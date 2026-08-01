@@ -1,136 +1,228 @@
 // Shared types between frontend and backend
-// These mirror the Prisma models for type-safe client-server communication
 
-export type Provider = 'google' | 'apple';
-export type XVerifiedType = 'blue' | 'business' | 'government';
-export type EntityType = 'politician' | 'government' | 'company' | 'nonprofit' | 'creator' | 'sports_team' | 'small_business';
-export type IssueStatus = 'open' | 'claimed' | 'resolved' | 'cancelled' | 'pullout_triggered';
+export type Provider = 'google' | 'apple' | 'dev';
+export type EntityType =
+  | 'politician'
+  | 'government'
+  | 'company'
+  | 'nonprofit'
+  | 'creator'
+  | 'sports_team'
+  | 'small_business'
+  | 'church';
+export type OutcomeStatus =
+  | 'open'
+  | 'delivery_submitted'
+  | 'partially_resolved'
+  | 'resolved'
+  | 'expired';
+export type StakeStatus = 'active' | 'released' | 'refunded';
 export type ResolutionDecisionType = 'approve' | 'reject';
-export type ContributionResolution = 'pending' | 'approved' | 'rejected';
-export type EscrowStatus = 'active' | 'released' | 'refunded';
+export type LedgerEntryType =
+  | 'stake_lock'
+  | 'release'
+  | 'refund'
+  | 'deadline_refund'
+  | 'donation'
+  | 'adjust';
+export type VoteSessionAction = 'stake' | 'donate' | 'resolve' | 'deliverable';
+export type VoteSessionStatus = 'pending' | 'confirmed' | 'consumed' | 'expired';
 
 export interface UserPublic {
   id: string;
   displayName: string | null;
   showName: boolean;
   reliabilityScore: number;
+  tier: string;
+  isIdentityVerified: boolean;
+  ageBand: string | null;
+  region: string | null;
+  lastVerifiedAt: string | null;
+}
+
+export interface EntityLink {
+  id: string;
+  entityId: string;
+  label: string;
+  url: string;
+  sortOrder: number;
 }
 
 export interface Entity {
   id: string;
   name: string;
+  slug: string | null;
   type: EntityType;
   verified: boolean;
   walletAddress: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  ownerUserId: string | null;
   lastMonthlyUpdate: string | null;
+  links?: EntityLink[];
+  outcomes?: Array<{
+    id: string;
+    title: string;
+    status: OutcomeStatus;
+    totalBountyUsdc: string;
+    createdAt: string;
+  }>;
+  donationTotalUsdc?: string;
 }
 
-export interface Issue {
+export interface Outcome {
   id: string;
-  entityId: string;
-  entity?: Entity;
+  entityId: string | null;
+  entity?: Entity | null;
   title: string;
   description: string;
   successCriteria: string;
-  targetDate: string | null;
-  status: IssueStatus;
+  status: OutcomeStatus;
   totalBountyUsdc: string;
+  defaultSplitJson: string | null;
   createdAt: string;
-  contributions?: Contribution[];
+  stakes?: Stake[];
   deliverables?: Deliverable[];
-  pulloutVotes?: PulloutVote[];
 }
 
-export interface Contribution {
+export interface Stake {
   id: string;
-  issueId: string;
+  outcomeId: string;
   userId: string;
   user?: UserPublic;
   amountUsdc: string;
-  txHash: string;
-  redeemableAsCredit: boolean;
-  resolutionDecision: ContributionResolution | null;
+  deadlineAt: string;
+  status: StakeStatus;
+  txHash: string | null;
+  releasedAt: string | null;
+  refundedAt: string | null;
+  createdAt: string;
+}
+
+export interface Donation {
+  id: string;
+  entityId: string;
+  userId: string;
+  user?: UserPublic;
+  amountUsdc: string;
+  memo: string | null;
+  txHash: string | null;
   createdAt: string;
 }
 
 export interface Deliverable {
   id: string;
-  issueId: string;
+  outcomeId: string;
   proofText: string;
   proofFiles: string[];
   proofTxHashes: string[];
   submittedAt: string;
+  submittedById: string | null;
 }
 
-export interface PulloutVote {
+export interface LedgerEntry {
   id: string;
-  issueId: string;
-  userId: string;
-  amountWeight: string;
+  type: LedgerEntryType;
+  amountUsdc: string;
+  memo: string | null;
+  txHash: string | null;
+  userId: string | null;
+  entityId: string | null;
+  outcomeId: string | null;
+  stakeId: string | null;
+  donationId: string | null;
   createdAt: string;
 }
 
-export interface Escrow {
+export interface VoteSession {
   id: string;
-  issueId: string;
-  totalUsdc: string;
-  yieldEarnedUsdc: string;
-  status: EscrowStatus;
+  userId: string;
+  action: VoteSessionAction;
+  payloadHash: string;
+  status: VoteSessionStatus;
+  expiresAt: string;
+  confirmedAt: string | null;
+  createdAt: string;
 }
 
-// API Request/Response types
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; displayName: string | null };
+  user: {
+    id: string;
+    displayName: string | null;
+    isIdentityVerified: boolean;
+  };
 }
 
-export interface LinkXResponse {
-  accessToken: string;
-  xLinked: boolean;
-  isIdentityVerified: boolean;
-}
-
-export interface CreateIssueRequest {
-  entityId: string;
+export interface CreateOutcomeRequest {
+  entityId?: string;
   title: string;
   description: string;
   successCriteria: string;
-  targetDate?: string;
+  defaultSplitJson?: string;
 }
 
-export interface ContributeRequest {
+export interface CreateStakeRequest {
   amountUsdc: number;
-  txHash: string;
+  deadlineAt: string;
+  txHash?: string;
+  voteSessionId: string;
 }
 
-export interface ResolveRequest {
-  contributionId: string;
+export interface CreateDonationRequest {
+  amountUsdc: number;
+  memo?: string;
+  txHash?: string;
+  voteSessionId: string;
+}
+
+export interface ResolveStakeRequest {
+  stakeId: string;
   decision: ResolutionDecisionType;
-}
-
-export interface PulloutVoteRequest {
-  amountWeight: number;
+  voteSessionId: string;
 }
 
 export interface DeliverableRequest {
   proofText: string;
   proofFiles?: string[];
   proofTxHashes?: string[];
+  voteSessionId: string;
 }
 
 export interface CreateEntityRequest {
   name: string;
   type: EntityType;
   walletAddress: string;
+  slug?: string;
+  bio?: string;
+  links?: Array<{ label: string; url: string }>;
 }
 
-export interface PulloutStats {
-  userVotePercent: number;
-  usdcVotePercent: number;
+export interface UpdateEntityRequest {
+  bio?: string;
+  avatarUrl?: string;
+  links?: Array<{ label: string; url: string }>;
+}
+
+export interface CreateVoteSessionRequest {
+  action: VoteSessionAction;
+  payloadHash: string;
+}
+
+export interface ZkPassportVerifyRequest {
+  /** Real ZKPassport proof bundle, or mock payload when ZKPASSPORT_DEV_MODE=true */
+  mode?: 'live' | 'mock';
+  proofs?: unknown;
+  query?: unknown;
+  queryResult?: unknown;
+  mockNullifier?: string;
+  ageBand?: string;
+  region?: string;
 }
 
 export interface HealthResponse {
   status: 'healthy' | 'unhealthy';
   timestamp: string;
+  zkPassportDevMode?: boolean;
 }

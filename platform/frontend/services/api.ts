@@ -1,15 +1,20 @@
 import type {
-  Issue,
+  Outcome,
   Entity,
   AuthResponse,
-  LinkXResponse,
-  CreateIssueRequest,
+  CreateOutcomeRequest,
   CreateEntityRequest,
-  ContributeRequest,
-  ResolveRequest,
-  PulloutVoteRequest,
+  UpdateEntityRequest,
+  CreateStakeRequest,
+  CreateDonationRequest,
+  ResolveStakeRequest,
   DeliverableRequest,
+  CreateVoteSessionRequest,
+  VoteSession,
+  LedgerEntry,
+  ZkPassportVerifyRequest,
   HealthResponse,
+  UserPublic,
 } from '@votemap/shared';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -36,7 +41,8 @@ function authHeaders(token: string): HeadersInit {
 }
 
 export const api = {
-  // Auth
+  health: () => request<HealthResponse>('/health'),
+
   loginGoogle: (idToken: string) =>
     request<AuthResponse>('/auth/google', {
       method: 'POST',
@@ -49,33 +55,80 @@ export const api = {
       body: JSON.stringify({ idToken, nonce }),
     }),
 
-  linkX: (code: string, redirectUri: string, token: string) =>
-    request<LinkXResponse>('/auth/link-x', {
+  devLogin: (displayName?: string) =>
+    request<AuthResponse>('/auth/dev-login', {
       method: 'POST',
-      body: JSON.stringify({ code, redirectUri }),
+      body: JSON.stringify({ displayName }),
+    }),
+
+  me: (token: string) =>
+    request<UserPublic & { email?: string; verificationProvider?: string }>('/auth/me', {
       headers: authHeaders(token),
     }),
 
-  // Issues
-  getIssues: () =>
-    request<{ issues: Issue[] }>('/issues'),
+  verifyZkPassport: (data: ZkPassportVerifyRequest, token: string) =>
+    request<{ accessToken: string; isIdentityVerified: boolean; provider: string }>(
+      '/auth/zkpassport/verify',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: authHeaders(token),
+      }
+    ),
 
-  getIssue: (id: string) =>
-    request<Issue>(`/issues/${id}`),
-
-  createIssue: (data: CreateIssueRequest, token: string) =>
-    request<{ issue: Issue }>('/issues', {
+  createVoteSession: (data: CreateVoteSessionRequest, token: string) =>
+    request<{ session: VoteSession; deepLink: string; expiresInSec: number }>('/vote-sessions', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: authHeaders(token),
     }),
 
-  // Entities
-  getEntities: () =>
-    request<{ entities: Entity[] }>('/entities'),
+  getVoteSession: (id: string, token: string) =>
+    request<{ session: VoteSession }>(`/vote-sessions/${id}`, {
+      headers: authHeaders(token),
+    }),
 
-  getEntity: (id: string) =>
-    request<{ entity: Entity }>(`/entities/${id}`),
+  confirmVoteSession: (id: string, token: string) =>
+    request<{ session: VoteSession }>(`/vote-sessions/${id}/confirm`, {
+      method: 'POST',
+      headers: authHeaders(token),
+    }),
+
+  getOutcomes: () => request<{ outcomes: Outcome[] }>('/outcomes'),
+
+  getOutcome: (id: string) => request<Outcome>(`/outcomes/${id}`),
+
+  createOutcome: (data: CreateOutcomeRequest, token: string) =>
+    request<{ outcome: Outcome }>('/outcomes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  createStake: (outcomeId: string, data: CreateStakeRequest, token: string) =>
+    request<{ stake: unknown }>(`/outcomes/${outcomeId}/stakes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  submitDeliverable: (outcomeId: string, data: DeliverableRequest, token: string) =>
+    request<{ deliverable: unknown }>(`/outcomes/${outcomeId}/deliverables`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  resolveStake: (outcomeId: string, data: ResolveStakeRequest, token: string) =>
+    request<{ decision: unknown }>(`/outcomes/${outcomeId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  getEntities: () => request<{ entities: Entity[] }>('/entities'),
+
+  getEntity: (idOrSlug: string) => request<{ entity: Entity & { donationTotalUsdc?: string } }>(`/entities/${idOrSlug}`),
 
   createEntity: (data: CreateEntityRequest, token: string) =>
     request<{ entity: Entity }>('/entities', {
@@ -84,39 +137,20 @@ export const api = {
       headers: authHeaders(token),
     }),
 
-  // Contributions
-  contribute: (issueId: string, data: ContributeRequest, token: string) =>
-    request<{ contribution: unknown }>(`/issues/${issueId}/contribute`, {
+  updateEntity: (id: string, data: UpdateEntityRequest, token: string) =>
+    request<{ entity: Entity }>(`/entities/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      headers: authHeaders(token),
+    }),
+
+  donate: (entityId: string, data: CreateDonationRequest, token: string) =>
+    request<{ donation: unknown }>(`/entities/${entityId}/donations`, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: authHeaders(token),
     }),
 
-  // Resolution
-  resolve: (issueId: string, data: ResolveRequest, token: string) =>
-    request<{ decision: unknown }>(`/issues/${issueId}/resolve`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: authHeaders(token),
-    }),
-
-  // Pullout
-  pulloutVote: (issueId: string, data: PulloutVoteRequest, token: string) =>
-    request<{ vote: unknown; pulloutTriggered: boolean }>(`/issues/${issueId}/pullout-vote`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: authHeaders(token),
-    }),
-
-  // Deliverables
-  submitDeliverable: (issueId: string, data: DeliverableRequest, token: string) =>
-    request<{ deliverable: unknown }>(`/issues/${issueId}/deliverable`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: authHeaders(token),
-    }),
-
-  // Health
-  health: () =>
-    request<HealthResponse>('/health'),
+  getLedger: (limit = 50) =>
+    request<{ entries: LedgerEntry[]; nextCursor: string | null }>(`/ledger?limit=${limit}`),
 };

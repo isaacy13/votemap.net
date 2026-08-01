@@ -7,12 +7,12 @@ import { Server as SocketServer } from 'socket.io';
 import { createServer } from 'http';
 import { loadEnv } from './config/env';
 import { createAuthRouter } from './routes/auth';
-import { createIssuesRouter } from './routes/issues';
-import { createContributionsRouter } from './routes/contributions';
-import { createResolutionRouter } from './routes/resolution';
-import { createDeliverablesRouter } from './routes/deliverables';
+import { createOutcomesRouter } from './routes/outcomes';
 import { createEntitiesRouter } from './routes/entities';
+import { createLedgerRouter } from './routes/ledger';
+import { createVoteSessionsRouter } from './routes/voteSessions';
 import { createHealthRouter } from './routes/health';
+import { startExpireStakesJob } from './jobs/expireStakes';
 
 async function main() {
   const env = loadEnv();
@@ -20,13 +20,11 @@ async function main() {
   const app = express();
   const httpServer = createServer(app);
 
-  // Socket.io setup
   const io = new SocketServer(httpServer, {
     cors: { origin: env.CORS_ORIGIN, methods: ['GET', 'POST'] },
     path: '/socket',
   });
 
-  // Optional Redis adapter for horizontal scaling
   if (env.REDIS_URL && env.NODE_ENV === 'production') {
     try {
       const { createAdapter } = await import('@socket.io/redis-adapter');
@@ -40,39 +38,45 @@ async function main() {
     }
   }
 
-  // Socket.io connection handling
   io.on('connection', (socket) => {
-    socket.on('join-issue', (issueId: string) => {
-      socket.join(`/issue/${issueId}`);
+    socket.on('join-outcome', (outcomeId: string) => {
+      socket.join(`/outcome/${outcomeId}`);
     });
-    socket.on('leave-issue', (issueId: string) => {
-      socket.leave(`/issue/${issueId}`);
+    socket.on('leave-outcome', (outcomeId: string) => {
+      socket.leave(`/outcome/${outcomeId}`);
+    });
+    socket.on('join-vote-session', (sessionId: string) => {
+      socket.join(`/vote-session/${sessionId}`);
+    });
+    socket.on('leave-vote-session', (sessionId: string) => {
+      socket.leave(`/vote-session/${sessionId}`);
+    });
+    socket.on('join-entity', (entityId: string) => {
+      socket.join(`/entity/${entityId}`);
     });
   });
 
-  // Middleware
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN }));
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-  // Routes
-  app.use('/auth', createAuthRouter(prisma, env.JWT_SECRET, env.JWT_EXPIRES_IN));
-  app.use('/issues', createIssuesRouter(prisma, env.JWT_SECRET, io));
-  app.use('/issues', createContributionsRouter(prisma, env.JWT_SECRET, io));
-  app.use('/issues', createResolutionRouter(prisma, env.JWT_SECRET, io));
-  app.use('/issues', createDeliverablesRouter(prisma, env.JWT_SECRET, io));
+  app.use('/auth', createAuthRouter(prisma, env));
+  app.use('/outcomes', createOutcomesRouter(prisma, env.JWT_SECRET, io));
   app.use('/entities', createEntitiesRouter(prisma, env.JWT_SECRET, io));
-  app.use('/health', createHealthRouter(prisma));
+  app.use('/ledger', createLedgerRouter(prisma));
+  app.use('/vote-sessions', createVoteSessionsRouter(prisma, env, env.JWT_SECRET, io));
+  app.use('/health', createHealthRouter(prisma, env));
 
-  // Start server
+  const expireTimer = startExpireStakesJob(prisma, io, 60_000);
+
   httpServer.listen(env.PORT, () => {
     console.log(`Votemap backend running on port ${env.PORT}`);
   });
 
-  // Graceful shutdown
   const shutdown = async () => {
     console.log('Shutting down...');
+    clearInterval(expireTimer);
     await prisma.$disconnect();
     httpServer.close();
     process.exit(0);
