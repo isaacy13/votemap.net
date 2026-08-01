@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { requireAuth } from '../middleware/auth';
-import { authLimiter } from '../middleware/rateLimiter';
+import { authLimiter, readLimiter } from '../middleware/rateLimiter';
 import {
   googleAuthSchema,
   appleAuthSchema,
@@ -159,7 +159,7 @@ export function createAuthRouter(prisma: PrismaClient, env: Env) {
     }
   });
 
-  router.get('/me', requireAuth(jwtSecret), async (req: Request, res: Response) => {
+  router.get('/me', readLimiter, requireAuth(jwtSecret), async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
     if (!user) {
       res.status(404).json({ error: 'User not found' });

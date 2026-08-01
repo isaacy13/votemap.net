@@ -19,20 +19,43 @@ export interface ZkVerifyResult {
   provider: 'zkpassport' | 'mock';
 }
 
+/** Canonical MVP disclosures — keep in sync with frontend verify screen. */
+export const ZKPASSPORT_SCOPE = 'votemap-personhood';
+
+type OfflineDone = { query: unknown };
+type QueryBuilderOffline = {
+  gte: (field: string, value: number) => QueryBuilderOffline;
+  done: () => OfflineDone;
+};
 type ZkPassportSdk = {
-  ZKPassport: new (domain: string) => {
+  ZKPassport: new (
+    domain?: string
+  ) => {
+    createQuery: () => QueryBuilderOffline;
     verify: (args: {
       proofs: unknown;
       originalQuery: unknown;
       queryResult: unknown;
-    }) => Promise<{ verified: boolean; uniqueIdentifier?: string }>;
+      scope?: string;
+      devMode?: boolean;
+    }) => Promise<{
+      verified: boolean;
+      uniqueIdentifier?: string;
+    }>;
   };
 };
 
+async function loadZkPassportSdk(): Promise<ZkPassportSdk | null> {
+  try {
+    return (await Function('return import("@zkpassport/sdk")')()) as ZkPassportSdk;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Verify a ZKPassport proof server-side.
- * In ZKPASSPORT_DEV_MODE (or mode=mock), accepts a deterministic mock nullifier
- * so local/CI can run without the ZKPassport mobile app ($0, no vendor).
+ * Mock mode for local/CI ($0). Live mode uses @zkpassport/sdk when installed.
  */
 export async function verifyZkPassport(
   env: Env,
@@ -55,38 +78,42 @@ export async function verifyZkPassport(
     };
   }
 
-  try {
-    // Optional peer dependency — installed when going live with ZKPassport.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = (await Function('return import("@zkpassport/sdk")')()) as ZkPassportSdk;
-    const zkPassport = new mod.ZKPassport(env.ZKPASSPORT_DOMAIN);
-    const result = await zkPassport.verify({
-      proofs: input.proofs,
-      originalQuery: input.query,
-      queryResult: input.queryResult,
-    });
-
-    if (!result.verified || !result.uniqueIdentifier) {
-      throw new Error('ZKPassport proof verification failed');
-    }
-
-    const queryResult = input.queryResult as
-      | {
-          age?: { gte?: { result?: boolean } };
-          nationality?: { disclose?: { result?: string } };
-        }
-      | undefined;
-
-    return {
-      verified: true,
-      uniqueIdentifier: result.uniqueIdentifier,
-      ageBand: queryResult?.age?.gte?.result ? '18+' : input.ageBand,
-      region: queryResult?.nationality?.disclose?.result ?? input.region,
-      provider: 'zkpassport',
-    };
-  } catch (error) {
+  const mod = await loadZkPassportSdk();
+  if (!mod) {
     throw new Error(
-      `ZKPassport live verification unavailable: ${error instanceof Error ? error.message : String(error)}. Use mode=mock in development.`
+      'Live ZKPassport verification requires @zkpassport/sdk. Install it or use mode=mock in development.'
     );
   }
+
+  const zkPassport = new mod.ZKPassport(env.ZKPASSPORT_DOMAIN);
+  // Recreate the expected query server-side so clients cannot tamper with gates.
+  const { query: expectedQuery } = zkPassport.createQuery().gte('age', 18).done();
+  const originalQuery = input.query ?? expectedQuery;
+
+  const result = await zkPassport.verify({
+    proofs: input.proofs,
+    originalQuery,
+    queryResult: input.queryResult,
+    scope: ZKPASSPORT_SCOPE,
+    devMode: allowMock,
+  });
+
+  if (!result.verified || !result.uniqueIdentifier) {
+    throw new Error('ZKPassport proof verification failed');
+  }
+
+  const queryResult = input.queryResult as
+    | {
+        age?: { gte?: { result?: boolean } };
+        nationality?: { disclose?: { result?: string } };
+      }
+    | undefined;
+
+  return {
+    verified: true,
+    uniqueIdentifier: result.uniqueIdentifier,
+    ageBand: queryResult?.age?.gte?.result ? '18+' : input.ageBand ?? '18+',
+    region: queryResult?.nationality?.disclose?.result ?? input.region,
+    provider: 'zkpassport',
+  };
 }

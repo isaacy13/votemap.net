@@ -18,9 +18,11 @@
    - Dev/CI: `ZKPASSPORT_DEV_MODE=true` accepts mock verification ($0, no app).  
    - Alternate (not wired): Self Protocol / former OpenPassport.
 
-2. **Face ID (every vote)** — stake / donate / resolve / deliverable require a short-lived `VoteSession` confirmed after successful local biometrics on the phone. Web clients create a session, show QR/deep link, wait until the phone confirms, then submit with `voteSessionId`.
+2. **Face ID (every vote)** — stake / donate / resolve / deliverable require a short-lived `VoteSession` confirmed after successful local biometrics on the phone. Web clients create a session, show QR/deep link (`PhoneConfirmModal`), wait until the phone confirms, then submit with `voteSessionId`.
 
-3. **Ledger** — every `stake_lock`, `release`, `refund`, `deadline_refund`, and `donation` is an immutable `LedgerEntry` exposed at `GET /ledger`.
+3. **ZKPassport UI** — web verify screen mounts `@zkpassport/ui` QR (`age >= 18`, scope `votemap-personhood`); proofs POST to `/auth/zkpassport/verify`. Native shows app install instructions + mock/dev path. Backend recreates the expected query via `createQuery()` when `@zkpassport/sdk` is installed.
+
+4. **Ledger** — every `stake_lock`, `release`, `refund`, `deadline_refund`, and `donation` is an immutable `LedgerEntry` exposed at `GET /ledger`.
 
 ## Domain
 

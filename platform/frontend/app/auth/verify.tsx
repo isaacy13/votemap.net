@@ -5,10 +5,11 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../store/auth';
 import { useTheme } from '../../context/theme';
 import { colors, FadeInView } from '../../components/ui';
+import { ZkPassportCard } from '../../components/ZkPassportCard';
 
 /**
  * ZKPassport verification screen.
- * Production: integrate @zkpassport/ui QR / deep link into ZKPassport app.
+ * Production: QR via @zkpassport/ui (web) / ZKPassport app (native).
  * Dev: mock verify when backend ZKPASSPORT_DEV_MODE=true ($0).
  */
 export default function VerifyIdentityScreen() {
@@ -70,6 +71,15 @@ export default function VerifyIdentityScreen() {
           no paid KYC vendor. Scan once; then Face ID gates every vote.
         </Text>
 
+        <View style={{ marginTop: 24 }}>
+          <ZkPassportCard
+            onVerified={() => {
+              setMessage('Passport verified. You can vote.');
+              router.replace('/');
+            }}
+          />
+        </View>
+
         <View
           style={{
             marginTop: 28,
@@ -81,33 +91,30 @@ export default function VerifyIdentityScreen() {
           }}
         >
           <Text style={{ color: textColor, fontWeight: '700', marginBottom: 8 }}>
-            Production path
+            Local / CI fallback
           </Text>
-          <Text style={{ color: subtitleColor, lineHeight: 22 }}>
-            Install the ZKPassport app, complete an NFC passport proof for VoteMap (age 18+ /
-            personhood), then return here. Live proof submission wires through
-            /auth/zkpassport/verify.
+          <Text style={{ color: subtitleColor, lineHeight: 22, marginBottom: 12 }}>
+            When ZKPASSPORT_DEV_MODE is on, mock verification unlocks write access without a
+            physical passport ($0).
           </Text>
+          <Pressable
+            onPress={mockVerify}
+            disabled={busy || !accessToken}
+            style={{
+              backgroundColor: colors.purple,
+              paddingVertical: 14,
+              borderRadius: 999,
+              alignItems: 'center',
+              opacity: busy ? 0.7 : 1,
+            }}
+          >
+            {busy ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Mock verify (dev)</Text>
+            )}
+          </Pressable>
         </View>
-
-        <Pressable
-          onPress={mockVerify}
-          disabled={busy || !accessToken}
-          style={{
-            marginTop: 24,
-            backgroundColor: colors.purple,
-            paddingVertical: 16,
-            borderRadius: 999,
-            alignItems: 'center',
-            opacity: busy ? 0.7 : 1,
-          }}
-        >
-          {busy ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Mock verify (dev)</Text>
-          )}
-        </Pressable>
 
         {message && (
           <Text style={{ color: subtitleColor, marginTop: 16, textAlign: 'center' }}>{message}</Text>
