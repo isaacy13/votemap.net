@@ -14,8 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "votemap",
-  description: "democratize everything. vote for the future you want to see.",
-  keywords: ["votemap", "democratize", "voting", "future", "collective decision making"],
+  description:
+    "vote + roadmap: stake real money on measurable outcomes with personal deadlines, transparent donations, and Face ID–gated votes.",
+  keywords: [
+    "votemap",
+    "democratize",
+    "voting",
+    "outcomes",
+    "bounties",
+    "transparency",
+    "zkpassport",
+  ],
   authors: [{ name: "OneX Engineering" }],
   alternates: {
     canonical: "https://votemap.net",

@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "votemap",
+    "slug": "votemap",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "votemap",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "net.votemap.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "VoteMap requires Face ID to confirm every stake, donation, and resolution."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "net.votemap.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "VoteMap requires Face ID to confirm every stake, donation, and resolution."
+        }
+      ]
+    ]
+  }
+}

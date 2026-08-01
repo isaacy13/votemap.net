@@ -86,9 +86,35 @@ https://x.com/isaac_yeang/status/1954029843701805328?s=20
 
 ## 📦 What you'll find in this repo
 
-- A Next.js (App Router) frontend in `app/` and reusable UI components in `components/`.
-- Global styles in `app/globals.css` and simple landing components in `components/landing/`.
-- A small codebase designed for rapid iteration and open contribution.
+- A Next.js (App Router) **marketing site** in `app/` and `components/landing/`.
+- Product docs in `docs/` (`VISION.md`, `ARCHITECTURE.md`, `ROADMAP.md`).
+- The **platform monorepo** in `platform/`:
+  - `platform/backend` — Express + Prisma API (stakes, donations, ledger, ZKPassport, Face ID vote sessions)
+  - `platform/frontend` — Expo (iOS / Android / web)
+  - `platform/shared` — shared TypeScript types
+  - `platform/contracts` — Solana Anchor stubs (Phase 2)
+- `docker-compose.yml` for Postgres, Redis, MinIO, and backend.
+
+### Platform local development
+
+```bash
+# Infra (Postgres/Redis/MinIO) — or use a local Postgres
+docker compose up -d postgres redis
+
+cp platform/.env.example platform/backend/.env
+cd platform/backend
+npm install
+npx prisma migrate deploy
+npx prisma db seed
+npm run dev   # http://localhost:4000
+
+# In another terminal — Expo app
+cd platform/frontend
+npm install
+npx expo start
+```
+
+Dev identity: `ALLOW_DEV_LOGIN=true` + `ZKPASSPORT_DEV_MODE=true` enable `/auth/dev-login` and mock passport verification ($0). Every stake/donate/resolve still requires a Face ID–confirmed `VoteSession` (on web: confirm via the mobile deep link `votemap://vote-confirm/:id`).
 
 ---
 
