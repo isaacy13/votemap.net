@@ -2,6 +2,17 @@
 
 Guidance for coding agents working on this repo.
 
+## Pull / merge requests — always use the template
+
+**Every PR/MR body must follow `.github/PULL_REQUEST_TEMPLATE.md`.** Do not invent a free-form description.
+
+When creating or updating a PR:
+
+1. Copy the template sections exactly: **Description**, **Type of change**, **Checklist**, and **How to test**.
+2. Fill in a clear summary, link related issues (`Closes #…` when applicable), and check the relevant boxes.
+3. Complete **How to test** with concrete steps; for UI changes, also embed the required screenshots there (see below).
+4. Keep the checklist honest — run `npm run lint` and `npm run build` before claiming they pass.
+
 ## UI / landing page changes — screenshots are mandatory
 
 **Do not consider a UI change done until fresh screenshots are captured and shown.**
@@ -25,3 +36,13 @@ After **every** visual change (including follow-ups like “remove X”, spacing
 - Next.js App Router with `output: 'export'` (static export) — no server-only APIs at request time.
 - Landing UI lives in `app/page.tsx` + `components/landing/*` (Chakra UI + framer-motion).
 - Prefer free, keyless embeds (e.g. `react-tweet`) over paid APIs when embedding third-party content.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
