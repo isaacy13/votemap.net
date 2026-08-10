@@ -27,10 +27,10 @@ export const TweetEmbeds = ({ effectsEnabled = true }: TweetEmbedsProps) => {
             as="section"
             aria-label="From the founder"
             w="full"
-            maxW={{ base: '100%', sm: '550px', md: '560px' }}
+            maxW="720px"
             mx="auto"
             gap={{ base: 4, md: 5 }}
-            px={{ base: 0, sm: 1 }}
+            px={0}
             textAlign="start"
         >
             {TWEET_IDS.map((id, index) => (
@@ -54,7 +54,7 @@ export const TweetEmbeds = ({ effectsEnabled = true }: TweetEmbedsProps) => {
                             : undefined
                     }
                     css={{
-                        // Let our Stack gap own vertical rhythm
+                        // Match VideoEmbed max width; override react-tweet's 550px cap
                         '& .react-tweet-theme': {
                             '--tweet-container-margin': '0',
                             margin: 0,
@@ -71,7 +71,6 @@ export const TweetEmbeds = ({ effectsEnabled = true }: TweetEmbedsProps) => {
                                   boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.18)',
                               }
                             : undefined,
-                        // Dark mode hover shadow
                         '.dark &:hover .react-tweet-theme': effectsEnabled
                             ? {
                                   boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.55)',
