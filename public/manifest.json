@@ -1,16 +1,37 @@
 {
   "name": "votemap",
   "short_name": "votemap",
-  "description": "democratize everything. vote for the future you want to see.",
+  "description": "Democratize everything. Vote for the future you want to see.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#000000",
+  "lang": "en-US",
+  "categories": ["social", "productivity", "lifestyle"],
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "any",
       "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }
