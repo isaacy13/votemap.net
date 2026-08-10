@@ -10,12 +10,10 @@ const MotionBox = motion(Box)
 /**
  * Narrative order (chronological story arc):
  * 1. Problem / ambition — billionaires control the game; want in
- * 2. Thesis — solution is aligning officials with The People
- * 3. Vision — tech democratized fame & riches, not yet power
+ * 2. Vision — tech democratized fame & riches, not yet power
  */
 const TWEET_IDS = [
     '2024186960454021466',
-    '2068869445406068960',
     '2086102002241540162',
 ] as const
 
