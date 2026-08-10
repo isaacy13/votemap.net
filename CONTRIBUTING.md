@@ -39,7 +39,7 @@ Look for issues labeled `good first issue`. If none exist, open an issue suggest
 
 ## Agent / UI review notes
 
-See `AGENTS.md` for coding-agent conventions. For landing/UI PRs, attach desktop + mobile screenshots (light and dark when theme is involved) so reviewers can check the change on a phone.
+See `AGENTS.md`. **Required on every UI change (including follow-up edits):** re-capture desktop + mobile light/dark screenshots, put them in `/opt/cursor/artifacts/screenshots/`, show them in the agent reply, and embed them in the PR. Do not skip this step.
 
 ---
 
