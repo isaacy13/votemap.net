@@ -2,7 +2,7 @@
 
 import { Box, Stack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
-import { Tweet } from 'react-tweet'
+import { ExpandedTweet } from '@/components/landing/ExpandedTweet'
 import 'react-tweet/theme.css'
 
 const MotionBox = motion(Box)
@@ -79,7 +79,7 @@ export const TweetEmbeds = ({ effectsEnabled = true }: TweetEmbedsProps) => {
                             : undefined,
                     }}
                 >
-                    <Tweet id={id} />
+                    <ExpandedTweet id={id} />
                 </MotionBox>
             ))}
         </Stack>
