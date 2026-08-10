@@ -1,14 +1,18 @@
 import { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/seo'
 
 export const dynamic = 'force-static'
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date()
+
   return [
     {
-      url: 'https://votemap.net',
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
+      url: SITE_URL,
+      lastModified,
+      changeFrequency: 'weekly',
       priority: 1,
+      images: [`${SITE_URL}/images/og-image.png`],
     },
   ]
 }
