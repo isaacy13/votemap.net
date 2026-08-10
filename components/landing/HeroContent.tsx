@@ -11,6 +11,7 @@ export const HeroContent = () => {
     return (
         <>
             <MotionText
+                as="h2"
                 fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
                 fontWeight="bold"
                 color="gray.800"
@@ -24,6 +25,7 @@ export const HeroContent = () => {
             </MotionText>
 
             <MotionText
+                as="p"
                 fontSize={{ base: 'xl', md: '2xl', lg: '3xl' }}
                 color="gray.600"
                 _dark={{ color: 'gray.300' }}

@@ -13,7 +13,22 @@ export default function Home() {
   const [effectsEnabled, setEffectsEnabled] = useState(true)
 
   return (
-    <Box>
+    <Box as="main">
+      {/* Accessible / SEO primary heading — brand is rendered visually via SVG */}
+      <Box
+        as="h1"
+        position="absolute"
+        w="1px"
+        h="1px"
+        p={0}
+        m="-1px"
+        overflow="hidden"
+        clip="rect(0, 0, 0, 0)"
+        whiteSpace="nowrap"
+        borderWidth={0}
+      >
+        votemap — democratize everything
+      </Box>
       <Container maxW="container.xl" p={4} position="relative" zIndex={1}>
         <VStack gap={16} align="center" justify="center" minH="85vh" textAlign="center">
           <Stack gap={0} align="center">
