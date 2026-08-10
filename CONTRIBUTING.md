@@ -37,6 +37,10 @@ Look for issues labeled `good first issue`. If none exist, open an issue suggest
 
 - This repository runs CI checks (lint & build) on PRs. Please ensure your branch is green before merging.
 
+## Agent / UI review notes
+
+See `AGENTS.md` for coding-agent conventions. For landing/UI PRs, attach desktop + mobile screenshots (light and dark when theme is involved) so reviewers can check the change on a phone.
+
 ---
 
 Thanks again — your contributions to votemap directly builds a better future for everyone.
