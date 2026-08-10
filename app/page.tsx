@@ -6,6 +6,7 @@ import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { HeroContent } from '@/components/landing/HeroContent'
 import { SocialLinks } from '@/components/landing/SocialLinks'
 import { VideoEmbed } from '@/components/landing/VideoEmbed'
+import { TweetEmbeds } from '@/components/landing/TweetEmbeds'
 import { Footer } from '@/components/landing/Footer'
 
 export default function Home() {
@@ -21,6 +22,8 @@ export default function Home() {
           </Stack>
 
           <VideoEmbed />
+
+          <TweetEmbeds effectsEnabled={effectsEnabled} />
 
           <SocialLinks />
         </VStack>
