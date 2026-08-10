@@ -13,6 +13,7 @@ Thank you for your interest in contributing to votemap! We welcome contributions
 
 - Keep PRs focused and small.
 - Include a short, descriptive PR title and a detailed description in the PR body.
+- **Always fill out `.github/PULL_REQUEST_TEMPLATE.md`** (Description, Type of change, Checklist, How to test). Agents: see `AGENTS.md`.
 - Reference any related issues (e.g., "Closes #123").
 - Add tests where relevant and ensure TypeScript & lint pass (`npm run lint`).
 

@@ -3,18 +3,19 @@
 import { Flex, Link, Text, IconButton } from '@chakra-ui/react'
 import { FaMoon, FaSun, FaMagic } from 'react-icons/fa'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
 interface FooterProps {
     effectsEnabled?: boolean
     toggleEffects?: () => void
 }
 
+const emptySubscribe = () => () => {}
+
 export const Footer = ({ effectsEnabled = true, toggleEffects }: FooterProps) => {
     const { resolvedTheme, setTheme } = useTheme()
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => setMounted(true), [])
+    // Avoid SSR icon mismatch without setState-in-effect (react-hooks/set-state-in-effect).
+    const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
     const toggleColorMode = () => {
         setTheme(resolvedTheme === 'light' ? 'dark' : 'light')

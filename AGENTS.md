@@ -2,6 +2,17 @@
 
 Guidance for coding agents working on this repo.
 
+## Pull / merge requests — always use the template
+
+**Every PR/MR body must follow `.github/PULL_REQUEST_TEMPLATE.md`.** Do not invent a free-form description.
+
+When creating or updating a PR:
+
+1. Copy the template sections exactly: **Description**, **Type of change**, **Checklist**, and **How to test**.
+2. Fill in a clear summary, link related issues (`Closes #…` when applicable), and check the relevant boxes.
+3. Complete **How to test** with concrete steps; for UI changes, also embed the required screenshots there (see below).
+4. Keep the checklist honest — run `npm run lint` and `npm run build` before claiming they pass.
+
 ## UI / landing page changes — screenshots are mandatory
 
 **Do not consider a UI change done until fresh screenshots are captured and shown.**
