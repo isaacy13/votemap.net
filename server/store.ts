@@ -1,0 +1,173 @@
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { dirname } from "node:path";
+import { randomUUID } from "node:crypto";
+
+export type Wallet = { address: string; linkedAt: number };
+
+export type User = {
+    id: string;
+    provider: "google" | "apple";
+    sub: string;
+    email: string;
+    name: string;
+    gender: number | null;
+    birthYear: number | null;
+    phone: string | null;
+    phoneVerified: boolean;
+    handle: string | null;
+    payout: string | null;
+    wallets: Wallet[];
+    socials: { x: string; threads: string; instagram: string; tiktok: string };
+    device: { pubkey: string; platform: string; at: number } | null;
+    createdAt: number;
+};
+
+export type Challenge = { id: string; userId: string; bytes: string; exp: number; used: boolean };
+
+export type Otp = { phone: string; userId: string; hash: string; exp: number };
+
+type Db = {
+    users: User[];
+    challenges: Challenge[];
+    otps: Otp[];
+};
+
+const path = process.env.VOTEMAP_DATA || new URL("../data/votemap.json", import.meta.url).pathname;
+
+function empty(): Db {
+    return { users: [], challenges: [], otps: [] };
+}
+
+function load(): Db {
+    if (!existsSync(path)) return empty();
+    try {
+        return { ...empty(), ...JSON.parse(readFileSync(path, "utf8")) };
+    } catch {
+        return empty();
+    }
+}
+
+function save(db: Db) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(db), { mode: 0o600 });
+}
+
+let queue: Promise<unknown> = Promise.resolve();
+
+function withDb<T>(fn: (db: Db) => T): Promise<T> {
+    const run = queue.then(() => {
+        const db = load();
+        const out = fn(db);
+        save(db);
+        return out;
+    });
+    queue = run.catch(() => undefined);
+    return run;
+}
+
+export function publicUser(u: User) {
+    return {
+        id: u.id,
+        provider: u.provider,
+        email: u.email,
+        name: u.name,
+        gender: u.gender,
+        birthYear: u.birthYear,
+        phone: u.phone,
+        phoneVerified: u.phoneVerified,
+        handle: u.handle,
+        payout: u.payout,
+        wallets: u.wallets,
+        socials: u.socials,
+        hasDevice: Boolean(u.device),
+    };
+}
+
+export function upsertOidc(input: {
+    provider: "google" | "apple";
+    sub: string;
+    email: string;
+    name: string;
+}): Promise<User> {
+    return withDb((db) => {
+        let u = db.users.find((x) => x.provider === input.provider && x.sub === input.sub);
+        if (!u) {
+            u = {
+                id: randomUUID(),
+                provider: input.provider,
+                sub: input.sub,
+                email: input.email,
+                name: input.name,
+                gender: null,
+                birthYear: null,
+                phone: null,
+                phoneVerified: false,
+                handle: null,
+                payout: null,
+                wallets: [],
+                socials: { x: "", threads: "", instagram: "", tiktok: "" },
+                device: null,
+                createdAt: Date.now(),
+            };
+            db.users.push(u);
+        } else {
+            u.email = input.email || u.email;
+            if (input.name) u.name = input.name;
+        }
+        return u;
+    });
+}
+
+export function getUser(id: string): Promise<User | undefined> {
+    return withDb((db) => db.users.find((u) => u.id === id));
+}
+
+export function updateUser(id: string, patch: (u: User) => void): Promise<User> {
+    return withDb((db) => {
+        const u = db.users.find((x) => x.id === id);
+        if (!u) throw new Error("no user");
+        patch(u);
+        return u;
+    });
+}
+
+export function handleTaken(handle: string, exceptId?: string): Promise<boolean> {
+    const h = handle.toLowerCase();
+    return withDb((db) => db.users.some((u) => u.handle === h && u.id !== exceptId));
+}
+
+export function putChallenge(userId: string, bytes: string, ttlMs = 120_000): Promise<Challenge> {
+    return withDb((db) => {
+        const now = Date.now();
+        db.challenges = db.challenges.filter((c) => c.exp > now && !c.used);
+        const c: Challenge = { id: randomUUID(), userId, bytes, exp: now + ttlMs, used: false };
+        db.challenges.push(c);
+        return c;
+    });
+}
+
+export function takeChallenge(id: string, userId: string): Promise<Challenge> {
+    return withDb((db) => {
+        const c = db.challenges.find((x) => x.id === id);
+        if (!c || c.userId !== userId || c.used || c.exp < Date.now()) throw new Error("challenge");
+        c.used = true;
+        return c;
+    });
+}
+
+export function putOtp(row: Otp): Promise<void> {
+    return withDb((db) => {
+        db.otps = db.otps.filter((o) => o.exp > Date.now());
+        db.otps.push(row);
+    });
+}
+
+export function takeOtp(userId: string, phone: string): Promise<Otp | undefined> {
+    return withDb((db) => {
+        const i = db.otps.findIndex((o) => o.userId === userId && o.phone === phone && o.exp > Date.now());
+        if (i < 0) return undefined;
+        const row = db.otps[i];
+        db.otps.splice(i, 1);
+        return row;
+    });
+}

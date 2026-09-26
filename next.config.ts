@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ['@capacitor/core'],
 };
 
 export default nextConfig;

@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# votemap api local store
+/data
+# foundry / capacitor generated
+/cache
+mvp/out
+/ios/App
+/android/app

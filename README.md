@@ -88,6 +88,7 @@ https://x.com/isaac_yeang/status/1954029843701805328?s=20
 
 - A Next.js (App Router) frontend in `app/` and reusable UI components in `components/`.
 - Global styles in `app/globals.css` and simple landing components in `components/landing/`.
+- The production app at `/mvp` (`mvp/`, `server/`, Capacitor plugin). See `mvp/README.md`.
 - A small codebase designed for rapid iteration and open contribution.
 
 ---

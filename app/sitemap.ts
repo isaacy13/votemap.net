@@ -14,5 +14,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       images: [`${SITE_URL}/images/og-image.png`],
     },
+    {
+      url: `${SITE_URL}/mvp`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ]
 }
