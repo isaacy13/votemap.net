@@ -12,7 +12,6 @@ import {
     PAY_FEE_BPS,
     addressUrl,
     chainName,
-    checkResidence,
     contractAddress,
     formatUsdc,
     getIssue,
@@ -58,7 +57,6 @@ export function App() {
 
     const [wallet, setWallet] = useState<string | null>(null);
     const [handles, setHandles] = useState({ x: "", threads: "" });
-    const [residence, setResidence] = useState<{ ok: boolean; country: string | null } | null>(null);
     const [treasury, setTreasury] = useState<string | null>(null);
     const [issues, setIssues] = useState<Issue[]>([]);
     const [issue, setIssue] = useState<Issue | null>(null);
@@ -71,7 +69,7 @@ export function App() {
     const [oauthHint, setOauthHint] = useState("");
 
     const linked = Boolean(handles.x || handles.threads);
-    const gated = Boolean(wallet && residence?.ok && linked);
+    const gated = Boolean(wallet && linked);
 
     async function refresh(w = wallet) {
         if (configErr) return;
@@ -79,9 +77,7 @@ export function App() {
         if (issueUrl) setIssue(await getIssue(issueUrl));
         else setIssues(await listIssues());
         if (!w) return;
-        const [h, r] = await Promise.all([handlesOf(w), checkResidence(w)]);
-        setHandles(h);
-        setResidence(r);
+        setHandles(await handlesOf(w));
     }
 
     useEffect(() => {
@@ -196,12 +192,12 @@ export function App() {
                 <a href={addressUrl(contractAddress()!)} target="_blank" rel="noreferrer">
                     {short(contractAddress()!)}
                 </a>
-                . Treasury {treasury ? <code>{short(treasury)}</code> : "…"}. Coinbase Verified Country
-                is checked on chain (EAS). twitter.com URLs are rejected.
+                . Treasury {treasury ? <code>{short(treasury)}</code> : "…"}. twitter.com URLs are
+                rejected.
             </p>
 
             <section>
-                <h2>1. Wallet, residence, handle</h2>
+                <h2>1. Wallet and handle</h2>
                 {wallet ? (
                     <p>
                         {short(wallet)}{" "}
@@ -216,24 +212,6 @@ export function App() {
                 )}
                 {wallet && (
                     <>
-                        <p className="muted">
-                            Residence:{" "}
-                            {residence?.ok
-                                ? `ok${residence.country ? ` (${residence.country})` : ""}`
-                                : "required — claim Coinbase Verified Country on this wallet"}
-                            {!residence?.ok && (
-                                <>
-                                    {" "}
-                                    <a
-                                        href="https://www.coinbase.com/onchain-verify"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        onchain-verify
-                                    </a>
-                                </>
-                            )}
-                        </p>
                         <p className="muted">
                             On chain: {handles.x ? `X @${handles.x}` : "no X"} ·{" "}
                             {handles.threads ? `Threads @${handles.threads}` : "no Threads"}
@@ -310,9 +288,9 @@ export function App() {
 
             {!gated && wallet && (
                 <p className="muted">
-                    Need Coinbase residence and at least one registered handle before staking. You can
-                    stake on x.com or Threads posts regardless of which handle you registered. Pay
-                    only goes to a handle that someone registered first.
+                    Need at least one registered handle before staking. You can stake on x.com or
+                    Threads posts regardless of which handle you registered. Pay only goes to a handle
+                    that someone registered first.
                 </p>
             )}
 

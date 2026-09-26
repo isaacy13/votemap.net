@@ -5,7 +5,6 @@ import {
     http,
     getAddress,
     parseAbi,
-    zeroHash,
     type Hex,
 } from "viem";
 import { base, baseSepolia } from "viem/chains";
@@ -19,16 +18,6 @@ export const EXPIRY_FEE_BPS = 500;
 export const MIN_STAKE_USDC = 1;
 const USDC_DECIMALS = 6;
 const MIN_STAKE_UNITS = BigInt(1_000_000);
-
-const EAS = "0x4200000000000000000000000000000000000021" as const;
-const INDEXER: Record<"base" | "base-sepolia", `0x${string}`> = {
-    base: "0x2c7eE1E5f416dfF40054c27A62f7B357C4E8619C",
-    "base-sepolia": "0xd147a19c3B085Fb9B0c15D2EAAFC6CB086ea849B",
-};
-const COUNTRY_SCHEMA: Record<"base" | "base-sepolia", `0x${string}`> = {
-    base: "0x1801901fabd0e6189356b4fb52bb0ab855276d84f7ec140839fbd1f6801ca065",
-    "base-sepolia": "0xef54ae90f47a187acc050ce631c55584fd4273c0ca9456ab21750921c3a84028",
-};
 
 const abi = parseAbi([
     "function usdc() view returns (address)",
@@ -52,37 +41,6 @@ const erc20 = parseAbi([
     "function approve(address spender, uint256 amount) returns (bool)",
     "function allowance(address owner, address spender) view returns (uint256)",
 ]);
-
-const indexerAbi = parseAbi([
-    "function getAttestationUid(address recipient, bytes32 schemaUid) view returns (bytes32)",
-]);
-
-const easAbi = [
-    {
-        type: "function",
-        name: "getAttestation",
-        stateMutability: "view",
-        inputs: [{ name: "uid", type: "bytes32" }],
-        outputs: [
-            {
-                name: "",
-                type: "tuple",
-                components: [
-                    { name: "uid", type: "bytes32" },
-                    { name: "schema", type: "bytes32" },
-                    { name: "time", type: "uint64" },
-                    { name: "expirationTime", type: "uint64" },
-                    { name: "revocationTime", type: "uint64" },
-                    { name: "refUID", type: "bytes32" },
-                    { name: "recipient", type: "address" },
-                    { name: "attester", type: "address" },
-                    { name: "revocable", type: "bool" },
-                    { name: "data", type: "bytes" },
-                ],
-            },
-        ],
-    },
-] as const;
 
 function env(name: string): string {
     return (process.env[name] ?? "").trim();
@@ -337,26 +295,4 @@ export async function withdrawEarly(canonicalUrl: string, from: string): Promise
 export async function withdrawExpired(canonicalUrl: string, from: string): Promise<string> {
     await switchChain();
     return send(getAddress(from), factory(), abi, "withdrawExpired", [await issueId(canonicalUrl)]);
-}
-
-export async function checkResidence(walletAddr: string): Promise<{ ok: boolean; country: string | null }> {
-    const name = chainName();
-    if (!name) return { ok: false, country: null };
-    const uid = (await pub().readContract({
-        address: INDEXER[name],
-        abi: indexerAbi,
-        functionName: "getAttestationUid",
-        args: [getAddress(walletAddr), COUNTRY_SCHEMA[name]],
-    })) as `0x${string}`;
-    if (!uid || uid === zeroHash) return { ok: false, country: null };
-    const att = (await pub().readContract({
-        address: EAS,
-        abi: easAbi,
-        functionName: "getAttestation",
-        args: [uid],
-    })) as { revocationTime: bigint; expirationTime: bigint };
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    if (att.revocationTime !== BigInt(0)) return { ok: false, country: null };
-    if (att.expirationTime !== BigInt(0) && att.expirationTime < now) return { ok: false, country: null };
-    return { ok: true, country: "attested" };
 }

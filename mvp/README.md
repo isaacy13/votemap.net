@@ -10,7 +10,6 @@ One factory on **Base**, native **USDC**, issues keyed by a **canonical x.com or
 - Each staker **must** set their **own expiry**.
 - On **their** USDC: pay a solver **1.5%** fee, early withdraw **10%**, expiry **5%**.
 - **Treasury** is a required constructor argument. No dummy address.
-- **Coinbase Verified Country** (EAS) is checked in the app. No mock checkbox.
 - **Handles:** first wallet to call `registerHandle` owns that @. No attester key. X/Threads OAuth is optional login UX that prefills the handle; it does not sign on chain.
 - **URLs:** `x.com` only for X posts. `twitter.com` is rejected. Threads posts are allowed.
 - Embeds (`react-tweet` / Threads) and **Basescan** on txs.
