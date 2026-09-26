@@ -62,42 +62,39 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                 </Text>
                 <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
             </VStack>
-            {err && !asking ? <Text color="red.500" textAlign="center">{err}</Text> : null}
-            <Stack gap={4} maxW="720px" mx="auto" w="full">
-                {(issues || []).map((issue) => (
-                    <Box
-                        key={issue.id}
-                        as="button"
-                        textAlign="left"
-                        p={{ base: 5, md: 8 }}
-                        rounded="2xl"
-                        borderWidth="1px"
-                        borderColor="gray.200"
-                        _dark={{ borderColor: 'gray.700' }}
-                        _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-                        transition="all 0.2s"
-                        onClick={() => setView({ view: 'issue', i: issue.url })}
-                    >
-                        <Text fontSize="sm" color="gray.500" mb={1}>
-                            {issue.parsed?.network === 'threads' ? 'Threads' : 'X'}
-                        </Text>
-                        <Text fontWeight="medium" wordBreak="break-all">
-                            {issue.url}
-                        </Text>
-                        <Text mt={3} fontSize="2xl" fontWeight="bold">
-                            {formatUsdc(issue.live)} USDC live
-                        </Text>
-                    </Box>
-                ))}
-                {issues && issues.length === 0 ? (
-                    <Text textAlign="center" color="gray.500">
-                        No pots yet. First stake on a URL creates it.
-                    </Text>
-                ) : null}
-                <Text textAlign="center" fontSize="sm" color="gray.500">
-                    First stake on a URL creates the pot. Same URL joins.
+            {issues && issues.length > 0 ? (
+                <Stack gap={4} maxW="720px" mx="auto" w="full">
+                    {issues.map((issue) => (
+                        <Box
+                            key={issue.id}
+                            as="button"
+                            textAlign="left"
+                            p={{ base: 5, md: 8 }}
+                            rounded="2xl"
+                            borderWidth="1px"
+                            borderColor="gray.200"
+                            _dark={{ borderColor: 'gray.700' }}
+                            _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+                            transition="all 0.2s"
+                            onClick={() => setView({ view: 'issue', i: issue.url })}
+                        >
+                            <Text fontSize="sm" color="gray.500" mb={1}>
+                                {issue.parsed?.network === 'threads' ? 'Threads' : 'X'}
+                            </Text>
+                            <Text fontWeight="medium" wordBreak="break-all">
+                                {issue.url}
+                            </Text>
+                            <Text mt={3} fontSize="2xl" fontWeight="bold">
+                                {formatUsdc(issue.live)} USDC live
+                            </Text>
+                        </Box>
+                    ))}
+                </Stack>
+            ) : (
+                <Text textAlign="center" color="gray.500">
+                    No pots yet. First stake on a URL creates it.
                 </Text>
-            </Stack>
+            )}
         </VStack>
     )
 }

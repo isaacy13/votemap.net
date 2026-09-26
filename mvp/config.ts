@@ -22,28 +22,28 @@ export const COINBASE = {
 
 export type ChainName = keyof typeof COINBASE;
 
-function env(name: string): string {
-    return (process.env[name] ?? "").trim();
+function pub(v: string | undefined): string {
+    return (v ?? "").trim();
 }
 
 export function chainName(): ChainName | null {
-    const v = env("NEXT_PUBLIC_VOTEMAP_CHAIN").toLowerCase();
+    const v = pub(process.env.NEXT_PUBLIC_VOTEMAP_CHAIN).toLowerCase();
     if (v === "base") return "base";
     if (v === "base-sepolia" || v === "sepolia") return "base-sepolia";
     return null;
 }
 
 export function contractAddress(): `0x${string}` | null {
-    const a = env("NEXT_PUBLIC_VOTEMAP_CONTRACT");
+    const a = pub(process.env.NEXT_PUBLIC_VOTEMAP_CONTRACT);
     return a.startsWith("0x") && a.length === 42 ? (a as `0x${string}`) : null;
 }
 
 export function apiUrl(): string {
-    return env("NEXT_PUBLIC_API_URL").replace(/\/+$/, "");
+    return pub(process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, "");
 }
 
 export function siteUrl(): string {
-    return env("NEXT_PUBLIC_SITE_URL") || "https://votemap.net";
+    return pub(process.env.NEXT_PUBLIC_SITE_URL) || "https://votemap.net";
 }
 
 export function missingEnv(): string | null {
@@ -54,7 +54,7 @@ export function missingEnv(): string | null {
 }
 
 export function rpcUrl(): string {
-    return env("NEXT_PUBLIC_BASE_RPC") || (chainName() === "base" ? "https://mainnet.base.org" : "https://sepolia.base.org");
+    return pub(process.env.NEXT_PUBLIC_BASE_RPC) || (chainName() === "base" ? "https://mainnet.base.org" : "https://sepolia.base.org");
 }
 
 export function explorerHost(): string {

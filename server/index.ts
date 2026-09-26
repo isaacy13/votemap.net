@@ -12,7 +12,10 @@ import * as store from "./store";
 import type { User } from "./store";
 
 const PORT = Number(process.env.PORT || 8787);
-const APP_ORIGIN = (process.env.APP_ORIGIN || "http://localhost:3000").replace(/\/+$/, "");
+const APP_ORIGINS = (process.env.APP_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
+    .split(",")
+    .map((s) => s.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const SIGNER_PRIVATE_KEY = (process.env.SIGNER_PRIVATE_KEY || "") as Hex | "";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
@@ -41,15 +44,23 @@ function configured() {
     };
 }
 
+function corsOrigin(req: IncomingMessage): string {
+    const origin = (req.headers.origin || "").replace(/\/+$/, "");
+    if (origin && APP_ORIGINS.includes(origin)) return origin;
+    return APP_ORIGINS[0] || "*";
+}
+
 function json(res: ServerResponse, status: number, body: unknown) {
     const data = JSON.stringify(body);
+    const origin = activeReq ? corsOrigin(activeReq) : APP_ORIGINS[0] || "*";
     res.writeHead(status, {
         "content-type": "application/json; charset=utf-8",
-        "access-control-allow-origin": APP_ORIGIN,
+        "access-control-allow-origin": origin,
         "access-control-allow-credentials": "true",
         "access-control-allow-headers": "content-type, authorization",
         "access-control-allow-methods": "GET,POST,OPTIONS",
         "cache-control": "no-store",
+        vary: "origin",
     });
     res.end(data);
 }
@@ -98,7 +109,7 @@ async function needUser(req: IncomingMessage): Promise<User> {
 }
 
 function redirect(res: ServerResponse, url: string) {
-    res.writeHead(302, { location: url, "access-control-allow-origin": APP_ORIGIN });
+    res.writeHead(302, { location: url });
     res.end();
 }
 
@@ -177,8 +188,10 @@ function oauthCallback(req: IncomingMessage, provider: "google" | "apple") {
 }
 
 const lastSms = new Map<string, number>();
+let activeReq: IncomingMessage | null = null;
 
 async function handle(req: IncomingMessage, res: ServerResponse) {
+    activeReq = req;
     const url = new URL(req.url || "/", `http://${req.headers.host}`);
     if (req.method === "OPTIONS") return json(res, 204, {});
 
@@ -233,7 +246,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             email: payload.email || "",
             name: payload.name || "",
         });
-        return redirect(res, `${APP_ORIGIN}/mvp?token=${tokenFor(user.id)}&view=signup`);
+        return redirect(res, `${APP_ORIGINS[0]}/mvp?token=${tokenFor(user.id)}&view=signup`);
     }
 
     if (req.method === "GET" && url.pathname === "/auth/apple") {
@@ -273,7 +286,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             email: payload.email || "",
             name: "",
         });
-        return redirect(res, `${APP_ORIGIN}/mvp?token=${tokenFor(user.id)}&view=signup`);
+        return redirect(res, `${APP_ORIGINS[0]}/mvp?token=${tokenFor(user.id)}&view=signup`);
     }
 
     if (req.method === "POST" && url.pathname === "/profile/gender") {

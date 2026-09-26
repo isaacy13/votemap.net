@@ -155,50 +155,57 @@ async function loadIssue(id: Hex, urlHint?: string): Promise<Issue | null> {
 }
 
 export async function listIssues(): Promise<Issue[]> {
-    const address = factory();
-    const client = pub();
-    const n = (await client.readContract({ address, abi: voteMapAbi, functionName: "issueCount" })) as bigint;
-    const out: Issue[] = [];
-    for (let i = 0; i < Number(n); i++) {
-        const id = (await client.readContract({
-            address,
-            abi: voteMapAbi,
-            functionName: "issueIds",
-            args: [BigInt(i)],
-        })) as Hex;
-        const issue = await loadIssue(id);
-        if (issue) out.push(issue);
+    try {
+        const address = factory();
+        const client = pub();
+        const n = (await client.readContract({ address, abi: voteMapAbi, functionName: "issueCount" })) as bigint;
+        const out: Issue[] = [];
+        for (let i = 0; i < Number(n); i++) {
+            const id = (await client.readContract({
+                address,
+                abi: voteMapAbi,
+                functionName: "issueIds",
+                args: [BigInt(i)],
+            })) as Hex;
+            const issue = await loadIssue(id);
+            if (issue) out.push(issue);
+        }
+        return out;
+    } catch {
+        return [];
     }
-    return out;
 }
 
 export async function getIssue(canonicalUrl: string): Promise<Issue | null> {
-    const address = factory();
-    const client = pub();
-    const id = (await client.readContract({
-        address,
-        abi: voteMapAbi,
-        functionName: "issueIdOf",
-        args: [canonicalUrl],
-    })) as Hex;
-    const stored = (await client.readContract({
-        address,
-        abi: voteMapAbi,
-        functionName: "issueUrl",
-        args: [id],
-    })) as string;
-    if (!stored) {
-        return {
-            id,
-            url: canonicalUrl,
-            parsed: parsePostUrl(canonicalUrl),
-            total: BigInt(0),
-            live: BigInt(0),
-            stakers: [],
-            byCountry: [],
-        };
+    const empty = (): Issue => ({
+        id: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        url: canonicalUrl,
+        parsed: parsePostUrl(canonicalUrl),
+        total: BigInt(0),
+        live: BigInt(0),
+        stakers: [],
+        byCountry: [],
+    });
+    try {
+        const address = factory();
+        const client = pub();
+        const id = (await client.readContract({
+            address,
+            abi: voteMapAbi,
+            functionName: "issueIdOf",
+            args: [canonicalUrl],
+        })) as Hex;
+        const stored = (await client.readContract({
+            address,
+            abi: voteMapAbi,
+            functionName: "issueUrl",
+            args: [id],
+        })) as string;
+        if (!stored) return empty();
+        return (await loadIssue(id, stored)) || empty();
+    } catch {
+        return empty();
     }
-    return loadIssue(id, stored);
 }
 
 export async function readTreasury(): Promise<string> {

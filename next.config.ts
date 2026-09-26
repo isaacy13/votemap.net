@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   transpilePackages: ['@capacitor/core'],
+  devIndicators: false,
 };
 
 export default nextConfig;
