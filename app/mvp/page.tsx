@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { MvpApp } from "@/mvp/MvpApp";
+import { App } from "@/mvp/App";
 
 export default function MvpPage() {
     return (
         <Suspense fallback={<p style={{ padding: "1rem" }}>Loading mvp…</p>}>
-            <MvpApp />
+            <App />
         </Suspense>
     );
 }

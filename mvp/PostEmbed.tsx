@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Tweet } from "react-tweet";
-import type { ParsedPost } from "./lib/urls";
+import type { ParsedPost } from "./urls";
 
 export function PostEmbed({ parsed }: { parsed: ParsedPost }) {
     if (parsed.network === "x") {

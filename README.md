@@ -169,7 +169,7 @@ Be careful not to commit secrets. If integrating on-chain flows or external serv
 ## 🧭 Project architecture (high level)
 
 - `app/` — Next.js routes and pages (`app/mvp/` is a thin route into `mvp/`)
-- `mvp/` — v0 factory, portable OAuth, mock/testnet UI
+- `mvp/` — v0 factory, portable OAuth login, Base UI (no mock)
 - `components/` — shared UI (e.g., landing, footer, hero)
 - `public/` — static assets
 - `postcss.config.mjs` / `tailwind` — styling pipeline

@@ -1,18 +1,12 @@
 /**
- * Portable OAuth callback (vanilla HTTP).
+ * Portable X / Threads OAuth (vanilla HTTP). UX login only — does not sign
+ * anything on chain. Secrets from `env` (process.env / Lambda / Worker
+ * bindings). No Cloudflare APIs. No attester key.
  *
- * One function for X and Threads. Secrets come from `env` (process.env,
- * Lambda, Worker bindings — not Cloudflare KV or any vendor API).
- *
- * After OAuth, this process signs a handle↔wallet attestation. The static
- * app submits that signature on chain. No database.
- *
- * Node (from repo root):  node mvp/oauth/callback.mjs
+ *   node mvp/oauth.mjs
  */
 
 import { createServer } from "node:http";
-import { encodeAbiParameters, keccak256, stringToHex } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 
 const encoder = new TextEncoder();
 
@@ -87,13 +81,8 @@ function normHandle(raw) {
         .toLowerCase();
 }
 
-function networkByte(network) {
-    return network === "x" ? 0 : 1;
-}
-
 function pkceVerifier() {
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
-    return b64urlFromBytes(bytes);
+    return b64urlFromBytes(crypto.getRandomValues(new Uint8Array(32)));
 }
 
 async function pkceChallenge(verifier) {
@@ -108,38 +97,6 @@ function redirectUri(request, env) {
     u.search = "";
     u.hash = "";
     return u.toString();
-}
-
-async function signBind(env, wallet, network, handle, deadline) {
-    const key = envOf(env, "OAUTH_ATTESTER_PRIVATE_KEY");
-    const contract = envOf(env, "VOTEMAP_CONTRACT");
-    const chainId = BigInt(envOf(env, "CHAIN_ID", "84532"));
-    if (!key || !contract) {
-        throw new Error("OAUTH_ATTESTER_PRIVATE_KEY and VOTEMAP_CONTRACT are required to bind on chain");
-    }
-    const inner = keccak256(
-        encodeAbiParameters(
-            [
-                { type: "address" },
-                { type: "uint8" },
-                { type: "bytes32" },
-                { type: "uint64" },
-                { type: "address" },
-                { type: "uint256" },
-            ],
-            [
-                wallet,
-                networkByte(network),
-                keccak256(stringToHex(handle)),
-                BigInt(deadline),
-                contract,
-                chainId,
-            ],
-        ),
-    );
-    const account = privateKeyToAccount(key.startsWith("0x") ? key : `0x${key}`);
-    const signature = await account.signMessage({ message: { raw: inner } });
-    return signature;
 }
 
 async function startOAuth(request, env) {
@@ -162,14 +119,13 @@ async function startOAuth(request, env) {
     if (network === "x") {
         const clientId = envOf(env, "X_CLIENT_ID");
         if (!clientId) return html(500, "X_CLIENT_ID is not set");
-        const challenge = await pkceChallenge(verifier);
         const dest = new URL("https://x.com/i/oauth2/authorize");
         dest.searchParams.set("response_type", "code");
         dest.searchParams.set("client_id", clientId);
         dest.searchParams.set("redirect_uri", redir);
         dest.searchParams.set("scope", "users.read tweet.read");
         dest.searchParams.set("state", state);
-        dest.searchParams.set("code_challenge", challenge);
+        dest.searchParams.set("code_challenge", await pkceChallenge(verifier));
         dest.searchParams.set("code_challenge_method", "S256");
         return redirect(dest.toString());
     }
@@ -188,7 +144,6 @@ async function startOAuth(request, env) {
 async function fetchXHandle(env, code, verifier, redir) {
     const clientId = envOf(env, "X_CLIENT_ID");
     const clientSecret = envOf(env, "X_CLIENT_SECRET");
-    const basic = btoa(`${clientId}:${clientSecret}`);
     const body = new URLSearchParams({
         grant_type: "authorization_code",
         code,
@@ -199,7 +154,7 @@ async function fetchXHandle(env, code, verifier, redir) {
     const tokenRes = await fetch("https://api.x.com/2/oauth2/token", {
         method: "POST",
         headers: {
-            authorization: `Basic ${basic}`,
+            authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
             "content-type": "application/x-www-form-urlencoded",
         },
         body,
@@ -268,23 +223,12 @@ async function finishOAuth(request, env) {
     handle = normHandle(handle);
     if (!handle) return html(502, "provider did not return a username");
 
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 60;
-    let sig;
-    try {
-        sig = await signBind(env, state.w, state.n, handle, deadline);
-    } catch (e) {
-        return html(500, e.message || String(e));
-    }
-
     const app = envOf(env, "APP_ORIGIN", "http://localhost:3000").replace(/\/$/, "");
     const dest = new URL(`${app}/mvp`);
-    // Hash, not query: attester signature should not hit CDN/access logs.
     dest.hash = new URLSearchParams({
-        bind_network: state.n,
-        bind_handle: handle,
-        bind_deadline: String(deadline),
-        bind_sig: sig,
-        bind_wallet: state.w,
+        network: state.n,
+        handle,
+        wallet: state.w,
     }).toString();
     return redirect(dest.toString());
 }
@@ -296,14 +240,11 @@ export async function handleRequest(request, env) {
     const url = new URL(request.url);
     if (url.searchParams.get("action") === "start") return startOAuth(request, env);
     if (url.searchParams.has("code") || url.searchParams.has("error")) return finishOAuth(request, env);
-    return html(
-        200,
-        "votemap oauth callback is up.\nGET ?action=start&network=x|threads&wallet=0x…",
-    );
+    return html(200, "votemap oauth is up.\nGET ?action=start&network=x|threads&wallet=0x…");
 }
 
 const port = Number(process.env.PORT || 8787);
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("callback.mjs")) {
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("oauth.mjs")) {
     createServer(async (req, res) => {
         try {
             const host = req.headers.host || `127.0.0.1:${port}`;
