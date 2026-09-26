@@ -132,9 +132,15 @@ contract VoteMap {
         emit HandleBound(msg.sender, network, h);
     }
 
+    function _linked(address wallet) internal view returns (bool) {
+        return bytes(xHandle[wallet]).length > 0 || bytes(threadsHandle[wallet]).length > 0;
+    }
+
     /// @notice First stake on a canonical post URL creates the issue; later stakes join it.
     ///         Caller must pick their own expiry (unix seconds, in the future). Min 1 USDC.
+    ///         Caller must already have bound an X or Threads handle (OAuth attester).
     function stake(string calldata url, uint64 expiry, uint256 amount) external {
+        require(_linked(msg.sender), "oauth");
         require(amount >= MIN_STAKE, "min 1 USDC");
         require(expiry > block.timestamp, "expiry");
         uint256 urlLen = bytes(url).length;

@@ -11,7 +11,7 @@ Open **`/mvp`**. Default is **mock mode** (no contract, no seeded issues) so you
 - On **their** USDC: pay a solver **1.5%** fee, early withdraw **10%**, expiry **5%**. Treasury is a **placeholder**.
 - **Coinbase residence** required (real Verified Country on Base mainnet; **mocked on testnet/mock**).
 - **X or Threads OAuth** (at least one; may link both). Posts are independent of which network they logged in with. Pay only to handles that OAuth’d here.
-- After OAuth, handle↔wallet is bound **on chain** (attester signature). **No database.**
+- After OAuth, handle↔wallet is bound **on chain** (attester signature). **No database.** `stake` now requires that bind in the factory (not only in the UI).
 - Embeds: `react-tweet` for X, Threads embed.js for Threads. **Basescan** links on txs (when not mock).
 
 Not in v0: vesting/clawback, custom inspector.

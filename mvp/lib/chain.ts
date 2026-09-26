@@ -4,7 +4,6 @@ import {
     custom,
     http,
     getAddress,
-    maxUint256,
     zeroAddress,
     type Hex,
 } from "viem";
@@ -208,7 +207,7 @@ export function createChainApi(): VoteMapApi {
                 args: [account, factory],
             })) as bigint;
             if (allowance < amount) {
-                await send(account, erc20Abi, usdc, "approve", [factory, maxUint256]);
+                await send(account, erc20Abi, usdc, "approve", [factory, amount]);
             }
             return send(account, voteMapAbi, factory, "stake", [
                 canonicalUrl,

@@ -97,6 +97,9 @@ export function createMockApi(): VoteMapApi {
             const s = load();
             const id = issueIdOf(canonicalUrl);
             const wallet = getAddress(from);
+            if (!s.xHandle[wallet] && !s.threadsHandle[wallet]) {
+                throw new Error("link X or Threads first");
+            }
             if (!s.urls.includes(canonicalUrl)) s.urls.push(canonicalUrl);
             const rows = s.stakes[id] ?? [];
             const open = rows.find((r) => r.wallet === wallet && !r.closed && BigInt(r.amount) > BigInt(0));
@@ -135,13 +138,15 @@ export function createMockApi(): VoteMapApi {
         async bindHandle(attestation, from) {
             const s = load();
             const wallet = getAddress(from);
-            const key = handleKey(attestation.network, attestation.handle);
+            const handle = attestation.handle.trim().replace(/^@/, "").toLowerCase();
+            if (!handle) throw new Error("handle required");
+            const key = handleKey(attestation.network, handle);
             const existing = s.walletOfHandle[key];
             if (existing && existing !== wallet) throw new Error("handle already bound");
             const map = attestation.network === "x" ? s.xHandle : s.threadsHandle;
             const prev = map[wallet];
             if (prev) delete s.walletOfHandle[handleKey(attestation.network, prev)];
-            map[wallet] = attestation.handle;
+            map[wallet] = handle;
             s.walletOfHandle[key] = wallet;
             save(s);
             return fakeTx();

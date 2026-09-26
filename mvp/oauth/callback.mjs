@@ -61,9 +61,17 @@ async function unseal(token, secret) {
     return JSON.parse(new TextDecoder().decode(pt));
 }
 
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
 function html(status, body) {
     return new Response(
-        `<!doctype html><meta charset="utf-8"><title>votemap oauth</title><pre>${body}</pre>`,
+        `<!doctype html><meta charset="utf-8"><title>votemap oauth</title><pre>${escapeHtml(body)}</pre>`,
         { status, headers: { "content-type": "text/html; charset=utf-8" } },
     );
 }
@@ -270,11 +278,14 @@ async function finishOAuth(request, env) {
 
     const app = envOf(env, "APP_ORIGIN", "http://localhost:3000").replace(/\/$/, "");
     const dest = new URL(`${app}/mvp`);
-    dest.searchParams.set("bind_network", state.n);
-    dest.searchParams.set("bind_handle", handle);
-    dest.searchParams.set("bind_deadline", String(deadline));
-    dest.searchParams.set("bind_sig", sig);
-    dest.searchParams.set("bind_wallet", state.w);
+    // Hash, not query: attester signature should not hit CDN/access logs.
+    dest.hash = new URLSearchParams({
+        bind_network: state.n,
+        bind_handle: handle,
+        bind_deadline: String(deadline),
+        bind_sig: sig,
+        bind_wallet: state.w,
+    }).toString();
     return redirect(dest.toString());
 }
 
@@ -311,8 +322,9 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
             res.writeHead(response.status, out);
             res.end(buf);
         } catch (e) {
-            res.writeHead(500, { "content-type": "text/plain" });
-            res.end(String(e?.stack || e));
+            console.error(e);
+            res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+            res.end("internal error");
         }
     }).listen(port, () => {
         console.log(`votemap oauth listening on http://127.0.0.1:${port}`);

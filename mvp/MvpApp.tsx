@@ -46,7 +46,8 @@ function defaultExpiryInput() {
 export function MvpApp() {
     const router = useRouter();
     const params = useSearchParams();
-    const issueUrl = params.get("url");
+    const rawIssueUrl = params.get("url");
+    const issueUrl = rawIssueUrl ? parsePostUrl(rawIssueUrl)?.canonical ?? rawIssueUrl : null;
     const { resolvedTheme, setTheme } = useTheme();
 
     const [wallet, setWallet] = useState<string | null>(isMock() ? MOCK_WALLETS[0].address : null);
@@ -84,22 +85,28 @@ export function MvpApp() {
     }, [wallet, issueUrl]);
 
     useEffect(() => {
-        if (!wallet || typeof window === "undefined" || bindOnce.done) return;
-        const bind = readBindQuery(new URLSearchParams(window.location.search));
+        if (!wallet || typeof window === "undefined") return;
+        const fromHash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const bind = readBindQuery(fromHash) || readBindQuery(new URLSearchParams(window.location.search));
         if (!bind) return;
+        const stated = fromHash.get("bind_wallet") || params.get("bind_wallet");
+        if (stated && getAddress(stated) !== getAddress(wallet)) {
+            setErr(`OAuth was started with ${short(stated)}. Switch to that wallet.`);
+            return;
+        }
+        if (bindOnce.done) return;
+        // Clear hash before the async bind so React Strict Mode cannot double-submit.
         bindOnce.done = true;
-        const stated = params.get("bind_wallet");
+        window.history.replaceState(null, "", "/mvp");
         (async () => {
             try {
                 setBusy("Binding handle on chain…");
-                if (stated && getAddress(stated) !== getAddress(wallet)) {
-                    throw new Error(`OAuth was started with ${short(stated)}. Switch to that wallet.`);
-                }
                 const tx = await api.bindHandle(bind, wallet);
                 setLastTx(tx);
                 router.replace("/mvp");
                 await refresh(wallet);
             } catch (e) {
+                bindOnce.done = false;
                 setErr(String((e as Error).message || e));
             } finally {
                 setBusy("");
@@ -384,6 +391,7 @@ function WalletSection({
                             />
                             <button
                                 type="button"
+                                disabled={!mockHandle.trim()}
                                 onClick={() => onMockOauth(mockNet, mockHandle.trim().replace(/^@/, "").toLowerCase())}
                             >
                                 Bind mock handle
@@ -600,6 +608,7 @@ function IssuePanel({
                     <p>
                         <button
                             type="button"
+                            disabled={!payHandle.trim()}
                             onClick={() =>
                                 onPay(payNet, payHandle.trim().replace(/^@/, "").toLowerCase())
                             }
