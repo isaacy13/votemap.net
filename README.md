@@ -88,6 +88,7 @@ https://x.com/isaac_yeang/status/1954029843701805328?s=20
 
 - A Next.js (App Router) frontend in `app/` and reusable UI components in `components/`.
 - Global styles in `app/globals.css` and simple landing components in `components/landing/`.
+- **MVP** in `mvp/` (factory contract, OAuth callback, click-through UI) at **`/mvp`**. The landing is separate. See `mvp/README.md`.
 - A small codebase designed for rapid iteration and open contribution.
 
 ---
@@ -167,7 +168,8 @@ Be careful not to commit secrets. If integrating on-chain flows or external serv
 ---
 ## 🧭 Project architecture (high level)
 
-- `app/` — Next.js routes and pages
+- `app/` — Next.js routes and pages (`app/mvp/` is a thin route into `mvp/`)
+- `mvp/` — v0 factory, portable OAuth, mock/testnet UI
 - `components/` — shared UI (e.g., landing, footer, hero)
 - `public/` — static assets
 - `postcss.config.mjs` / `tailwind` — styling pipeline
