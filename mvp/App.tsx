@@ -13,6 +13,7 @@ import {
     addressUrl,
     chainName,
     contractAddress,
+    countryOk,
     formatUsdc,
     getIssue,
     handlesOf,
@@ -57,6 +58,7 @@ export function App() {
 
     const [wallet, setWallet] = useState<string | null>(null);
     const [handles, setHandles] = useState({ x: "", threads: "" });
+    const [country, setCountry] = useState(false);
     const [treasury, setTreasury] = useState<string | null>(null);
     const [issues, setIssues] = useState<Issue[]>([]);
     const [issue, setIssue] = useState<Issue | null>(null);
@@ -69,7 +71,7 @@ export function App() {
     const [oauthHint, setOauthHint] = useState("");
 
     const linked = Boolean(handles.x || handles.threads);
-    const gated = Boolean(wallet && linked);
+    const gated = Boolean(wallet && country && linked);
 
     async function refresh(w = wallet) {
         if (configErr) return;
@@ -77,7 +79,9 @@ export function App() {
         if (issueUrl) setIssue(await getIssue(issueUrl));
         else setIssues(await listIssues());
         if (!w) return;
-        setHandles(await handlesOf(w));
+        const [h, c] = await Promise.all([handlesOf(w), countryOk(w)]);
+        setHandles(h);
+        setCountry(c);
     }
 
     useEffect(() => {
@@ -192,12 +196,11 @@ export function App() {
                 <a href={addressUrl(contractAddress()!)} target="_blank" rel="noreferrer">
                     {short(contractAddress()!)}
                 </a>
-                . Treasury {treasury ? <code>{short(treasury)}</code> : "…"}. twitter.com URLs are
-                rejected.
+                . Treasury {treasury ? <code>{short(treasury)}</code> : "…"}. Pots are x.com only.
             </p>
 
             <section>
-                <h2>1. Wallet and handle</h2>
+                <h2>1. Wallet, country, handle</h2>
                 {wallet ? (
                     <p>
                         {short(wallet)}{" "}
@@ -212,6 +215,19 @@ export function App() {
                 )}
                 {wallet && (
                     <>
+                        <p className="muted">
+                            Coinbase country: {country ? "ok" : "required"}{" "}
+                            {!country && (
+                                <a
+                                    href="https://www.coinbase.com/onchain-verify"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    claim Verified Country
+                                </a>
+                            )}
+                            . Checked on chain (EAS), not only in this page.
+                        </p>
                         <p className="muted">
                             On chain: {handles.x ? `X @${handles.x}` : "no X"} ·{" "}
                             {handles.threads ? `Threads @${handles.threads}` : "no Threads"}
@@ -288,9 +304,9 @@ export function App() {
 
             {!gated && wallet && (
                 <p className="muted">
-                    Need at least one registered handle before staking. You can stake on x.com or
-                    Threads posts regardless of which handle you registered. Pay only goes to a handle
-                    that someone registered first.
+                    Need Coinbase Verified Country and at least one registered handle before staking.
+                    Issue pots are x.com URLs only. Pay only sends your unexpired stake, not the whole
+                    pot.
                 </p>
             )}
 
@@ -346,21 +362,22 @@ function HomePanel({
             <section>
                 <h2>2. Stake on a post</h2>
                 <p className="muted">
-                    Issue key = canonical x.com or Threads URL (not twitter.com). First {MIN_STAKE_USDC}{" "}
-                    USDC creates it; the same URL joins. You must set your own expiry. Pay solver{" "}
+                    Issue key = canonical x.com URL (not twitter.com, not Threads). First{" "}
+                    {MIN_STAKE_USDC} USDC creates the pot; the same URL joins. You must set your own
+                    expiry. Pay / early / expire move only your remaining stake. Pay solver{" "}
                     {PAY_FEE_BPS / 100}% · early out {EARLY_FEE_BPS / 100}% · expiry {EXPIRY_FEE_BPS / 100}
                     %. Gas is extra ETH on Base, paid by you.
                 </p>
-                <label htmlFor="post-url">x.com or Threads post URL</label>
+                <label htmlFor="post-url">x.com post URL</label>
                 <input
                     id="post-url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://x.com/…/status/… or https://www.threads.net/@…/post/…"
+                    placeholder="https://x.com/…/status/…"
                 />
                 {formErr && <p className="err">{formErr}</p>}
                 {url && !parsed && (
-                    <p className="err">Need an x.com or Threads post URL. twitter.com is not accepted.</p>
+                    <p className="err">Need an x.com post URL. twitter.com and Threads are not accepted.</p>
                 )}
                 {parsed && (
                     <p className="muted">
@@ -422,7 +439,7 @@ function HomePanel({
                                 >
                                     {i.url}
                                 </a>
-                                <div className="muted">{formatUsdc(i.total)} USDC staked</div>
+                                <div className="muted">{formatUsdc(i.live)} USDC live (unexpired)</div>
                             </li>
                         ))}
                     </ul>
@@ -477,7 +494,10 @@ function IssuePanel({
                     {issue.url}
                 </a>
             </p>
-            <p className="muted">Total {formatUsdc(issue.total)} USDC</p>
+            <p className="muted">
+                Live bounty {formatUsdc(issue.live)} USDC unexpired · {formatUsdc(issue.total)} USDC still
+                in the pot (expired lines sit until those wallets withdraw). Pay only moves your line.
+            </p>
             {issue.parsed && <PostEmbed parsed={issue.parsed} />}
 
             <h2>Stakes</h2>
@@ -510,9 +530,10 @@ function IssuePanel({
                 <>
                     <h2>Your USDC</h2>
                     <p className="muted">
-                        {formatUsdc(mine.amount)} until {new Date(mine.expiry * 1000).toLocaleString()}
+                        {formatUsdc(mine.amount)} of yours until {new Date(mine.expiry * 1000).toLocaleString()}{" "}
+                        — not the whole pot.
                     </p>
-                    <label htmlFor="pay-handle">Pay solver (must have registered that @ first)</label>
+                    <label htmlFor="pay-handle">Pay solver from your live stake only</label>
                     <select value={payNet} onChange={(e) => setPayNet(e.target.value as Network)}>
                         <option value="x">X</option>
                         <option value="threads">Threads</option>

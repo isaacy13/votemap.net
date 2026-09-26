@@ -29,6 +29,7 @@ const abi = parseAbi([
     "function stakerCount(bytes32 id) view returns (uint256)",
     "function getStakerAt(bytes32 id, uint256 i) view returns (address wallet, uint256 amount, uint64 expiry, bool closed)",
     "function handlesOf(address wallet) view returns (string x, string threads)",
+    "function countryOk(address wallet) view returns (bool)",
     "function issueIdOf(string url) pure returns (bytes32)",
     "function registerHandle(uint8 network, string handle)",
     "function stake(string url, uint64 expiry, uint256 amount)",
@@ -128,6 +129,7 @@ export type Issue = {
     url: string;
     parsed: ParsedPost | null;
     total: bigint;
+    live: bigint;
     stakers: StakeRow[];
 };
 
@@ -210,7 +212,12 @@ async function loadIssue(id: Hex, urlHint?: string): Promise<Issue | null> {
             closed: row[3],
         });
     }
-    return { id, url, parsed: parsePostUrl(url), total, stakers };
+    const now = Math.floor(Date.now() / 1000);
+    const live = stakers.reduce(
+        (n, s) => (s.closed || s.amount === BigInt(0) || s.expiry <= now ? n : n + s.amount),
+        BigInt(0),
+    );
+    return { id, url, parsed: parsePostUrl(url), total, live, stakers };
 }
 
 export async function readTreasury(): Promise<string> {
@@ -247,6 +254,15 @@ export async function handlesOf(walletAddr: string): Promise<{ x: string; thread
     return { x: pair[0], threads: pair[1] };
 }
 
+export async function countryOk(walletAddr: string): Promise<boolean> {
+    return (await pub().readContract({
+        address: factory(),
+        abi,
+        functionName: "countryOk",
+        args: [getAddress(walletAddr)],
+    })) as boolean;
+}
+
 export async function registerHandle(network: Network, handle: string, from: string): Promise<string> {
     await switchChain();
     return send(getAddress(from), factory(), abi, "registerHandle", [networkByte(network), handle]);
@@ -255,6 +271,7 @@ export async function registerHandle(network: Network, handle: string, from: str
 export async function stake(canonicalUrl: string, expiry: number, amount: bigint, from: string): Promise<string> {
     await switchChain();
     const account = getAddress(from);
+    if (!(await countryOk(account))) throw new Error("Coinbase Verified Country required");
     const address = factory();
     const usdc = (await pub().readContract({ address, abi, functionName: "usdc" })) as `0x${string}`;
     const allowance = (await pub().readContract({
@@ -280,7 +297,9 @@ async function issueId(canonicalUrl: string): Promise<Hex> {
 
 export async function paySolver(canonicalUrl: string, network: Network, handle: string, from: string): Promise<string> {
     await switchChain();
-    return send(getAddress(from), factory(), abi, "paySolver", [
+    const account = getAddress(from);
+    if (!(await countryOk(account))) throw new Error("Coinbase Verified Country required");
+    return send(account, factory(), abi, "paySolver", [
         await issueId(canonicalUrl),
         networkByte(network),
         handle,
@@ -289,10 +308,14 @@ export async function paySolver(canonicalUrl: string, network: Network, handle: 
 
 export async function withdrawEarly(canonicalUrl: string, from: string): Promise<string> {
     await switchChain();
-    return send(getAddress(from), factory(), abi, "withdrawEarly", [await issueId(canonicalUrl)]);
+    const account = getAddress(from);
+    if (!(await countryOk(account))) throw new Error("Coinbase Verified Country required");
+    return send(account, factory(), abi, "withdrawEarly", [await issueId(canonicalUrl)]);
 }
 
 export async function withdrawExpired(canonicalUrl: string, from: string): Promise<string> {
     await switchChain();
-    return send(getAddress(from), factory(), abi, "withdrawExpired", [await issueId(canonicalUrl)]);
+    const account = getAddress(from);
+    if (!(await countryOk(account))) throw new Error("Coinbase Verified Country required");
+    return send(account, factory(), abi, "withdrawExpired", [await issueId(canonicalUrl)]);
 }

@@ -12,18 +12,12 @@ test("x.com status urls collapse to https://x.com/i/status/id", () => {
     assert.equal(a?.network, "x");
 });
 
-test("twitter.com and other hosts are rejected", () => {
+test("twitter.com, threads, and other hosts are rejected", () => {
     assert.equal(parsePostUrl("https://twitter.com/isaac_yeang/status/1954029843701805328"), null);
     assert.equal(parsePostUrl("https://mobile.twitter.com/foo/status/1954029843701805328"), null);
-    assert.equal(parsePostUrl("https://fxtwitter.com/foo/status/1954029843701805328"), null);
+    assert.equal(parsePostUrl("https://www.threads.net/@Vote_Map/post/CxgZjwPsIsA"), null);
+    assert.equal(parsePostUrl("https://threads.com/t/CxgZjwPsIsA"), null);
     assert.equal(parsePostUrl("https://mobile.x.com/foo/status/1954029843701805328"), null);
-});
-
-test("threads urls canonicalize", () => {
-    const a = parsePostUrl("https://www.threads.net/@Vote_Map/post/CxgZjwPsIsA?x=1");
-    assert.equal(a?.canonical, "https://www.threads.net/@vote_map/post/CxgZjwPsIsA");
-    const b = parsePostUrl("https://threads.com/t/CxgZjwPsIsA");
-    assert.equal(b?.canonical, "https://www.threads.net/t/CxgZjwPsIsA");
 });
 
 test("junk is rejected", () => {
