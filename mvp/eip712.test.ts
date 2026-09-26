@@ -14,8 +14,14 @@ test("VoteMap.sol EIP-712 type strings stay in sync", () => {
     assert.ok(sol.includes(CLAIM), "Claim typehash");
     assert.ok(sol.includes('keccak256("votemap")'));
     assert.ok(!sol.includes("function stake(") || sol.includes("bytes calldata votemapSig"));
-    assert.ok(sol.includes("https://threads.net/"));
-    assert.ok(sol.includes("https://threads.com/"));
-    assert.ok(sol.includes("https://x.com/"));
+    const prefixes = [...sol.matchAll(/_prefix\(b, "([^"]+)"\)/g)].map((m) => m[1]).sort();
+    assert.deepEqual(prefixes, [
+        "https://threads.com/",
+        "https://threads.net/",
+        "https://www.threads.com/",
+        "https://www.threads.net/",
+        "https://www.x.com/",
+        "https://x.com/",
+    ]);
     assert.ok(!/function stake\([^)]*country/.test(sol), "no country argument on stake");
 });

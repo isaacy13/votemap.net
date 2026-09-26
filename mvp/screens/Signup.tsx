@@ -66,21 +66,18 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
                 title="Start with Google or Apple."
                 hint="We save your name the first time Apple shares it. Email can be Hide My Email."
                 effectsEnabled={effectsEnabled}
+                compact
             >
-                <VStack gap={4}>
+                <VStack gap={3}>
                     {oauth && !oauth.google && !oauth.apple ? (
                         <Text color="red.500">Google / Apple env is not set on the API. No mock mode.</Text>
                     ) : null}
-                    {oauth?.google ? (
-                        <BigButton asChild>
-                            <a href={`${apiUrl()}/auth/google`}>Continue with Google</a>
-                        </BigButton>
-                    ) : null}
-                    {oauth?.apple ? (
-                        <BigButton asChild>
-                            <a href={`${apiUrl()}/auth/apple`}>Continue with Apple</a>
-                        </BigButton>
-                    ) : null}
+                    <BigButton asChild>
+                        <a href={`${apiUrl()}/auth/google`}>Continue with Google</a>
+                    </BigButton>
+                    <BigButton asChild>
+                        <a href={`${apiUrl()}/auth/apple`}>Continue with Apple</a>
+                    </BigButton>
                     {err ? <Text color="red.500">{err}</Text> : null}
                 </VStack>
             </Question>

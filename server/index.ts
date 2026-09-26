@@ -12,9 +12,16 @@ import * as store from "./store";
 import type { User } from "./store";
 
 const PORT = Number(process.env.PORT || 8787);
+
+function trimSlashes(s: string): string {
+    let n = s.length;
+    while (n > 0 && s.charCodeAt(n - 1) === 47) n--;
+    return s.slice(0, n);
+}
+
 const APP_ORIGINS = (process.env.APP_ORIGIN || "http://localhost:3000,http://127.0.0.1:3000")
     .split(",")
-    .map((s) => s.trim().replace(/\/+$/, ""))
+    .map((s) => trimSlashes(s.trim()))
     .filter(Boolean);
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const SIGNER_PRIVATE_KEY = (process.env.SIGNER_PRIVATE_KEY || "") as Hex | "";
@@ -45,7 +52,7 @@ function configured() {
 }
 
 function corsOrigin(req: IncomingMessage): string {
-    const origin = (req.headers.origin || "").replace(/\/+$/, "");
+    const origin = trimSlashes(req.headers.origin || "");
     if (origin && APP_ORIGINS.includes(origin)) return origin;
     return APP_ORIGINS[0] || "*";
 }

@@ -16,6 +16,7 @@ export function Question({
     nextLabel = 'Continue',
     nextDisabled,
     effectsEnabled = true,
+    compact = false,
 }: {
     title: string
     hint?: string
@@ -25,13 +26,14 @@ export function Question({
     nextLabel?: string
     nextDisabled?: boolean
     effectsEnabled?: boolean
+    compact?: boolean
 }) {
     return (
         <Motion
-            minH={{ base: '70vh', md: '60vh' }}
-            justify="center"
+            minH={compact ? undefined : { base: '70vh', md: '60vh' }}
+            justify={compact ? { base: 'flex-start', md: 'center' } : 'center'}
             align="center"
-            gap={{ base: 8, md: 10 }}
+            gap={compact ? { base: 5, md: 8 } : { base: 8, md: 10 }}
             textAlign="center"
             px={2}
             initial={effectsEnabled ? { opacity: 0, y: 20 } : false}
@@ -40,7 +42,7 @@ export function Question({
         >
             <Text
                 as="h2"
-                fontSize={{ base: '4xl', md: '6xl' }}
+                fontSize={compact ? { base: '3xl', md: '6xl' } : { base: '4xl', md: '6xl' }}
                 fontWeight="bold"
                 letterSpacing="-0.04em"
                 lineHeight="1.05"
@@ -51,7 +53,7 @@ export function Question({
                 {title}
             </Text>
             {hint ? (
-                <Text fontSize={{ base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="xl">
+                <Text fontSize={compact ? { base: 'md', md: '2xl' } : { base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="xl">
                     {hint}
                 </Text>
             ) : null}
