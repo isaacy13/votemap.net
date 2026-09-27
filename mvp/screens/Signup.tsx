@@ -8,6 +8,7 @@ import { setView } from '../session'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { Question } from '../ui/Question'
+import { SignInButtons } from '../ui/SignInButtons'
 
 const GENDERS: { id: number; label: string }[] = [
     { id: 1, label: 'Woman' },
@@ -55,29 +56,17 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
     }
 
     if (!apiUrl()) {
-        return (
-            <Question title="The account API is not set." hint="Set NEXT_PUBLIC_API_URL. There is no mock login." effectsEnabled={effectsEnabled} />
-        )
+        return <Question title="Set the account API." hint="NEXT_PUBLIC_API_URL" effectsEnabled={effectsEnabled} />
     }
 
     if (step === 'auth') {
         return (
-            <Question
-                title="Start with Google or Apple."
-                hint="We save your name the first time Apple shares it. Email can be Hide My Email."
-                effectsEnabled={effectsEnabled}
-                compact
-            >
+            <Question title="Sign in." effectsEnabled={effectsEnabled}>
                 <VStack gap={3}>
                     {oauth && !oauth.google && !oauth.apple ? (
-                        <Text color="red.500">Google / Apple env is not set on the API. No mock mode.</Text>
+                        <Text color="red.500">Sign-in isn’t configured.</Text>
                     ) : null}
-                    <BigButton asChild>
-                        <a href={`${apiUrl()}/auth/google`}>Continue with Google</a>
-                    </BigButton>
-                    <BigButton asChild>
-                        <a href={`${apiUrl()}/auth/apple`}>Continue with Apple</a>
-                    </BigButton>
+                    <SignInButtons googleHref={`${apiUrl()}/auth/google`} appleHref={`${apiUrl()}/auth/apple`} />
                     {err ? <Text color="red.500">{err}</Text> : null}
                 </VStack>
             </Question>
@@ -86,8 +75,8 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
 
     if (step === 'gender') {
         return (
-            <Question title="What’s your gender?" hint="Self-reported. Google and Apple don’t send this." effectsEnabled={effectsEnabled}>
-                <Stack gap={4}>
+            <Question title="What’s your gender?" effectsEnabled={effectsEnabled}>
+                <Stack gap={3}>
                     {GENDERS.map((g) => (
                         <BigButton key={g.id} w="full" onClick={() => post('/profile/gender', { gender: g.id })}>
                             {g.label}
@@ -103,7 +92,6 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
         return (
             <Question
                 title="What year were you born?"
-                hint="One number. Then your phone."
                 onNext={() => post('/profile/birth-year', { birthYear: Number(year) })}
                 nextDisabled={!/^\d{4}$/.test(year)}
                 effectsEnabled={effectsEnabled}
@@ -124,10 +112,9 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
         return (
             <Question
                 title="What’s your phone number?"
-                hint="SMS once. We never put the raw number on-chain."
                 onNext={() => post('/otp/send', { phone })}
                 nextDisabled={!/^\+[1-9]\d{7,14}$/.test(phone)}
-                nextLabel="Text me a code"
+                nextLabel="Text me"
                 effectsEnabled={effectsEnabled}
             >
                 <BigInput
@@ -144,8 +131,8 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
     if (step === 'otp') {
         return (
             <Question
-                title="What code did we text?"
-                hint={me?.phone || ''}
+                title="What’s the code?"
+                hint={me?.phone || undefined}
                 onNext={() => post('/otp/verify', { code })}
                 nextDisabled={code.trim().length < 4}
                 onBack={() => onMe({ ...me!, phone: null, phoneVerified: false })}
@@ -165,7 +152,6 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
     return (
         <Question
             title="Pick a handle."
-            hint="First come, in our store. Not a social login."
             onNext={() => post('/handle', { handle })}
             nextDisabled={!/^[a-zA-Z0-9_]{3,20}$/.test(handle)}
             effectsEnabled={effectsEnabled}

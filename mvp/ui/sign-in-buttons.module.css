@@ -1,0 +1,116 @@
+.wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    max-width: 384px;
+    margin: 0 auto;
+}
+
+.google {
+    user-select: none;
+    appearance: none;
+    background-color: #fff;
+    border: 1px solid #747775;
+    border-radius: 4px;
+    box-sizing: border-box;
+    color: #1f1f1f;
+    cursor: pointer;
+    font-family: "Roboto", arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    height: 44px;
+    letter-spacing: 0.25px;
+    padding: 0 12px;
+    position: relative;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 384px;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+}
+
+.google:hover {
+    background-color: #f8faff;
+    box-shadow:
+        0 1px 2px 0 rgba(60, 64, 67, 0.3),
+        0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.google:focus-visible {
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
+}
+
+.googleIcon {
+    height: 20px;
+    width: 20px;
+    min-width: 20px;
+    margin-right: 12px;
+    display: block;
+    background: #fff;
+    border-radius: 2px;
+}
+
+.googleText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.googleDark {
+    background-color: #131314;
+    border-color: #8e918f;
+    color: #e3e3e3;
+}
+
+.googleDark:hover {
+    background-color: #2b2b2c;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+}
+
+.apple {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 384px;
+    height: 44px;
+    box-sizing: border-box;
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+    border-radius: 8px;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.022em;
+    text-decoration: none;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.apple svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.apple:focus-visible {
+    outline: 2px solid #0071e3;
+    outline-offset: 2px;
+}
+
+.appleDark {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+}

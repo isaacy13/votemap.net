@@ -36,23 +36,23 @@ export function Shell({
     handle?: string | null
 }) {
     return (
-        <Box as="main" minH="100vh" display="flex" flexDir="column">
-            <Box
-                as="h1"
-                position="absolute"
-                w="1px"
-                h="1px"
-                p={0}
-                m="-1px"
-                overflow="hidden"
-                clip="rect(0, 0, 0, 0)"
-                whiteSpace="nowrap"
-                borderWidth={0}
-            >
-                votemap
-            </Box>
-            <Box maxW="container.xl" mx="auto" w="full" px={4} pt={4} position="relative" zIndex={1} flex="1">
-                <Flex justify="space-between" align="center" py={2} gap={4}>
+        <Box as="main" minH="100vh">
+            <Box maxW="container.xl" mx="auto" w="full" p={4} position="relative" zIndex={1}>
+                <Box
+                    as="h1"
+                    position="absolute"
+                    w="1px"
+                    h="1px"
+                    p={0}
+                    m="-1px"
+                    overflow="hidden"
+                    clip="rect(0, 0, 0, 0)"
+                    whiteSpace="nowrap"
+                    borderWidth={0}
+                >
+                    votemap
+                </Box>
+                <Flex justify="space-between" align="center" gap={4}>
                     <Link href="/" _hover={{ opacity: 0.8 }}>
                         <Wordmark />
                     </Link>
@@ -72,9 +72,7 @@ export function Shell({
                         </Link>
                     </Flex>
                 </Flex>
-                <Box py={{ base: 8, md: 12 }}>{children}</Box>
-            </Box>
-            <Box maxW="container.xl" mx="auto" w="full" px={4}>
+                <Box pt={{ base: 8, md: 10 }}>{children}</Box>
                 <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} />
             </Box>
         </Box>

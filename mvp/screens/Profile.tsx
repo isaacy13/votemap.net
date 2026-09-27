@@ -77,8 +77,7 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
     if (nativeAsk) {
         return (
             <Question
-                title="Claim on-chain from the phone app."
-                hint="Web cannot obtain a votemap signature. Claim binds this wallet so it can be paid."
+                title="Open the phone app."
                 onNext={() => setNativeAsk(false)}
                 nextLabel="Back"
                 effectsEnabled={effectsEnabled}
@@ -88,18 +87,17 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
 
     return (
         <VStack gap={10} align="stretch" maxW="lg" mx="auto">
-            <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em" textAlign="center">
-                @{me.handle}
-            </Text>
-            <Text textAlign="center" color="gray.500">
-                {me.email} · {me.provider}
-            </Text>
+            <VStack gap={3}>
+                <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em" textAlign="center">
+                    @{me.handle}
+                </Text>
+                <Text textAlign="center" color="gray.500">
+                    {me.email}
+                </Text>
+            </VStack>
 
             <Stack gap={3}>
                 <Text fontWeight="medium">Wallets</Text>
-                <Text fontSize="sm" color="gray.500">
-                    Optional. No wallet means readonly. Sign a message per address. One is payout.
-                </Text>
                 {me.wallets.map((w) => (
                     <Stack key={w.address} gap={1}>
                         <Link href={addressUrl(w.address)} target="_blank" fontFamily="mono" fontSize="sm">
@@ -115,15 +113,12 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
                 ))}
                 <BigButton onClick={() => void linkWallet()}>Link wallet</BigButton>
                 <BigButton variant="outline" onClick={() => void claimOnchain()}>
-                    Claim on-chain (phone)
+                    Claim
                 </BigButton>
             </Stack>
 
             <Stack gap={3}>
-                <Text fontWeight="medium">Unverified socials</Text>
-                <Text fontSize="sm" color="gray.500">
-                    Display only. No OAuth, no check.
-                </Text>
+                <Text fontWeight="medium">Socials</Text>
                 {(['x', 'threads', 'instagram', 'tiktok'] as const).map((k) => (
                     <BigInput
                         key={k}
@@ -132,7 +127,7 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
                         onChange={(e) => setSocials({ ...socials, [k]: e.target.value })}
                     />
                 ))}
-                <BigButton onClick={() => void saveSocials()}>Save socials</BigButton>
+                <BigButton onClick={() => void saveSocials()}>Save</BigButton>
             </Stack>
 
             {err ? <Text color="red.500">{err}</Text> : null}

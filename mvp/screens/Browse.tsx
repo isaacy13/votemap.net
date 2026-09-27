@@ -25,7 +25,7 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     function openUrl() {
         const parsed = parsePostUrl(url)
         if (!parsed) {
-            setErr('Paste an x.com or Threads post URL.')
+            setErr('Paste an X or Threads post.')
             return
         }
         setView({ view: 'issue', i: parsed.canonical })
@@ -35,7 +35,6 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
         return (
             <Question
                 title="Which post?"
-                hint="x.com or Threads. Nothing else."
                 onNext={openUrl}
                 onBack={() => setAsking(false)}
                 nextLabel="Open"
@@ -52,18 +51,17 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     }
 
     return (
-        <VStack gap={12} align="stretch">
-            <VStack gap={4} textAlign="center">
+        <VStack gap={0} align="stretch">
+            <VStack gap={0} textAlign="center">
                 <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em" color="gray.800" _dark={{ color: 'white' }}>
                     stake on a post
                 </Text>
-                <Text fontSize={{ base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="2xl">
-                    Live bounty is unexpired USDC, rolled up by the country snapped on each line. Web is readonly — stake from the phone app.
-                </Text>
-                <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
+                <Box mt={8}>
+                    <BigButton onClick={() => setAsking(true)}>Stake on a post</BigButton>
+                </Box>
             </VStack>
             {issues && issues.length > 0 ? (
-                <Stack gap={4} maxW="720px" mx="auto" w="full">
+                <Stack gap={4} maxW="720px" mx="auto" w="full" mt={16}>
                     {issues.map((issue) => (
                         <Box
                             key={issue.id}
@@ -85,16 +83,21 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                                 {issue.url}
                             </Text>
                             <Text mt={3} fontSize="2xl" fontWeight="bold">
-                                {formatUsdc(issue.live)} USDC live
+                                {formatUsdc(issue.live)} USDC
                             </Text>
                         </Box>
                     ))}
                 </Stack>
             ) : (
-                <Text textAlign="center" color="gray.500">
-                    No pots yet. First stake on a URL creates it.
+                <Text mt={8} textAlign="center" color="gray.500">
+                    No pots yet.
                 </Text>
             )}
+            {err && !asking ? (
+                <Text mt={4} textAlign="center" color="red.500">
+                    {err}
+                </Text>
+            ) : null}
         </VStack>
     )
 }

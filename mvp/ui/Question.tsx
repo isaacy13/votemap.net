@@ -16,7 +16,6 @@ export function Question({
     nextLabel = 'Continue',
     nextDisabled,
     effectsEnabled = true,
-    compact = false,
 }: {
     title: string
     hint?: string
@@ -26,14 +25,11 @@ export function Question({
     nextLabel?: string
     nextDisabled?: boolean
     effectsEnabled?: boolean
-    compact?: boolean
 }) {
     return (
         <Motion
-            minH={compact ? undefined : { base: '70vh', md: '60vh' }}
-            justify={compact ? { base: 'flex-start', md: 'center' } : 'center'}
             align="center"
-            gap={compact ? { base: 5, md: 8 } : { base: 8, md: 10 }}
+            gap={0}
             textAlign="center"
             px={2}
             initial={effectsEnabled ? { opacity: 0, y: 20 } : false}
@@ -42,7 +38,7 @@ export function Question({
         >
             <Text
                 as="h2"
-                fontSize={compact ? { base: '3xl', md: '6xl' } : { base: '4xl', md: '6xl' }}
+                fontSize={{ base: '4xl', md: '6xl' }}
                 fontWeight="bold"
                 letterSpacing="-0.04em"
                 lineHeight="1.05"
@@ -53,15 +49,13 @@ export function Question({
                 {title}
             </Text>
             {hint ? (
-                <Text fontSize={compact ? { base: 'md', md: '2xl' } : { base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="xl">
+                <Text mt={3} fontSize={{ base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="xl">
                     {hint}
                 </Text>
             ) : null}
-            <Box w="full" maxW="lg">
-                {children}
-            </Box>
-            {(onNext || onBack) && (
-                <VStack gap={3} w="full" maxW="lg">
+            {(children || onNext || onBack) && (
+                <VStack mt={8} gap={4} w="full" maxW="lg">
+                    {children ? <Box w="full">{children}</Box> : null}
                     {onNext ? (
                         <BigButton onClick={onNext} disabled={nextDisabled}>
                             {nextLabel}

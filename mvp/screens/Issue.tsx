@@ -4,8 +4,8 @@ import { Box, Link, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Me } from '../api'
 import {
-    countryAllowed,
     getIssue,
+    issueId,
     submitPay,
     submitStake,
     withdrawEarly,
@@ -16,14 +16,13 @@ import { addressUrl, apiUrl, formatUsdc, parseUsdc, siteUrl, txUrl } from '../co
 import { VoteMap, isNativeApp } from '../plugin'
 import { readSessionToken, setView } from '../session'
 import { parsePostUrl } from '../urls'
-import { issueId } from '../chain'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { PostEmbed } from '../ui/PostEmbed'
 import { QrCard } from '../ui/QrCard'
 import { Question } from '../ui/Question'
 
-type StakeStep = 'idle' | 'amount' | 'days' | 'working' | 'pay'
+type StakeStep = 'idle' | 'amount' | 'days' | 'working' | 'pay' | 'withdraw'
 
 export function IssueView({
     canonical,
@@ -72,7 +71,7 @@ export function IssueView({
         try {
             const token = readSessionToken()
             const staker = me?.payout as `0x${string}` | undefined
-            if (!token || !staker) throw new Error('Sign in and link a wallet in the phone app first.')
+            if (!token || !staker) throw new Error('Sign in and link a wallet first.')
             const units = parseUsdc(amount)
             const expiry = Math.floor(Date.now() / 1000) + Number(days) * 86400
             const signed = await VoteMap.stake({
@@ -141,6 +140,7 @@ export function IssueView({
             const hash = kind === 'early' ? await withdrawEarly(url, from) : await withdrawExpired(url, from)
             setTx(hash)
             await reload()
+            setStep('idle')
         } catch (e) {
             setErr(e instanceof Error ? e.message : 'withdraw failed')
         }
@@ -148,7 +148,7 @@ export function IssueView({
 
     if (!parsed) {
         return (
-            <Question title="That is not an x.com or Threads post." onNext={() => setView({ view: 'browse', i: null })} nextLabel="Browse" effectsEnabled={effectsEnabled} />
+            <Question title="Not an X or Threads post." onNext={() => setView({ view: 'browse', i: null })} nextLabel="Browse" effectsEnabled={effectsEnabled} />
         )
     }
 
@@ -156,7 +156,6 @@ export function IssueView({
         return (
             <Question
                 title="How many USDC?"
-                hint="Minimum 1. You only move your own line."
                 onNext={() => setStep('days')}
                 onBack={() => setStep('idle')}
                 nextDisabled={(() => {
@@ -177,10 +176,9 @@ export function IssueView({
         return (
             <Question
                 title="How many days?"
-                hint="Your expiry. After that, a 5% fee to withdraw."
                 onNext={() => void stakeNow()}
                 onBack={() => setStep('amount')}
-                nextLabel="Face ID / biometrics"
+                nextLabel="Stake"
                 nextDisabled={!/^\d+$/.test(days) || Number(days) < 1}
                 effectsEnabled={effectsEnabled}
             >
@@ -199,11 +197,11 @@ export function IssueView({
     if (step === 'pay') {
         return (
             <Question
-                title="Pay which claimed wallet?"
-                hint="Not a social handle. They must have claimed on-chain."
+                title="Pay whom?"
+                hint="1.5% fee."
                 onNext={() => void payNow()}
                 onBack={() => setStep('idle')}
-                nextLabel="Face ID / biometrics"
+                nextLabel="Pay"
                 nextDisabled={!/^0x[a-fA-F0-9]{40}$/.test(solver)}
                 effectsEnabled={effectsEnabled}
             >
@@ -212,21 +210,31 @@ export function IssueView({
         )
     }
 
+    if (step === 'withdraw') {
+        return (
+            <Question title="Withdraw?" hint="10% now, 5% after the date." onBack={() => setStep('idle')} effectsEnabled={effectsEnabled}>
+                <VStack gap={3}>
+                    <BigButton w="full" onClick={() => void withdraw('early')}>
+                        Now
+                    </BigButton>
+                    <BigButton w="full" variant="outline" onClick={() => void withdraw('expired')}>
+                        After the date
+                    </BigButton>
+                </VStack>
+            </Question>
+        )
+    }
+
     const live = issue?.live ?? BigInt(0)
 
     return (
-        <VStack gap={10} align="stretch">
+        <VStack gap={0} align="stretch">
             <PostEmbed parsed={parsed} url={url} />
-            <VStack gap={2} textAlign="center">
-                <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em">
-                    {formatUsdc(live)} USDC
-                </Text>
-                <Text color="gray.600" _dark={{ color: 'gray.300' }} fontSize={{ base: 'lg', md: '2xl' }}>
-                    live bounty · tip your share only
-                </Text>
-            </VStack>
+            <Text mt={8} textAlign="center" fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em">
+                {formatUsdc(live)} USDC
+            </Text>
             {issue && issue.byCountry.length > 0 ? (
-                <Stack gap={2} maxW="md" mx="auto" w="full">
+                <Stack gap={1} maxW="md" mx="auto" w="full" mt={4}>
                     {issue.byCountry.map((row) => (
                         <Text key={row.country} textAlign="center" color="gray.500">
                             {row.country || '—'} · {formatUsdc(row.live)} USDC
@@ -236,75 +244,55 @@ export function IssueView({
             ) : null}
 
             {!native ? (
-                <VStack gap={6}>
-                    <QrCard value={share} label="Scan with the iOS or Android app to stake after Face ID. The website cannot obtain a votemap signature." />
-                    <BigButton onClick={() => void shareSheet()}>Share to phone</BigButton>
+                <VStack mt={8} gap={4}>
+                    <QrCard value={share} label="Open on your phone to stake" />
+                    <BigButton onClick={() => void shareSheet()}>Share</BigButton>
                 </VStack>
             ) : (
-                <VStack gap={4}>
+                <VStack mt={8} gap={4}>
                     <BigButton onClick={() => setStep('amount')} disabled={step === 'working'}>
                         Stake
                     </BigButton>
                     <BigButton variant="outline" onClick={() => setStep('pay')} disabled={step === 'working'}>
-                        Pay a claimed wallet
+                        Pay
                     </BigButton>
                 </VStack>
             )}
 
-            <Stack gap={3} maxW="lg" mx="auto" w="full">
-                <Text fontSize="sm" color="gray.500" textAlign="center">
-                    Withdraw and expiry are wallet-only (no votemap sig), so funds are not frozen if we are down. 10% early · 5% expiry · 1.5% pay.
-                </Text>
-                <BigButton variant="ghost" onClick={() => void withdraw('early')}>
-                    Withdraw early
+            <Box mt={8} textAlign="center">
+                <BigButton variant="ghost" onClick={() => setStep('withdraw')}>
+                    Withdraw
                 </BigButton>
-                <BigButton variant="ghost" onClick={() => void withdraw('expired')}>
-                    Withdraw after expiry
-                </BigButton>
-            </Stack>
+            </Box>
 
             {tx ? (
-                <Text textAlign="center">
+                <Text mt={6} textAlign="center">
                     <Link href={txUrl(tx)} target="_blank" textDecoration="underline">
-                        View on Basescan
+                        Basescan
                     </Link>
                 </Text>
             ) : null}
-            {err ? <Text color="red.500" textAlign="center">{err}</Text> : null}
+            {err ? (
+                <Text mt={4} color="red.500" textAlign="center">
+                    {err}
+                </Text>
+            ) : null}
 
             {issue && issue.stakers.length > 0 ? (
-                <Box maxW="720px" mx="auto" w="full">
+                <Box maxW="720px" mx="auto" w="full" mt={10}>
                     {issue.stakers.map((s) => (
                         <Box key={s.wallet} py={3} borderBottomWidth="1px" borderColor="gray.100" _dark={{ borderColor: 'gray.800' }}>
                             <Link href={addressUrl(s.wallet)} target="_blank" fontFamily="mono" fontSize="sm">
                                 {s.wallet.slice(0, 6)}…{s.wallet.slice(-4)}
                             </Link>
                             <Text>
-                                {formatUsdc(s.amount)} USDC · {s.country || '—'} ·{' '}
-                                {s.closed ? 'closed' : new Date(s.expiry * 1000).toLocaleDateString()}
+                                {formatUsdc(s.amount)} USDC
+                                {s.closed ? ' · closed' : ` · ${new Date(s.expiry * 1000).toLocaleDateString()}`}
                             </Text>
                         </Box>
                     ))}
                 </Box>
             ) : null}
-
-            <CountryHint wallet={me?.payout} />
         </VStack>
-    )
-}
-
-function CountryHint({ wallet }: { wallet?: string | null }) {
-    const [text, setText] = useState('')
-    useEffect(() => {
-        if (!wallet) return
-        countryAllowed(wallet)
-            .then((ok) => setText(ok ? 'Coinbase country allowlist: this wallet may stake.' : 'This wallet needs a Coinbase Verified Country on the allowlist (US in v0).'))
-            .catch(() => undefined)
-    }, [wallet])
-    if (!text) return null
-    return (
-        <Text textAlign="center" color="gray.500" fontSize="sm">
-            {text}
-        </Text>
     )
 }

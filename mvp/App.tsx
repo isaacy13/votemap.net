@@ -54,11 +54,7 @@ export function App() {
     let body = <Browse effectsEnabled={effectsEnabled} />
     if (missing) {
         body = (
-            <Question
-                title="Chain env is required."
-                hint={`${missing} There is no mock chain. Treasury is required at deploy.`}
-                effectsEnabled={effectsEnabled}
-            />
+            <Question title="Set the chain env." hint={missing} effectsEnabled={effectsEnabled} />
         )
     } else if (view === 'signup' || (view === 'me' && !signupDone)) {
         body = <Signup me={user} onMe={setUser} effectsEnabled={effectsEnabled} />

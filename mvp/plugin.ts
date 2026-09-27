@@ -60,8 +60,7 @@ export interface VoteMapPlugin {
     claim(args: ClaimArgs): Promise<SignResult>;
 }
 
-const WEB_READONLY =
-    "Web and desktop are readonly. Open this issue in the iOS or Android app. Stake, pay, and claim need Face ID or Android Class 3 biometrics — not a JavaScript sendOk().";
+const WEB_READONLY = "Open the phone app to stake.";
 
 class VoteMapWeb extends WebPlugin implements VoteMapPlugin {
     async capabilities(): Promise<Capabilities> {
