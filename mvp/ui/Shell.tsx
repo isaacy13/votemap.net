@@ -36,7 +36,7 @@ export function Shell({
     handle?: string | null
 }) {
     return (
-        <Box as="main" minH="100vh">
+        <Box as="main">
             <Box maxW="container.xl" mx="auto" w="full" p={4} position="relative" zIndex={1}>
                 <Box
                     as="h1"
