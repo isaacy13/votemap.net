@@ -39,6 +39,8 @@ export function Windowed({
                     setShown(true)
                     return
                 }
+                // Keep above-the-fold rows mounted — IO can false-negative in short viewports.
+                if (eager) return
                 const h = el.getBoundingClientRect().height
                 if (h > 8) setPh(h)
                 setShown(false)
@@ -47,7 +49,7 @@ export function Windowed({
         )
         io.observe(el)
         return () => io.disconnect()
-    }, [])
+    }, [eager])
 
     return (
         <Box
@@ -159,14 +161,9 @@ function IssueCardBody({
                             color="gray.800"
                             _dark={{ color: 'gray.100' }}
                             whiteSpace="pre-wrap"
-                            css={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                            }}
+                            lineClamp={{ base: 5, md: 4 }}
                         >
-                            {snap.text}
+                            {snap.text.replace(/\n{2,}/g, '\n')}
                         </Text>
                     ) : null}
                 </Box>
