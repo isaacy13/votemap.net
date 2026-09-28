@@ -4,6 +4,7 @@ import { Box, Container, Flex, Link, Text } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
 import { Footer } from '@/components/landing/Footer'
 import { setView } from '../session'
+import { AccountControl } from './AccountControl'
 
 export function Wordmark() {
     return (
@@ -63,21 +64,7 @@ export function Shell({
                     >
                         <Wordmark />
                     </Link>
-                    {handle ? (
-                        <Link
-                            href="/mvp?view=me"
-                            fontWeight="medium"
-                            fontSize={{ base: 'md', md: 'lg' }}
-                            color="gray.600"
-                            _dark={{ color: 'gray.300' }}
-                            onClick={(e) => {
-                                e.preventDefault()
-                                setView({ view: 'me', i: null })
-                            }}
-                        >
-                            @{handle}
-                        </Link>
-                    ) : null}
+                    <AccountControl handle={handle} signedOutLabel />
                 </Flex>
                 <Box flex="1" w="full" pt={{ base: 8, md: 10 }}>
                     {children}

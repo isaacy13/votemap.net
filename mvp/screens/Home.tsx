@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Button, Container, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Container, Flex, Stack, Text, VStack } from '@chakra-ui/react'
 import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { HeroContent } from '@/components/landing/HeroContent'
 import { SocialLinks } from '@/components/landing/SocialLinks'
@@ -9,15 +9,18 @@ import { TweetEmbeds } from '@/components/landing/TweetEmbeds'
 import { Footer } from '@/components/landing/Footer'
 import { apiUrl } from '../config'
 import { setView } from '../session'
+import { AccountControl } from '../ui/AccountControl'
 import { SignInButtons } from '../ui/SignInButtons'
 import { OrRule } from '../ui/OrRule'
 
 export function Home({
     effectsEnabled,
     toggleEffects,
+    handle,
 }: {
     effectsEnabled: boolean
     toggleEffects: () => void
+    handle?: string | null
 }) {
     const api = apiUrl()
 
@@ -38,6 +41,11 @@ export function Home({
                 votemap — democratize everything
             </Box>
             <Container maxW="container.xl" p={4} position="relative" zIndex={1}>
+                {handle ? (
+                    <Flex justify="flex-end" position="absolute" top={4} right={4} zIndex={2}>
+                        <AccountControl handle={handle} />
+                    </Flex>
+                ) : null}
                 <VStack gap={16} align="center" justify="center" minH="85vh" textAlign="center">
                     <Stack gap={0} align="center" w="full">
                         <VotemapHeading effectsEnabled={effectsEnabled} />
@@ -45,12 +53,12 @@ export function Home({
                             effectsEnabled={effectsEnabled}
                             actions={
                                 <VStack gap={6} w="full" maxW="384px">
-                                    {api ? (
+                                    {handle ? null : api ? (
                                         <SignInButtons googleHref={`${api}/auth/google`} appleHref={`${api}/auth/apple`} />
                                     ) : (
                                         <Text color="red.500">Set the account API.</Text>
                                     )}
-                                    <OrRule effectsEnabled={effectsEnabled} />
+                                    {handle ? null : <OrRule effectsEnabled={effectsEnabled} />}
                                     <Button
                                         variant="outline"
                                         size="lg"

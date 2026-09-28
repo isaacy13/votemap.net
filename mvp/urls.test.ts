@@ -43,4 +43,16 @@ test("postPreview keeps the handle without needing an embed", () => {
         network: "Threads",
         handle: "@vote_map",
     });
+    assert.deepEqual(postPreview("https://www.instagram.com/p/AbCdEf", null), {
+        network: "Instagram",
+        handle: null,
+    });
+    assert.deepEqual(postPreview("https://www.instagram.com/vote_map/p/AbCdEf", null), {
+        network: "Instagram",
+        handle: "@vote_map",
+    });
+    assert.deepEqual(postPreview("https://www.tiktok.com/@vote_map/video/1234567890123456789", null), {
+        network: "TikTok",
+        handle: "@vote_map",
+    });
 });

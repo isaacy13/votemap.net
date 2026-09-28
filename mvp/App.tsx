@@ -15,6 +15,34 @@ import { Shell } from './ui/Shell'
 
 const emptySubscribe = () => () => {}
 
+function screenshotMe(): Me | null {
+    if (typeof window === 'undefined') return null
+    try {
+        const raw = sessionStorage.getItem('votemap.screenshotMe')
+        if (!raw) return null
+        const row = JSON.parse(raw) as { handle?: string; name?: string }
+        const handle = (row.handle || '').replace(/^@/, '')
+        if (!handle) return null
+        return {
+            id: 'screenshot',
+            provider: 'google',
+            email: '',
+            name: row.name || handle,
+            gender: 0,
+            birthYear: 1990,
+            phone: '+10000000000',
+            phoneVerified: true,
+            handle,
+            payout: null,
+            wallets: [],
+            socials: { x: '', threads: '', instagram: '', tiktok: '' },
+            hasDevice: true,
+        }
+    } catch {
+        return null
+    }
+}
+
 function route() {
     if (typeof window === 'undefined') return { view: 'home', i: '' }
     const sp = new URLSearchParams(window.location.search)
@@ -42,7 +70,13 @@ export function App() {
     }, [ready])
 
     useEffect(() => {
-        if (!ready || !readSessionToken() || !apiUrl()) return
+        if (!ready) return
+        const shot = screenshotMe()
+        if (shot) {
+            Promise.resolve().then(() => setUser(shot))
+            return
+        }
+        if (!readSessionToken() || !apiUrl()) return
         loadMe()
             .then(setUser)
             .catch(() => setUser(null))
@@ -62,7 +96,9 @@ export function App() {
     }
 
     if (view === 'home' && !i) {
-        return <Home effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} />
+        return (
+            <Home effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} handle={user?.handle} />
+        )
     }
 
     let body = <Browse effectsEnabled={effectsEnabled} />

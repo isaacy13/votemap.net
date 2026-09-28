@@ -1,12 +1,14 @@
 'use client'
 
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useTweet } from 'react-tweet'
 import { formatUsdc } from '../config'
 import type { Issue } from '../chain'
+import { snapFromTweet, snapFromUrl, type PostSnap } from '../postSnap'
 import { setView } from '../session'
-import { postPreview } from '../urls'
+import type { ParsedPost } from '../urls'
 import { listEnter } from './enter'
 
 const MotionBox = motion(Box)
@@ -18,7 +20,7 @@ const MotionBox = motion(Box)
 export function Windowed({
     children,
     eager = false,
-    minH = 148,
+    minH = 176,
 }: {
     children: ReactNode
     eager?: boolean
@@ -61,6 +63,139 @@ export function Windowed({
     )
 }
 
+/** Bake first; optional react-tweet JSON only when this windowed card is mounted and has no text. */
+function usePostSnap(url: string, parsed: ParsedPost | null): PostSnap {
+    const base = snapFromUrl(url, parsed)
+    const fetchId = parsed?.network === 'x' && !base.text ? parsed.postId : undefined
+    const { data } = useTweet(fetchId)
+    if (!data) return base
+    return { ...base, ...snapFromTweet(data) }
+}
+
+function IssueCardBody({
+    issue,
+    index,
+    effectsEnabled,
+}: {
+    issue: Issue
+    index: number
+    effectsEnabled: boolean
+}) {
+    const snap = usePostSnap(issue.url, issue.parsed)
+    const amount = `${formatUsdc(issue.live)} USDC`
+    const who = snap.name ?? snap.handle ?? (snap.network === 'X' ? 'X post' : snap.network)
+    const initial = (snap.handle || who).replace(/^@/, '').slice(0, 1).toUpperCase()
+    const aria = [snap.network, who, snap.text, amount].filter(Boolean).join(', ')
+
+    return (
+        <MotionBox
+            as="button"
+            w="full"
+            textAlign="left"
+            p={{ base: 5, md: 6 }}
+            rounded="2xl"
+            borderWidth="1px"
+            borderColor="gray.200"
+            bg="white"
+            overflow="hidden"
+            _dark={{ borderColor: 'gray.700', bg: 'gray.900' }}
+            cursor="pointer"
+            aria-label={aria}
+            onClick={() => setView({ view: 'issue', i: issue.url })}
+            {...listEnter(effectsEnabled, index)}
+            whileHover={effectsEnabled ? { y: -3, transition: { duration: 0.25 } } : undefined}
+            whileTap={effectsEnabled ? { scale: 0.995 } : undefined}
+            css={{
+                transition: effectsEnabled ? 'box-shadow 0.3s ease, border-color 0.3s ease' : undefined,
+                '&:hover': effectsEnabled ? { boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.18)' } : undefined,
+                '.dark &:hover': effectsEnabled ? { boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.55)' } : undefined,
+            }}
+        >
+            <Flex gap={3} align="flex-start">
+                <Flex
+                    w="9"
+                    h="9"
+                    rounded="full"
+                    overflow="hidden"
+                    align="center"
+                    justify="center"
+                    bg="gray.100"
+                    color="gray.700"
+                    fontSize="sm"
+                    fontWeight="bold"
+                    flexShrink={0}
+                    _dark={{ bg: 'gray.800', color: 'gray.200' }}
+                >
+                    {snap.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={snap.avatarUrl} alt="" width={36} height={36} draggable={false} />
+                    ) : (
+                        initial
+                    )}
+                </Flex>
+                <Box flex="1" minW={0}>
+                    <Flex justify="space-between" align="baseline" gap={3} mb={0.5}>
+                        <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }}>
+                            {snap.network}
+                        </Text>
+                        <Text fontSize="sm" fontWeight="semibold" flexShrink={0} letterSpacing="-0.02em">
+                            {amount}
+                        </Text>
+                    </Flex>
+                    <Flex gap={2} align="baseline" minW={0}>
+                        <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="medium" truncate>
+                            {who}
+                        </Text>
+                        {snap.name && snap.handle ? (
+                            <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }} truncate>
+                                {snap.handle}
+                            </Text>
+                        ) : null}
+                    </Flex>
+                    {snap.text ? (
+                        <Text
+                            mt={2}
+                            fontSize={{ base: 'sm', md: 'md' }}
+                            color="gray.800"
+                            _dark={{ color: 'gray.100' }}
+                            whiteSpace="pre-wrap"
+                            css={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {snap.text}
+                        </Text>
+                    ) : null}
+                </Box>
+                {snap.mediaUrl ? (
+                    <Box
+                        w="72px"
+                        h="72px"
+                        rounded="lg"
+                        overflow="hidden"
+                        flexShrink={0}
+                        bg="gray.100"
+                        _dark={{ bg: 'gray.800' }}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={snap.mediaUrl}
+                            alt=""
+                            width={72}
+                            height={72}
+                            draggable={false}
+                            style={{ width: '72px', height: '72px', objectFit: 'cover' }}
+                        />
+                    </Box>
+                ) : null}
+            </Flex>
+        </MotionBox>
+    )
+}
+
 export function IssueCard({
     issue,
     index,
@@ -70,49 +205,9 @@ export function IssueCard({
     index: number
     effectsEnabled: boolean
 }) {
-    const preview = postPreview(issue.url, issue.parsed)
-    const title = preview.handle ?? (preview.network === 'X' ? 'X post' : preview.network)
-    const amount = `${formatUsdc(issue.live)} USDC`
-
     return (
         <Windowed eager={index < 6}>
-            <MotionBox
-                as="button"
-                w="full"
-                textAlign="left"
-                p={{ base: 6, md: 8 }}
-                rounded="2xl"
-                borderWidth="1px"
-                borderColor="gray.200"
-                bg="white"
-                overflow="hidden"
-                _dark={{ borderColor: 'gray.700', bg: 'gray.900' }}
-                cursor="pointer"
-                aria-label={`${title}, ${amount}`}
-                onClick={() => setView({ view: 'issue', i: issue.url })}
-                {...listEnter(effectsEnabled, index)}
-                whileHover={effectsEnabled ? { y: -3, transition: { duration: 0.25 } } : undefined}
-                whileTap={effectsEnabled ? { scale: 0.995 } : undefined}
-                css={{
-                    transition: effectsEnabled ? 'box-shadow 0.3s ease, border-color 0.3s ease' : undefined,
-                    '&:hover': effectsEnabled
-                        ? { boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.18)' }
-                        : undefined,
-                    '.dark &:hover': effectsEnabled
-                        ? { boxShadow: '0 12px 40px -12px rgba(0, 0, 0, 0.55)' }
-                        : undefined,
-                }}
-            >
-                <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }} mb={3}>
-                    {preview.network}
-                </Text>
-                <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="medium" truncate>
-                    {title}
-                </Text>
-                <Text mt={3} fontSize={{ base: '3xl', md: '4xl' }} fontWeight="bold" letterSpacing="-0.04em">
-                    {amount}
-                </Text>
-            </MotionBox>
+            <IssueCardBody issue={issue} index={index} effectsEnabled={effectsEnabled} />
         </Windowed>
     )
 }

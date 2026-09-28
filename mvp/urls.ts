@@ -45,25 +45,43 @@ export function issuePath(canonical: string): string {
     return `/mvp?i=${encodeURIComponent(canonical)}`;
 }
 
+export type PreviewNetwork = "X" | "Threads" | "Instagram" | "TikTok" | "Post";
+
 /** Light catalog label — no live embed. Handle when the stored URL still has it. */
 export function postPreview(
     url: string,
     parsed: ParsedPost | null,
-): { network: "X" | "Threads" | "Post"; handle: string | null } {
+): { network: PreviewNetwork; handle: string | null } {
     if (parsed?.network === "threads") {
         return { network: "Threads", handle: `@${parsed.handle}` };
     }
     try {
         const u = new URL(url);
         const host = u.hostname.toLowerCase().replace(/^www\./, "");
+        const path = u.pathname.replace(/\/+$/, "");
         if (host === "x.com" || host === "twitter.com") {
-            const path = u.pathname.replace(/\/+$/, "");
             const m = path.match(/^\/([^/]+)\/status(?:es)?\/\d+$/i);
             const name = m?.[1];
             if (name && name.toLowerCase() !== "i" && name.toLowerCase() !== "web") {
                 return { network: "X", handle: `@${name}` };
             }
             return { network: "X", handle: null };
+        }
+        if (host === "threads.net" || host === "threads.com") {
+            const m = path.match(/^\/@([^/]+)\/post\/[^/]+$/i);
+            return { network: "Threads", handle: m ? `@${m[1]}` : null };
+        }
+        if (host === "instagram.com" || host === "instagr.am") {
+            const withUser = path.match(/^\/([^/]+)\/(?:p|reel|reels|tv)\/[^/]+$/i);
+            const user = withUser?.[1];
+            if (user && !["p", "reel", "reels", "tv", "stories"].includes(user.toLowerCase())) {
+                return { network: "Instagram", handle: `@${user}` };
+            }
+            return { network: "Instagram", handle: null };
+        }
+        if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+            const m = path.match(/^\/@([^/]+)\/video\/\d+$/i);
+            return { network: "TikTok", handle: m ? `@${m[1]}` : null };
         }
     } catch {
         /* ignore */

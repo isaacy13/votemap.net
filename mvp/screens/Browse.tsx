@@ -1,19 +1,18 @@
 'use client'
 
-import { Box, Flex, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Text, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
 import { setView } from '../session'
-import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { IssueCard } from '../ui/IssueCard'
 import { Question } from '../ui/Question'
 import { enter, swap } from '../ui/enter'
 
 const MotionText = motion(Text)
-const MotionFlex = motion(Flex)
+const MotionBox = motion(Box)
 const MotionVStack = motion(VStack)
 
 function screenshotIssues(): Issue[] | null {
@@ -34,6 +33,34 @@ function screenshotIssues(): Issue[] | null {
     } catch {
         return null
     }
+}
+
+function CatalogOpen({ onClick }: { onClick: () => void }) {
+    return (
+        <Button
+            variant="outline"
+            size="lg"
+            h="12"
+            w="full"
+            px="8"
+            fontSize={{ base: 'lg', md: 'xl' }}
+            fontWeight="medium"
+            color="gray.700"
+            borderColor="gray.300"
+            _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
+            rounded="full"
+            onClick={onClick}
+            _hover={{
+                transform: 'translateY(-3px)',
+                shadow: 'md',
+                color: 'gray.900',
+                _dark: { color: 'white' },
+            }}
+            transition="all 0.2s"
+        >
+            Open a post
+        </Button>
+    )
 }
 
 export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
@@ -106,16 +133,16 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
             ) : (
                 <MotionVStack
                     key="catalog"
-                    gap={10}
+                    gap={4}
                     align="stretch"
                     w="full"
                     maxW="720px"
                     mx="auto"
                     {...swap(effectsEnabled)}
                 >
-                    <MotionFlex justify="center" w="full" {...enter(effectsEnabled, 0.2)}>
-                        <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
-                    </MotionFlex>
+                    <MotionBox {...enter(effectsEnabled, 0.2)}>
+                        <CatalogOpen onClick={() => setAsking(true)} />
+                    </MotionBox>
                     <AnimatePresence mode="wait">
                         {empty ? (
                             <MotionText

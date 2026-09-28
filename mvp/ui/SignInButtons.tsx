@@ -2,7 +2,11 @@
 
 import { useTheme } from 'next-themes'
 import { useSyncExternalStore } from 'react'
+import { Roboto } from 'next/font/google'
 import styles from './sign-in-buttons.module.css'
+
+/** GIS specifies Google Sans Medium 14/20; Roboto Medium is the official HTML-snippet fallback. */
+const roboto = Roboto({ weight: '500', subsets: ['latin'], display: 'swap' })
 
 const emptySubscribe = () => () => {}
 
@@ -27,21 +31,22 @@ export function SignInButtons({
 
     return (
         <div className={styles.wrap}>
-            <a className={`${styles.gsi} ${dark ? styles.gsiDark : ''}`} href={googleHref}>
-                <div className={styles.state} />
-                <div className={styles.contentWrapper}>
-                    <div className={styles.icon}>
-                        {/* Official 4-color G as an image so dark `color-scheme` cannot recolor the mark. */}
+            <a className={`${styles.gsi} ${roboto.className} ${dark ? styles.gsiDark : ''}`} href={googleHref}>
+                <span className={styles.state} />
+                <span className={styles.row}>
+                    <span className={styles.icon}>
+                        {/* Official 4-color G as an image so dark color-scheme cannot recolor the mark. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/gsi/google.svg" alt="" width={20} height={20} draggable={false} />
-                    </div>
-                    <span className={styles.contents}>Sign in with Google</span>
-                    <span className={styles.contentsHidden}>Sign in with Google</span>
-                </div>
+                    </span>
+                    <span className={styles.label}>Sign in with Google</span>
+                </span>
             </a>
             <a className={`${styles.apple} ${dark ? styles.appleDark : ''}`} href={appleHref}>
-                <AppleMark />
-                Sign in with Apple
+                <span className={styles.appleRow}>
+                    <AppleMark />
+                    Sign in with Apple
+                </span>
             </a>
         </div>
     )
