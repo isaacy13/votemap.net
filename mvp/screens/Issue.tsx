@@ -1,8 +1,9 @@
 'use client'
 
-import { Box, Link, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Flex, IconButton, Link, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { FaShareNodes } from 'react-icons/fa6'
 import { enter } from '../ui/enter'
 import type { Me } from '../api'
 import {
@@ -25,7 +26,6 @@ import { QrCard } from '../ui/QrCard'
 import { Question } from '../ui/Question'
 
 const MotionBox = motion(Box)
-const MotionText = motion(Text)
 const MotionStack = motion(VStack)
 
 type StakeStep = 'idle' | 'amount' | 'days' | 'working' | 'pay' | 'withdraw'
@@ -234,38 +234,54 @@ export function IssueView({
     const live = issue?.live ?? BigInt(0)
 
     return (
-        <VStack gap={0} align="stretch">
+        <VStack gap={16} align="stretch">
             <MotionBox {...enter(effectsEnabled, 0.2)}>
                 <PostEmbed parsed={parsed} url={url} />
             </MotionBox>
-            <MotionText
-                mt={8}
-                textAlign="center"
-                fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-                fontWeight="bold"
-                color="gray.800"
-                _dark={{ color: 'white' }}
-                {...enter(effectsEnabled, 0.4)}
-            >
-                {formatUsdc(live)} USDC
-            </MotionText>
-            {issue && issue.byCountry.length > 0 ? (
-                <Stack gap={1} maxW="md" mx="auto" w="full" mt={4}>
-                    {issue.byCountry.map((row) => (
-                        <Text key={row.country} textAlign="center" color="gray.500">
-                            {row.country || '—'} · {formatUsdc(row.live)} USDC
-                        </Text>
-                    ))}
-                </Stack>
-            ) : null}
+            <MotionStack gap={4} {...enter(effectsEnabled, 0.4)}>
+                <Text
+                    textAlign="center"
+                    fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
+                    fontWeight="bold"
+                    color="gray.800"
+                    _dark={{ color: 'white' }}
+                >
+                    {formatUsdc(live)} USDC
+                </Text>
+                {issue && issue.byCountry.length > 0 ? (
+                    <Stack gap={1} maxW="md" mx="auto" w="full">
+                        {issue.byCountry.map((row) => (
+                            <Text key={row.country} textAlign="center" color="gray.500">
+                                {row.country || '—'} · {formatUsdc(row.live)} USDC
+                            </Text>
+                        ))}
+                    </Stack>
+                ) : null}
+            </MotionStack>
 
             {!native ? (
-                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.6)}>
+                <MotionStack gap={6} align="center" {...enter(effectsEnabled, 0.6)}>
                     <QrCard value={share} label="Open on your phone to stake" />
-                    <BigButton onClick={() => void shareSheet()}>Share</BigButton>
+                    <Flex align="center" justify="center" gap={3}>
+                        <Text fontSize={{ base: 'xl', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }}>
+                            Open on your phone to stake
+                        </Text>
+                        <IconButton
+                            aria-label="Share"
+                            onClick={() => void shareSheet()}
+                            variant="ghost"
+                            rounded="full"
+                            size="sm"
+                            color="gray.500"
+                            _dark={{ color: 'gray.400' }}
+                            _hover={{ color: 'blue.500', bg: 'transparent', transform: 'scale(1.15)' }}
+                        >
+                            <FaShareNodes />
+                        </IconButton>
+                    </Flex>
                 </MotionStack>
             ) : (
-                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.6)}>
+                <MotionStack gap={6} align="center" {...enter(effectsEnabled, 0.6)}>
                     <BigButton onClick={() => setStep('amount')} disabled={step === 'working'}>
                         Stake
                     </BigButton>
@@ -275,27 +291,21 @@ export function IssueView({
                 </MotionStack>
             )}
 
-            <MotionBox mt={8} textAlign="center" {...enter(effectsEnabled, 0.8)}>
-                <BigButton variant="ghost" onClick={() => setStep('withdraw')}>
-                    Withdraw
-                </BigButton>
-            </MotionBox>
-
             {tx ? (
-                <Text mt={6} textAlign="center">
+                <Text textAlign="center">
                     <Link href={txUrl(tx)} target="_blank" textDecoration="underline">
                         Basescan
                     </Link>
                 </Text>
             ) : null}
             {err ? (
-                <Text mt={4} color="red.500" textAlign="center">
+                <Text color="red.500" textAlign="center">
                     {err}
                 </Text>
             ) : null}
 
             {issue && issue.stakers.length > 0 ? (
-                <Box maxW="720px" mx="auto" w="full" mt={10}>
+                <Box maxW="720px" mx="auto" w="full">
                     {issue.stakers.map((s) => (
                         <Box key={s.wallet} py={3} borderBottomWidth="1px" borderColor="gray.100" _dark={{ borderColor: 'gray.800' }}>
                             <Link href={addressUrl(s.wallet)} target="_blank" fontFamily="mono" fontSize="sm">
@@ -309,6 +319,20 @@ export function IssueView({
                     ))}
                 </Box>
             ) : null}
+
+            <MotionBox textAlign="center" {...enter(effectsEnabled, 0.8)}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    color="gray.500"
+                    _dark={{ color: 'gray.400' }}
+                    fontWeight="medium"
+                    onClick={() => setStep('withdraw')}
+                    _hover={{ color: 'blue.500', bg: 'transparent' }}
+                >
+                    Withdraw
+                </Button>
+            </MotionBox>
         </VStack>
     )
 }

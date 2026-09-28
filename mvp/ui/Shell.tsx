@@ -53,7 +53,7 @@ export function Shell({
                     whiteSpace="nowrap"
                     borderWidth={0}
                 >
-                    votemap
+                    votemap — democratize everything
                 </Box>
                 <Flex justify="space-between" align="center" gap={4} flexShrink={0}>
                     <Link href="/" _hover={{ opacity: 0.8 }}>
@@ -71,7 +71,7 @@ export function Shell({
                                 setView({ view: handle ? 'me' : 'signup', i: null })
                             }}
                         >
-                            {handle ? `@${handle}` : 'you'}
+                            {handle ? `@${handle}` : 'sign in'}
                         </Link>
                     </Flex>
                 </Flex>

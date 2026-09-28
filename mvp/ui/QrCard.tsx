@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Text, VStack } from '@chakra-ui/react'
+import { Box, VStack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
 export function QrCard({ value, label }: { value: string; label: string }) {
@@ -19,15 +19,12 @@ export function QrCard({ value, label }: { value: string; label: string }) {
     }, [value])
 
     return (
-        <VStack gap={3}>
+        <VStack gap={0}>
             <Box
-                p={{ base: 3, md: 4 }}
+                p={{ base: 5, md: 8 }}
                 bg="white"
                 rounded="2xl"
-                shadow="lg"
-                borderWidth="1px"
-                borderColor="gray.200"
-                _dark={{ borderColor: 'gray.700' }}
+                shadow="xl"
             >
                 {src ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -36,9 +33,6 @@ export function QrCard({ value, label }: { value: string; label: string }) {
                     <Box w="220px" h="220px" />
                 )}
             </Box>
-            <Text fontSize={{ base: 'md', md: 'lg' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="sm">
-                {label}
-            </Text>
         </VStack>
     )
 }
