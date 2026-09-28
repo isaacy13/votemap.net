@@ -1,8 +1,9 @@
 'use client'
 
-import { Box, Flex, Link, Text } from '@chakra-ui/react'
+import { Box, Container, Flex, Link, Stack, Text, VStack } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
 import { Footer } from '@/components/landing/Footer'
+import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { setView } from '../session'
 
 export function Wordmark() {
@@ -29,15 +30,17 @@ export function Shell({
     effectsEnabled,
     toggleEffects,
     handle,
+    showBrandMark = true,
 }: {
     children: ReactNode
     effectsEnabled: boolean
     toggleEffects: () => void
     handle?: string | null
+    showBrandMark?: boolean
 }) {
     return (
-        <Box as="main">
-            <Box maxW="container.xl" mx="auto" w="full" p={4} position="relative" zIndex={1}>
+        <Box as="main" minH="100svh" display="flex" flexDir="column">
+            <Container maxW="container.xl" p={4} flex="1" display="flex" flexDir="column" position="relative" zIndex={1}>
                 <Box
                     as="h1"
                     position="absolute"
@@ -52,7 +55,7 @@ export function Shell({
                 >
                     votemap
                 </Box>
-                <Flex justify="space-between" align="center" gap={4}>
+                <Flex justify="space-between" align="center" gap={4} flexShrink={0}>
                     <Link href="/" _hover={{ opacity: 0.8 }}>
                         <Wordmark />
                     </Link>
@@ -72,9 +75,28 @@ export function Shell({
                         </Link>
                     </Flex>
                 </Flex>
-                <Box pt={{ base: 8, md: 10 }}>{children}</Box>
+                <VStack
+                    flex="1"
+                    justify="center"
+                    align="center"
+                    textAlign="center"
+                    w="full"
+                    gap={0}
+                    py={{ base: 6, md: 8 }}
+                >
+                    {showBrandMark ? (
+                        <Stack gap={0} align="center" w="full">
+                            <VotemapHeading effectsEnabled={effectsEnabled} />
+                            <Box mt={{ base: -2, md: -4, lg: -8 }} w="full">
+                                {children}
+                            </Box>
+                        </Stack>
+                    ) : (
+                        <Box w="full">{children}</Box>
+                    )}
+                </VStack>
                 <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} />
-            </Box>
+            </Container>
         </Box>
     )
 }

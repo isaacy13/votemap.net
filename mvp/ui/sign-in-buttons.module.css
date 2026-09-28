@@ -8,13 +8,17 @@
     margin: 0 auto;
 }
 
-/* Official GIS “Sign in with Google” (outline / outline_dark). Not a Chakra pill. */
+/*
+ * GIS “Sign in with Google” HTML/CSS from Google’s branding configurator
+ * (outline / outline_dark). Not a Chakra restyle of the G.
+ * https://developers.google.com/identity/branding-guidelines
+ */
 .gsi {
     -moz-user-select: none;
     -webkit-user-select: none;
     user-select: none;
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
     background-color: #fff;
     background-image: none;
     border: 1px solid #747775;
@@ -24,7 +28,6 @@
     cursor: pointer;
     font-family: "Roboto", arial, sans-serif;
     font-size: 14px;
-    font-weight: 500;
     height: 40px;
     letter-spacing: 0.25px;
     outline: none;
@@ -34,12 +37,60 @@
     text-align: center;
     text-decoration: none;
     transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+    vertical-align: middle;
     white-space: nowrap;
     width: 100%;
     max-width: 384px;
-    display: inline-flex;
+    min-width: min-content;
+}
+
+.state {
+    transition: opacity 0.218s;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.contentWrapper {
     align-items: center;
-    justify-content: center;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    height: 100%;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+}
+
+.icon {
+    height: 20px;
+    width: 20px;
+    min-width: 20px;
+    margin-right: 12px;
+}
+
+.icon img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    color-scheme: only light;
+    forced-color-adjust: none;
+}
+
+.contents {
+    flex-grow: 1;
+    font-family: "Roboto", arial, sans-serif;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+}
+
+.contentsHidden {
+    display: none;
 }
 
 .gsi:hover {
@@ -48,48 +99,33 @@
         0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
-.gsi:active {
-    background-color: #eee;
+.gsi:hover .state {
+    background-color: #303030;
+    opacity: 8%;
 }
 
-.icon {
-    height: 20px;
-    width: 20px;
-    min-width: 20px;
-    margin-right: 12px;
-    display: block;
-    color-scheme: only light;
-    forced-color-adjust: none;
-    isolation: isolate;
-    flex-shrink: 0;
+.gsi:active .state,
+.gsi:focus .state {
+    background-color: #303030;
+    opacity: 12%;
 }
 
-.icon svg {
-    display: block;
-    width: 20px;
-    height: 20px;
-}
-
-.contents {
-    font-family: "Roboto", arial, sans-serif;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* GIS outline_dark: fill #131314, stroke #8E918F, font #E3E3E3. G stays color-on-white in the SVG. */
+/* outline_dark: fill #131314, stroke #8E918F, font #E3E3E3. G stays the 4-color mark on that fill. */
 .gsiDark {
     background-color: #131314;
     border-color: #8e918f;
     color: #e3e3e3;
 }
 
-.gsiDark:hover {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+.gsiDark:hover .state,
+.gsiDark:active .state,
+.gsiDark:focus .state {
+    background-color: #fff;
 }
 
-.gsiDark:active {
-    background-color: #2b2b2c;
+.gsi:focus-visible {
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
 }
 
 .apple {
@@ -123,9 +159,8 @@
     flex-shrink: 0;
 }
 
-.apple:focus-visible,
-.gsi:focus-visible {
-    outline: 2px solid #4285f4;
+.apple:focus-visible {
+    outline: 2px solid #0071e3;
     outline-offset: 2px;
 }
 
@@ -133,8 +168,4 @@
     background: #fff;
     color: #000;
     border-color: #fff;
-}
-
-.appleDark:focus-visible {
-    outline-color: #0071e3;
 }

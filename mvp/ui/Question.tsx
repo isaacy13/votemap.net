@@ -6,7 +6,6 @@ import type { ReactNode } from 'react'
 import { BigButton } from './BigButton'
 import { enter } from './enter'
 
-const Motion = motion(VStack)
 const MotionText = motion(Text)
 const MotionBox = motion(Box)
 
@@ -30,20 +29,11 @@ export function Question({
     effectsEnabled?: boolean
 }) {
     return (
-        <Motion
-            minH={{ base: '62vh', md: '70vh' }}
-            justify="center"
-            align="center"
-            gap={0}
-            textAlign="center"
-            px={2}
-        >
+        <VStack gap={0} align="center" textAlign="center" w="full" px={2}>
             <MotionText
                 as="h2"
                 fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
                 fontWeight="bold"
-                letterSpacing="-0.04em"
-                lineHeight="1.05"
                 color="gray.800"
                 _dark={{ color: 'white' }}
                 maxW="3xl"
@@ -53,18 +43,19 @@ export function Question({
             </MotionText>
             {hint ? (
                 <MotionText
-                    mt={3}
-                    fontSize={{ base: 'xl', md: '2xl' }}
+                    as="p"
+                    mt={2}
+                    fontSize={{ base: 'xl', md: '2xl', lg: '3xl' }}
                     color="gray.600"
                     _dark={{ color: 'gray.300' }}
-                    maxW="xl"
-                    {...enter(effectsEnabled, 0.35)}
+                    maxW="3xl"
+                    {...enter(effectsEnabled, 0.4)}
                 >
                     {hint}
                 </MotionText>
             ) : null}
             {(children || onNext || onBack) && (
-                <MotionBox mt={8} w="full" maxW="lg" {...enter(effectsEnabled, 0.5)}>
+                <MotionBox mt={8} w="full" maxW="lg" {...enter(effectsEnabled, 0.6)}>
                     <VStack gap={4} w="full">
                         {children ? <Box w="full">{children}</Box> : null}
                         {onNext ? (
@@ -80,6 +71,6 @@ export function Question({
                     </VStack>
                 </MotionBox>
             )}
-        </Motion>
+        </VStack>
     )
 }

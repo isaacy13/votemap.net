@@ -72,8 +72,15 @@ export function App() {
         )
     }
 
+    const showBrandMark = !(view === 'issue' || (view === 'me' && signupDone))
+
     return (
-        <Shell effectsEnabled={effectsEnabled} toggleEffects={() => setEffectsEnabled((v) => !v)} handle={user?.handle}>
+        <Shell
+            effectsEnabled={effectsEnabled}
+            toggleEffects={() => setEffectsEnabled((v) => !v)}
+            handle={user?.handle}
+            showBrandMark={showBrandMark}
+        >
             {body}
         </Shell>
     )

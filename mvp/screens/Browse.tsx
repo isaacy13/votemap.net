@@ -57,29 +57,25 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     const pots = issues && issues.length > 0
 
     return (
-        <VStack gap={0} align="stretch">
-            <VStack minH={pots ? undefined : { base: '62vh', md: '70vh' }} justify="center" textAlign="center" gap={0}>
-                <MotionText
-                    as="button"
-                    fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-                    fontWeight="bold"
-                    letterSpacing="-0.04em"
-                    lineHeight="1.05"
-                    color="gray.800"
-                    _dark={{ color: 'white' }}
-                    cursor="pointer"
-                    bg="transparent"
-                    border="0"
-                    onClick={() => setAsking(true)}
-                    _hover={{ transform: 'translateY(-4px)' }}
-                    css={{ transition: 'transform 0.2s' }}
-                    {...enter(effectsEnabled, 0.2)}
-                >
-                    stake on a post
-                </MotionText>
-            </VStack>
+        <VStack gap={0} align="stretch" w="full">
+            <MotionText
+                as="button"
+                fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
+                fontWeight="bold"
+                color="gray.800"
+                _dark={{ color: 'white' }}
+                cursor="pointer"
+                bg="transparent"
+                border="0"
+                onClick={() => setAsking(true)}
+                _hover={{ transform: 'translateY(-4px)' }}
+                css={{ transition: 'transform 0.2s' }}
+                {...enter(effectsEnabled, 0.2)}
+            >
+                stake on a post
+            </MotionText>
             {pots ? (
-                <MotionStack gap={4} maxW="720px" mx="auto" w="full" mt={8} {...enter(effectsEnabled, 0.45)}>
+                <MotionStack gap={4} maxW="720px" mx="auto" w="full" mt={8} {...enter(effectsEnabled, 0.6)}>
                     {issues!.map((issue) => (
                         <Box
                             key={issue.id}

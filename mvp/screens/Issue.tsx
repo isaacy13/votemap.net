@@ -235,7 +235,7 @@ export function IssueView({
 
     return (
         <VStack gap={0} align="stretch">
-            <MotionBox {...enter(effectsEnabled, 0.15)}>
+            <MotionBox {...enter(effectsEnabled, 0.2)}>
                 <PostEmbed parsed={parsed} url={url} />
             </MotionBox>
             <MotionText
@@ -243,8 +243,9 @@ export function IssueView({
                 textAlign="center"
                 fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
                 fontWeight="bold"
-                letterSpacing="-0.04em"
-                {...enter(effectsEnabled, 0.35)}
+                color="gray.800"
+                _dark={{ color: 'white' }}
+                {...enter(effectsEnabled, 0.4)}
             >
                 {formatUsdc(live)} USDC
             </MotionText>
@@ -259,12 +260,12 @@ export function IssueView({
             ) : null}
 
             {!native ? (
-                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.55)}>
+                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.6)}>
                     <QrCard value={share} label="Open on your phone to stake" />
                     <BigButton onClick={() => void shareSheet()}>Share</BigButton>
                 </MotionStack>
             ) : (
-                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.55)}>
+                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.6)}>
                     <BigButton onClick={() => setStep('amount')} disabled={step === 'working'}>
                         Stake
                     </BigButton>
@@ -274,7 +275,7 @@ export function IssueView({
                 </MotionStack>
             )}
 
-            <MotionBox mt={8} textAlign="center" {...enter(effectsEnabled, 0.7)}>
+            <MotionBox mt={8} textAlign="center" {...enter(effectsEnabled, 0.8)}>
                 <BigButton variant="ghost" onClick={() => setStep('withdraw')}>
                     Withdraw
                 </BigButton>
