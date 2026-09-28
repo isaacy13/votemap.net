@@ -44,3 +44,29 @@ export function parsePostUrl(raw: string): ParsedPost | null {
 export function issuePath(canonical: string): string {
     return `/mvp?i=${encodeURIComponent(canonical)}`;
 }
+
+/** Light catalog label — no live embed. Handle when the stored URL still has it. */
+export function postPreview(
+    url: string,
+    parsed: ParsedPost | null,
+): { network: "X" | "Threads" | "Post"; handle: string | null } {
+    if (parsed?.network === "threads") {
+        return { network: "Threads", handle: `@${parsed.handle}` };
+    }
+    try {
+        const u = new URL(url);
+        const host = u.hostname.toLowerCase().replace(/^www\./, "");
+        if (host === "x.com" || host === "twitter.com") {
+            const path = u.pathname.replace(/\/+$/, "");
+            const m = path.match(/^\/([^/]+)\/status(?:es)?\/\d+$/i);
+            const name = m?.[1];
+            if (name && name.toLowerCase() !== "i" && name.toLowerCase() !== "web") {
+                return { network: "X", handle: `@${name}` };
+            }
+            return { network: "X", handle: null };
+        }
+    } catch {
+        /* ignore */
+    }
+    return { network: parsed?.network === "x" ? "X" : "Post", handle: null };
+}

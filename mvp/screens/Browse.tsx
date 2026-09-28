@@ -1,7 +1,7 @@
 'use client'
 
-import { Flex, Text, VStack } from '@chakra-ui/react'
-import { motion } from 'framer-motion'
+import { Box, Flex, Text, VStack } from '@chakra-ui/react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
@@ -10,10 +10,11 @@ import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { IssueCard } from '../ui/IssueCard'
 import { Question } from '../ui/Question'
-import { enter } from '../ui/enter'
+import { enter, swap } from '../ui/enter'
 
 const MotionText = motion(Text)
 const MotionFlex = motion(Flex)
+const MotionVStack = motion(VStack)
 
 function screenshotIssues(): Issue[] | null {
     if (typeof window === 'undefined') return null
@@ -75,56 +76,88 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
         setView({ view: 'issue', i: parsed.canonical })
     }
 
-    if (asking) {
-        return (
-            <Question
-                title="Which post?"
-                onNext={openUrl}
-                onBack={() => setAsking(false)}
-                nextLabel="Open"
-                effectsEnabled={effectsEnabled}
-            >
-                <BigInput
-                    placeholder="https://x.com/…/status/…"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                />
-                {err ? <Text color="red.500" mt={3}>{err}</Text> : null}
-            </Question>
-        )
-    }
-
     const list = issues ?? []
     const loaded = issues !== null
     const empty = loaded && list.length === 0
 
     return (
-        <VStack gap={10} align="stretch" w="full" maxW="720px" mx="auto">
-            <MotionFlex justify="center" w="full" {...enter(effectsEnabled, 0.15)}>
-                <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
-            </MotionFlex>
-            {empty ? (
-                <MotionText
-                    textAlign="center"
-                    fontSize={{ base: 'xl', md: '2xl' }}
-                    color="gray.500"
-                    _dark={{ color: 'gray.400' }}
-                    {...enter(effectsEnabled, 0.35)}
-                >
-                    No issues yet
-                </MotionText>
+        <AnimatePresence mode="wait">
+            {asking ? (
+                <MotionVStack key="ask" w="full" align="stretch" {...swap(effectsEnabled)}>
+                    <Question
+                        title="Which post?"
+                        onNext={openUrl}
+                        onBack={() => setAsking(false)}
+                        nextLabel="Open"
+                        effectsEnabled={effectsEnabled}
+                    >
+                        <BigInput
+                            placeholder="https://x.com/…/status/…"
+                            value={url}
+                            onChange={(e) => setUrl(e.target.value)}
+                        />
+                        {err ? (
+                            <Text color="red.500" mt={3}>
+                                {err}
+                            </Text>
+                        ) : null}
+                    </Question>
+                </MotionVStack>
             ) : (
-                <VStack gap={4} align="stretch" w="full">
-                    {list.map((issue, index) => (
-                        <IssueCard key={issue.id} issue={issue} index={index} effectsEnabled={effectsEnabled} />
-                    ))}
-                </VStack>
+                <MotionVStack
+                    key="catalog"
+                    gap={10}
+                    align="stretch"
+                    w="full"
+                    maxW="720px"
+                    mx="auto"
+                    {...swap(effectsEnabled)}
+                >
+                    <MotionFlex justify="center" w="full" {...enter(effectsEnabled, 0.2)}>
+                        <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
+                    </MotionFlex>
+                    <AnimatePresence mode="wait">
+                        {empty ? (
+                            <MotionText
+                                key="empty"
+                                textAlign="center"
+                                fontSize={{ base: 'xl', md: '2xl', lg: '3xl' }}
+                                color="gray.500"
+                                _dark={{ color: 'gray.400' }}
+                                {...enter(effectsEnabled, 0.4)}
+                                exit={effectsEnabled ? { opacity: 0, y: -12 } : undefined}
+                            >
+                                No issues yet
+                            </MotionText>
+                        ) : loaded ? (
+                            <MotionVStack
+                                key="pots"
+                                gap={4}
+                                align="stretch"
+                                w="full"
+                                role="list"
+                                initial={false}
+                                exit={effectsEnabled ? { opacity: 0, y: -12 } : undefined}
+                            >
+                                {list.map((issue, index) => (
+                                    <Box key={issue.id} role="listitem">
+                                        <IssueCard
+                                            issue={issue}
+                                            index={index}
+                                            effectsEnabled={effectsEnabled}
+                                        />
+                                    </Box>
+                                ))}
+                            </MotionVStack>
+                        ) : null}
+                    </AnimatePresence>
+                    {err && !asking ? (
+                        <Text textAlign="center" color="red.500">
+                            {err}
+                        </Text>
+                    ) : null}
+                </MotionVStack>
             )}
-            {err && !asking ? (
-                <Text textAlign="center" color="red.500">
-                    {err}
-                </Text>
-            ) : null}
-        </VStack>
+        </AnimatePresence>
     )
 }

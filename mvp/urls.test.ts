@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parsePostUrl } from "./urls";
+import { parsePostUrl, postPreview } from "./urls";
 
 test("accepts x.com status URLs and canonicalizes", () => {
     const p = parsePostUrl("https://x.com/isaac_yeang/status/1954029843701805328");
@@ -28,4 +28,19 @@ test("rejects other hosts", () => {
     assert.equal(parsePostUrl("https://github.com/isaacy13/votemap.net"), null);
     assert.equal(parsePostUrl("https://x.com/vote_map"), null);
     assert.equal(parsePostUrl("http://x.com/i/status/1"), null);
+});
+
+test("postPreview keeps the handle without needing an embed", () => {
+    const url = "https://x.com/isaac_yeang/status/1954029843701805328";
+    const parsed = parsePostUrl(url);
+    assert.deepEqual(postPreview(url, parsed), { network: "X", handle: "@isaac_yeang" });
+    assert.deepEqual(postPreview("https://x.com/i/status/1954029843701805328", parsed), {
+        network: "X",
+        handle: null,
+    });
+    const th = parsePostUrl("https://www.threads.net/@vote_map/post/C123abc");
+    assert.deepEqual(postPreview("https://www.threads.net/@vote_map/post/C123abc", th), {
+        network: "Threads",
+        handle: "@vote_map",
+    });
 });
