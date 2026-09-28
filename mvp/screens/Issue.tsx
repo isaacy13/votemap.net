@@ -236,6 +236,19 @@ export function IssueView({
     return (
         <VStack gap={16} align="stretch">
             <MotionBox {...enter(effectsEnabled, 0.2)}>
+                <Flex justify="flex-end" w="full" mb={{ base: 2, md: 3 }}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        color="gray.500"
+                        _dark={{ color: 'gray.400' }}
+                        fontWeight="medium"
+                        onClick={() => setStep('withdraw')}
+                        _hover={{ color: 'blue.500', bg: 'transparent' }}
+                    >
+                        Withdraw
+                    </Button>
+                </Flex>
                 <PostEmbed parsed={parsed} url={url} />
             </MotionBox>
             <MotionStack gap={4} {...enter(effectsEnabled, 0.4)}>
@@ -319,20 +332,6 @@ export function IssueView({
                     ))}
                 </Box>
             ) : null}
-
-            <MotionBox textAlign="center" {...enter(effectsEnabled, 0.8)}>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    color="gray.500"
-                    _dark={{ color: 'gray.400' }}
-                    fontWeight="medium"
-                    onClick={() => setStep('withdraw')}
-                    _hover={{ color: 'blue.500', bg: 'transparent' }}
-                >
-                    Withdraw
-                </Button>
-            </MotionBox>
         </VStack>
     )
 }
