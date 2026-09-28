@@ -1,7 +1,9 @@
 'use client'
 
 import { Box, Link, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react'
+import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { enter } from '../ui/enter'
 import type { Me } from '../api'
 import {
     getIssue,
@@ -21,6 +23,10 @@ import { BigInput } from '../ui/BigInput'
 import { PostEmbed } from '../ui/PostEmbed'
 import { QrCard } from '../ui/QrCard'
 import { Question } from '../ui/Question'
+
+const MotionBox = motion(Box)
+const MotionText = motion(Text)
+const MotionStack = motion(VStack)
 
 type StakeStep = 'idle' | 'amount' | 'days' | 'working' | 'pay' | 'withdraw'
 
@@ -229,10 +235,19 @@ export function IssueView({
 
     return (
         <VStack gap={0} align="stretch">
-            <PostEmbed parsed={parsed} url={url} />
-            <Text mt={8} textAlign="center" fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em">
+            <MotionBox {...enter(effectsEnabled, 0.15)}>
+                <PostEmbed parsed={parsed} url={url} />
+            </MotionBox>
+            <MotionText
+                mt={8}
+                textAlign="center"
+                fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
+                fontWeight="bold"
+                letterSpacing="-0.04em"
+                {...enter(effectsEnabled, 0.35)}
+            >
                 {formatUsdc(live)} USDC
-            </Text>
+            </MotionText>
             {issue && issue.byCountry.length > 0 ? (
                 <Stack gap={1} maxW="md" mx="auto" w="full" mt={4}>
                     {issue.byCountry.map((row) => (
@@ -244,26 +259,26 @@ export function IssueView({
             ) : null}
 
             {!native ? (
-                <VStack mt={8} gap={4}>
+                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.55)}>
                     <QrCard value={share} label="Open on your phone to stake" />
                     <BigButton onClick={() => void shareSheet()}>Share</BigButton>
-                </VStack>
+                </MotionStack>
             ) : (
-                <VStack mt={8} gap={4}>
+                <MotionStack mt={8} gap={4} {...enter(effectsEnabled, 0.55)}>
                     <BigButton onClick={() => setStep('amount')} disabled={step === 'working'}>
                         Stake
                     </BigButton>
                     <BigButton variant="outline" onClick={() => setStep('pay')} disabled={step === 'working'}>
                         Pay
                     </BigButton>
-                </VStack>
+                </MotionStack>
             )}
 
-            <Box mt={8} textAlign="center">
+            <MotionBox mt={8} textAlign="center" {...enter(effectsEnabled, 0.7)}>
                 <BigButton variant="ghost" onClick={() => setStep('withdraw')}>
                     Withdraw
                 </BigButton>
-            </Box>
+            </MotionBox>
 
             {tx ? (
                 <Text mt={6} textAlign="center">

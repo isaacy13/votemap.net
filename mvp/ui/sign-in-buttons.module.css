@@ -8,10 +8,15 @@
     margin: 0 auto;
 }
 
-.google {
+/* Official GIS “Sign in with Google” (outline / outline_dark). Not a Chakra pill. */
+.gsi {
+    -moz-user-select: none;
+    -webkit-user-select: none;
     user-select: none;
     appearance: none;
+    -webkit-appearance: none;
     background-color: #fff;
+    background-image: none;
     border: 1px solid #747775;
     border-radius: 4px;
     box-sizing: border-box;
@@ -20,57 +25,71 @@
     font-family: "Roboto", arial, sans-serif;
     font-size: 14px;
     font-weight: 500;
-    height: 44px;
+    height: 40px;
     letter-spacing: 0.25px;
+    outline: none;
+    overflow: hidden;
     padding: 0 12px;
     position: relative;
+    text-align: center;
     text-decoration: none;
+    transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+    white-space: nowrap;
+    width: 100%;
+    max-width: 384px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    max-width: 384px;
-    white-space: nowrap;
-    overflow: hidden;
-    transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
 }
 
-.google:hover {
-    background-color: #f8faff;
+.gsi:hover {
     box-shadow:
         0 1px 2px 0 rgba(60, 64, 67, 0.3),
         0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
-.google:focus-visible {
-    outline: 2px solid #4285f4;
-    outline-offset: 2px;
+.gsi:active {
+    background-color: #eee;
 }
 
-.googleIcon {
+.icon {
     height: 20px;
     width: 20px;
     min-width: 20px;
     margin-right: 12px;
     display: block;
-    background: #fff;
-    border-radius: 2px;
+    color-scheme: only light;
+    forced-color-adjust: none;
+    isolation: isolate;
+    flex-shrink: 0;
 }
 
-.googleText {
+.icon svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+.contents {
+    font-family: "Roboto", arial, sans-serif;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.googleDark {
+/* GIS outline_dark: fill #131314, stroke #8E918F, font #E3E3E3. G stays color-on-white in the SVG. */
+.gsiDark {
     background-color: #131314;
     border-color: #8e918f;
     color: #e3e3e3;
 }
 
-.googleDark:hover {
-    background-color: #2b2b2c;
+.gsiDark:hover {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+}
+
+.gsiDark:active {
+    background-color: #2b2b2c;
 }
 
 .apple {
@@ -80,12 +99,12 @@
     gap: 8px;
     width: 100%;
     max-width: 384px;
-    height: 44px;
+    height: 40px;
     box-sizing: border-box;
     background: #000;
     color: #fff;
     border: 1px solid #000;
-    border-radius: 8px;
+    border-radius: 6px;
     font-family:
         -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
     font-size: 17px;
@@ -98,14 +117,15 @@
 }
 
 .apple svg {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 17px;
     fill: currentColor;
     flex-shrink: 0;
 }
 
-.apple:focus-visible {
-    outline: 2px solid #0071e3;
+.apple:focus-visible,
+.gsi:focus-visible {
+    outline: 2px solid #4285f4;
     outline-offset: 2px;
 }
 
@@ -113,4 +133,8 @@
     background: #fff;
     color: #000;
     border-color: #fff;
+}
+
+.appleDark:focus-visible {
+    outline-color: #0071e3;
 }

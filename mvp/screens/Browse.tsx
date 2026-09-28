@@ -1,14 +1,18 @@
 'use client'
 
 import { Box, Stack, Text, VStack } from '@chakra-ui/react'
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { formatUsdc } from '../config'
 import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
 import { setView } from '../session'
-import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { Question } from '../ui/Question'
+import { enter } from '../ui/enter'
+
+const MotionText = motion(Text)
+const MotionStack = motion(Stack)
 
 export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     const [issues, setIssues] = useState<Issue[] | null>(null)
@@ -50,19 +54,33 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
         )
     }
 
+    const pots = issues && issues.length > 0
+
     return (
         <VStack gap={0} align="stretch">
-            <VStack gap={0} textAlign="center">
-                <Text fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" letterSpacing="-0.04em" color="gray.800" _dark={{ color: 'white' }}>
+            <VStack minH={pots ? undefined : { base: '62vh', md: '70vh' }} justify="center" textAlign="center" gap={0}>
+                <MotionText
+                    as="button"
+                    fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
+                    fontWeight="bold"
+                    letterSpacing="-0.04em"
+                    lineHeight="1.05"
+                    color="gray.800"
+                    _dark={{ color: 'white' }}
+                    cursor="pointer"
+                    bg="transparent"
+                    border="0"
+                    onClick={() => setAsking(true)}
+                    _hover={{ transform: 'translateY(-4px)' }}
+                    css={{ transition: 'transform 0.2s' }}
+                    {...enter(effectsEnabled, 0.2)}
+                >
                     stake on a post
-                </Text>
-                <Box mt={8}>
-                    <BigButton onClick={() => setAsking(true)}>Stake on a post</BigButton>
-                </Box>
+                </MotionText>
             </VStack>
-            {issues && issues.length > 0 ? (
-                <Stack gap={4} maxW="720px" mx="auto" w="full" mt={16}>
-                    {issues.map((issue) => (
+            {pots ? (
+                <MotionStack gap={4} maxW="720px" mx="auto" w="full" mt={8} {...enter(effectsEnabled, 0.45)}>
+                    {issues!.map((issue) => (
                         <Box
                             key={issue.id}
                             as="button"
@@ -87,12 +105,8 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                             </Text>
                         </Box>
                     ))}
-                </Stack>
-            ) : (
-                <Text mt={8} textAlign="center" color="gray.500">
-                    No pots yet.
-                </Text>
-            )}
+                </MotionStack>
+            ) : null}
             {err && !asking ? (
                 <Text mt={4} textAlign="center" color="red.500">
                     {err}

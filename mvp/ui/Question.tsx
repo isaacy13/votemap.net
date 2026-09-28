@@ -4,8 +4,11 @@ import { Box, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { BigButton } from './BigButton'
+import { enter } from './enter'
 
 const Motion = motion(VStack)
+const MotionText = motion(Text)
+const MotionBox = motion(Box)
 
 export function Question({
     title,
@@ -28,45 +31,54 @@ export function Question({
 }) {
     return (
         <Motion
+            minH={{ base: '62vh', md: '70vh' }}
+            justify="center"
             align="center"
             gap={0}
             textAlign="center"
             px={2}
-            initial={effectsEnabled ? { opacity: 0, y: 20 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-            <Text
+            <MotionText
                 as="h2"
-                fontSize={{ base: '4xl', md: '6xl' }}
+                fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
                 fontWeight="bold"
                 letterSpacing="-0.04em"
                 lineHeight="1.05"
                 color="gray.800"
                 _dark={{ color: 'white' }}
                 maxW="3xl"
+                {...enter(effectsEnabled, 0.2)}
             >
                 {title}
-            </Text>
+            </MotionText>
             {hint ? (
-                <Text mt={3} fontSize={{ base: 'lg', md: '2xl' }} color="gray.600" _dark={{ color: 'gray.300' }} maxW="xl">
+                <MotionText
+                    mt={3}
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    color="gray.600"
+                    _dark={{ color: 'gray.300' }}
+                    maxW="xl"
+                    {...enter(effectsEnabled, 0.35)}
+                >
                     {hint}
-                </Text>
+                </MotionText>
             ) : null}
             {(children || onNext || onBack) && (
-                <VStack mt={8} gap={4} w="full" maxW="lg">
-                    {children ? <Box w="full">{children}</Box> : null}
-                    {onNext ? (
-                        <BigButton onClick={onNext} disabled={nextDisabled}>
-                            {nextLabel}
-                        </BigButton>
-                    ) : null}
-                    {onBack ? (
-                        <BigButton variant="ghost" onClick={onBack} minW="auto">
-                            Back
-                        </BigButton>
-                    ) : null}
-                </VStack>
+                <MotionBox mt={8} w="full" maxW="lg" {...enter(effectsEnabled, 0.5)}>
+                    <VStack gap={4} w="full">
+                        {children ? <Box w="full">{children}</Box> : null}
+                        {onNext ? (
+                            <BigButton onClick={onNext} disabled={nextDisabled}>
+                                {nextLabel}
+                            </BigButton>
+                        ) : null}
+                        {onBack ? (
+                            <BigButton variant="ghost" onClick={onBack} minW="auto">
+                                Back
+                            </BigButton>
+                        ) : null}
+                    </VStack>
+                </MotionBox>
             )}
         </Motion>
     )
