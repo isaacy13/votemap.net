@@ -1,20 +1,26 @@
 'use client'
 
-import { Flex, Link, Text, IconButton } from '@chakra-ui/react'
-import { FaMoon, FaSun, FaMagic } from 'react-icons/fa'
+import { Flex, Link, Text, IconButton, Icon } from '@chakra-ui/react'
+import { FaMoon, FaSun, FaMagic, FaGithub } from 'react-icons/fa'
 import { useTheme } from 'next-themes'
 import { useSyncExternalStore } from 'react'
 
 interface FooterProps {
     effectsEnabled?: boolean
     toggleEffects?: () => void
+    showSocial?: boolean
+    showGithub?: boolean
 }
 
 const emptySubscribe = () => () => {}
 
-export const Footer = ({ effectsEnabled = true, toggleEffects }: FooterProps) => {
+export const Footer = ({
+    effectsEnabled = true,
+    toggleEffects,
+    showSocial = true,
+    showGithub = false,
+}: FooterProps) => {
     const { resolvedTheme, setTheme } = useTheme()
-    // Avoid SSR icon mismatch without setState-in-effect (react-hooks/set-state-in-effect).
     const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
     const toggleColorMode = () => {
@@ -34,22 +40,42 @@ export const Footer = ({ effectsEnabled = true, toggleEffects }: FooterProps) =>
             _dark={{ color: 'gray.400' }}
             fontSize="md"
         >
-            <Link href="mailto:support@votemap.net" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
-                support@votemap.net
-            </Link>
-            <Text display={{ base: 'none', md: 'block' }}>•</Text>
-            <Text>
-                Built by{' '}
-                <Link href="https://onexengineering.com" target="_blank" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
-                    onexengineering
-                </Link>
-            </Text>
-            <Text display={{ base: 'none', md: 'block' }}>•</Text>
-            <Link href="https://x.com/isaac_yeang" target="_blank" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
-                @isaac_yeang
-            </Link>
-            <Text display={{ base: 'none', md: 'block' }}>•</Text>
-            <Flex gap={2}>
+            {showSocial ? (
+                <>
+                    <Link href="mailto:support@votemap.net" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
+                        support@votemap.net
+                    </Link>
+                    <Text display={{ base: 'none', md: 'block' }}>•</Text>
+                    <Text>
+                        Built by{' '}
+                        <Link href="https://onexengineering.com" target="_blank" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
+                            onexengineering
+                        </Link>
+                    </Text>
+                    <Text display={{ base: 'none', md: 'block' }}>•</Text>
+                    <Link href="https://x.com/isaac_yeang" target="_blank" fontWeight="medium" textDecoration="underline" _hover={{ color: 'blue.500' }}>
+                        @isaac_yeang
+                    </Link>
+                    <Text display={{ base: 'none', md: 'block' }}>•</Text>
+                </>
+            ) : null}
+            <Flex gap={2} align="center">
+                {showGithub ? (
+                    <Link
+                        href="https://github.com/isaacy13/votemap.net"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="GitHub"
+                        color="gray.500"
+                        _dark={{ color: 'gray.400' }}
+                        _hover={{ color: 'black', _dark: { color: 'white' }, transform: 'scale(1.15)' }}
+                        transition="all 0.2s"
+                        display="flex"
+                        alignItems="center"
+                    >
+                        <Icon as={FaGithub} w={7} h={7} />
+                    </Link>
+                ) : null}
                 {toggleEffects && (
                     <IconButton
                         aria-label="Toggle effects"

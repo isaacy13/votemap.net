@@ -136,7 +136,7 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
                 onClick={() => {
                     clearSession()
                     onMe(null)
-                    setView({ view: 'signup' })
+                    setView({ view: null, i: null })
                 }}
             >
                 Sign out

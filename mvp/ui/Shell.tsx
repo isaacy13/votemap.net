@@ -1,9 +1,8 @@
 'use client'
 
-import { Box, Container, Flex, Link, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Container, Flex, Link, Text } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
 import { Footer } from '@/components/landing/Footer'
-import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { setView } from '../session'
 
 export function Wordmark() {
@@ -30,13 +29,11 @@ export function Shell({
     effectsEnabled,
     toggleEffects,
     handle,
-    showBrandMark = true,
 }: {
     children: ReactNode
     effectsEnabled: boolean
     toggleEffects: () => void
     handle?: string | null
-    showBrandMark?: boolean
 }) {
     return (
         <Box as="main" minH="100svh" display="flex" flexDir="column">
@@ -53,49 +50,39 @@ export function Shell({
                     whiteSpace="nowrap"
                     borderWidth={0}
                 >
-                    votemap — democratize everything
+                    votemap
                 </Box>
                 <Flex justify="space-between" align="center" gap={4} flexShrink={0}>
-                    <Link href="/" _hover={{ opacity: 0.8 }}>
+                    <Link
+                        href="/mvp"
+                        _hover={{ opacity: 0.8 }}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setView({ view: null, i: null })
+                        }}
+                    >
                         <Wordmark />
                     </Link>
-                    <Flex gap={{ base: 4, md: 8 }} fontSize={{ base: 'md', md: 'lg' }} color="gray.600" _dark={{ color: 'gray.300' }}>
-                        <Link href="/mvp" fontWeight="medium" onClick={(e) => { e.preventDefault(); setView({ view: 'browse', i: null }) }}>
-                            browse
-                        </Link>
+                    {handle ? (
                         <Link
-                            href="/mvp?view=signup"
+                            href="/mvp?view=me"
                             fontWeight="medium"
+                            fontSize={{ base: 'md', md: 'lg' }}
+                            color="gray.600"
+                            _dark={{ color: 'gray.300' }}
                             onClick={(e) => {
                                 e.preventDefault()
-                                setView({ view: handle ? 'me' : 'signup', i: null })
+                                setView({ view: 'me', i: null })
                             }}
                         >
-                            {handle ? `@${handle}` : 'sign in'}
+                            @{handle}
                         </Link>
-                    </Flex>
+                    ) : null}
                 </Flex>
-                <VStack
-                    flex="1"
-                    justify="center"
-                    align="center"
-                    textAlign="center"
-                    w="full"
-                    gap={0}
-                    py={{ base: 6, md: 8 }}
-                >
-                    {showBrandMark ? (
-                        <Stack gap={0} align="center" w="full">
-                            <VotemapHeading effectsEnabled={effectsEnabled} />
-                            <Box mt={{ base: -2, md: -4, lg: -8 }} w="full">
-                                {children}
-                            </Box>
-                        </Stack>
-                    ) : (
-                        <Box w="full">{children}</Box>
-                    )}
-                </VStack>
-                <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} />
+                <Box flex="1" w="full" pt={{ base: 8, md: 10 }}>
+                    {children}
+                </Box>
+                <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} showSocial={false} />
             </Container>
         </Box>
     )

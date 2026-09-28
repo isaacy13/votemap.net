@@ -1,18 +1,39 @@
 'use client'
 
-import { Box, Flex, Stack, Text, VStack } from '@chakra-ui/react'
+import { Flex, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { formatUsdc } from '../config'
 import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
 import { setView } from '../session'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
+import { IssueCard } from '../ui/IssueCard'
 import { Question } from '../ui/Question'
 import { enter } from '../ui/enter'
 
-const MotionStack = motion(Stack)
+const MotionText = motion(Text)
+const MotionFlex = motion(Flex)
+
+function screenshotIssues(): Issue[] | null {
+    if (typeof window === 'undefined') return null
+    try {
+        const raw = sessionStorage.getItem('votemap.screenshotIssues')
+        if (!raw) return null
+        const rows = JSON.parse(raw) as { id: `0x${string}`; url: string; live: string }[]
+        return rows.map((r) => ({
+            id: r.id,
+            url: r.url,
+            parsed: parsePostUrl(r.url),
+            total: BigInt(r.live),
+            live: BigInt(r.live),
+            stakers: [],
+            byCountry: [],
+        }))
+    } catch {
+        return null
+    }
+}
 
 export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     const [issues, setIssues] = useState<Issue[] | null>(null)
@@ -21,9 +42,28 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     const [asking, setAsking] = useState(false)
 
     useEffect(() => {
+        let gone = false
+        const seeded = screenshotIssues()
+        if (seeded) {
+            Promise.resolve().then(() => {
+                if (!gone) setIssues(seeded)
+            })
+            return () => {
+                gone = true
+            }
+        }
         listIssues()
-            .then(setIssues)
-            .catch((e: Error) => setErr(e.message))
+            .then((rows) => {
+                if (!gone) setIssues(rows)
+            })
+            .catch((e: Error) => {
+                if (gone) return
+                setErr(e.message)
+                setIssues([])
+            })
+        return () => {
+            gone = true
+        }
     }, [])
 
     function openUrl() {
@@ -54,44 +94,32 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
         )
     }
 
-    const pots = issues && issues.length > 0
+    const list = issues ?? []
+    const loaded = issues !== null
+    const empty = loaded && list.length === 0
 
     return (
-        <VStack gap={16} align="stretch" w="full">
-            <Question title="democratize everything" effectsEnabled={effectsEnabled}>
-                <Flex justify="center" w="full">
-                    <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
-                </Flex>
-            </Question>
-            {pots ? (
-                <MotionStack gap={4} maxW="720px" mx="auto" w="full" {...enter(effectsEnabled, 0.6)}>
-                    {issues!.map((issue) => (
-                        <Box
-                            key={issue.id}
-                            as="button"
-                            textAlign="left"
-                            p={{ base: 5, md: 8 }}
-                            rounded="2xl"
-                            borderWidth="1px"
-                            borderColor="gray.200"
-                            _dark={{ borderColor: 'gray.700' }}
-                            _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-                            transition="all 0.2s"
-                            onClick={() => setView({ view: 'issue', i: issue.url })}
-                        >
-                            <Text fontSize="sm" color="gray.500" mb={1}>
-                                {issue.parsed?.network === 'threads' ? 'Threads' : 'X'}
-                            </Text>
-                            <Text fontWeight="medium" wordBreak="break-all">
-                                {issue.url}
-                            </Text>
-                            <Text mt={3} fontSize="2xl" fontWeight="bold">
-                                {formatUsdc(issue.live)} USDC
-                            </Text>
-                        </Box>
+        <VStack gap={10} align="stretch" w="full" maxW="720px" mx="auto">
+            <MotionFlex justify="center" w="full" {...enter(effectsEnabled, 0.15)}>
+                <BigButton onClick={() => setAsking(true)}>Open a post</BigButton>
+            </MotionFlex>
+            {empty ? (
+                <MotionText
+                    textAlign="center"
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    color="gray.500"
+                    _dark={{ color: 'gray.400' }}
+                    {...enter(effectsEnabled, 0.35)}
+                >
+                    No issues yet
+                </MotionText>
+            ) : (
+                <VStack gap={4} align="stretch" w="full">
+                    {list.map((issue, index) => (
+                        <IssueCard key={issue.id} issue={issue} index={index} effectsEnabled={effectsEnabled} />
                     ))}
-                </MotionStack>
-            ) : null}
+                </VStack>
+            )}
             {err && !asking ? (
                 <Text textAlign="center" color="red.500">
                     {err}

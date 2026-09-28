@@ -61,7 +61,7 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
 
     if (step === 'auth') {
         return (
-            <Question title="democratize everything" hint="Sign in" effectsEnabled={effectsEnabled}>
+            <Question title="Sign in" effectsEnabled={effectsEnabled}>
                 <VStack gap={3}>
                     {oauth && !oauth.google && !oauth.apple ? (
                         <Text color="red.500">Sign-in isn’t configured.</Text>
