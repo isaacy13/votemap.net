@@ -82,7 +82,12 @@ export function Shell({
                 <Box flex="1" w="full" pt={{ base: 8, md: 10 }}>
                     {children}
                 </Box>
-                <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} showSocial={false} />
+                <Footer
+                    effectsEnabled={effectsEnabled}
+                    toggleEffects={toggleEffects}
+                    showSocial={false}
+                    showGithub
+                />
             </Container>
         </Box>
     )

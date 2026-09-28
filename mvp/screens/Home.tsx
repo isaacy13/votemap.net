@@ -10,6 +10,7 @@ import { Footer } from '@/components/landing/Footer'
 import { apiUrl } from '../config'
 import { setView } from '../session'
 import { SignInButtons } from '../ui/SignInButtons'
+import { OrRule } from '../ui/OrRule'
 
 export function Home({
     effectsEnabled,
@@ -49,19 +50,26 @@ export function Home({
                                     ) : (
                                         <Text color="red.500">Set the account API.</Text>
                                     )}
-                                    <Box w="full" h="1px" bg="gray.200" _dark={{ bg: 'gray.700' }} />
+                                    <OrRule effectsEnabled={effectsEnabled} />
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="lg"
                                         h="12"
+                                        w="full"
                                         px="8"
-                                        fontSize={{ base: 'xl', md: '2xl' }}
+                                        fontSize={{ base: 'lg', md: 'xl' }}
                                         fontWeight="medium"
-                                        color="gray.600"
-                                        _dark={{ color: 'gray.300' }}
+                                        color="gray.700"
+                                        borderColor="gray.300"
+                                        _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
                                         rounded="full"
                                         onClick={() => setView({ view: 'browse', i: null })}
-                                        _hover={{ transform: 'translateY(-2px)', color: 'gray.800', _dark: { color: 'white' }, bg: 'transparent' }}
+                                        _hover={{
+                                            transform: 'translateY(-3px)',
+                                            shadow: 'md',
+                                            color: 'gray.900',
+                                            _dark: { color: 'white' },
+                                        }}
                                         transition="all 0.2s"
                                     >
                                         Browse

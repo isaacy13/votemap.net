@@ -1,6 +1,6 @@
 'use client'
 
-import { Flex, Link, Text, IconButton, Icon } from '@chakra-ui/react'
+import { Flex, Link, Text, IconButton } from '@chakra-ui/react'
 import { FaMoon, FaSun, FaMagic, FaGithub } from 'react-icons/fa'
 import { useTheme } from 'next-themes'
 import { useSyncExternalStore } from 'react'
@@ -66,14 +66,18 @@ export const Footer = ({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="GitHub"
+                        display="inline-flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        w="10"
+                        h="10"
+                        rounded="full"
                         color="gray.500"
                         _dark={{ color: 'gray.400' }}
-                        _hover={{ color: 'black', _dark: { color: 'white' }, transform: 'scale(1.15)' }}
+                        _hover={{ color: 'black', transform: 'scale(1.15)', _dark: { color: 'white' } }}
                         transition="all 0.2s"
-                        display="flex"
-                        alignItems="center"
                     >
-                        <Icon as={FaGithub} w={7} h={7} />
+                        <FaGithub size={26} />
                     </Link>
                 ) : null}
                 {toggleEffects && (
