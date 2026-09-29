@@ -1,14 +1,14 @@
 'use client'
 
-import { Box, Button, Text, VStack } from '@chakra-ui/react'
+import { Box, Text, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
 import { setView } from '../session'
 import { BigInput } from '../ui/BigInput'
-import { catalogPill, catalogPillHover } from '../ui/catalogPill'
 import { IssueCard } from '../ui/IssueCard'
+import { BrowsePill } from '../ui/SignInButtons'
 import { Question } from '../ui/Question'
 import { enter, swap } from '../ui/enter'
 
@@ -37,22 +37,7 @@ function screenshotIssues(): Issue[] | null {
 }
 
 function CatalogOpen({ onClick }: { onClick: () => void }) {
-    return (
-        <Button
-            {...catalogPill}
-            color="gray.700"
-            borderColor="gray.300"
-            _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
-            onClick={onClick}
-            _hover={{
-                ...catalogPillHover,
-                color: 'gray.900',
-                _dark: { color: 'white' },
-            }}
-        >
-            Open a post
-        </Button>
-    )
+    return <BrowsePill onClick={onClick}>Open a post</BrowsePill>
 }
 
 export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {

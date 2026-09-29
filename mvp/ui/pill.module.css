@@ -1,0 +1,129 @@
+.stack {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+}
+
+/*
+ * One pill for Google, Apple, and Browse.
+ * 48px × 9999px — same as the catalog control, not GIS 40×4.
+ */
+.pill {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    padding: 0 32px;
+    border-radius: 9999px;
+    border: 1px solid;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    text-decoration: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    user-select: none;
+    margin: 0;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+@media (min-width: 48em) {
+    .pill {
+        font-size: 20px;
+    }
+}
+
+.pill:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        0 4px 6px -1px rgb(0 0 0 / 0.1),
+        0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.pill:focus-visible {
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
+}
+
+.start {
+    justify-content: flex-start;
+}
+
+.center {
+    justify-content: center;
+    background: transparent;
+    color: #2d3748;
+    border-color: #d0d5dd;
+}
+
+:global(.dark) .center {
+    color: #e2e8f0;
+    border-color: #4a5568;
+}
+
+.google {
+    background: #ffffff;
+    color: #1f1f1f;
+    border-color: #747775;
+}
+
+:global(.dark) .google {
+    background: #131314;
+    color: #e3e3e3;
+    border-color: #8e918f;
+}
+
+.apple {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+}
+
+:global(.dark) .apple {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+}
+
+.apple:focus-visible {
+    outline-color: #0071e3;
+}
+
+.mark {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.mark img {
+    display: block;
+    width: 24px;
+    height: 24px;
+    color-scheme: only light;
+    forced-color-adjust: none;
+}
+
+.mark svg {
+    display: block;
+    width: 20px;
+    height: 24px;
+    fill: currentColor;
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Button, Container, Flex, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Container, Flex, Stack, Text, VStack } from '@chakra-ui/react'
 import { VotemapHeading } from '@/components/landing/VotemapHeading'
 import { HeroContent } from '@/components/landing/HeroContent'
 import { SocialLinks } from '@/components/landing/SocialLinks'
@@ -10,8 +10,7 @@ import { Footer } from '@/components/landing/Footer'
 import { apiUrl } from '../config'
 import { setView } from '../session'
 import { AccountControl } from '../ui/AccountControl'
-import { catalogPill, catalogPillHover } from '../ui/catalogPill'
-import { SignInButtons } from '../ui/SignInButtons'
+import { BrowsePill, SignInButtons } from '../ui/SignInButtons'
 import { OrRule } from '../ui/OrRule'
 
 export function Home({
@@ -60,20 +59,7 @@ export function Home({
                                         <Text color="red.500">Set the account API.</Text>
                                     )}
                                     {handle ? null : <OrRule effectsEnabled={effectsEnabled} />}
-                                    <Button
-                                        {...catalogPill}
-                                        color="gray.700"
-                                        borderColor="gray.300"
-                                        _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
-                                        onClick={() => setView({ view: 'browse', i: null })}
-                                        _hover={{
-                                            ...catalogPillHover,
-                                            color: 'gray.900',
-                                            _dark: { color: 'white' },
-                                        }}
-                                    >
-                                        Browse
-                                    </Button>
+                                    <BrowsePill onClick={() => setView({ view: 'browse', i: null })}>Browse</BrowsePill>
                                 </VStack>
                             }
                         />
