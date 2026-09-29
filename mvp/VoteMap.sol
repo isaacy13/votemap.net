@@ -28,7 +28,7 @@ interface IEAS {
 }
 
 /// @title VoteMap
-/// @notice One factory on Base. Pots keyed by x.com or Threads post URL.
+/// @notice One factory on Base. Pots keyed by X, Threads, Instagram, or TikTok URL.
 ///         Country is read from Coinbase EAS for msg.sender — never a calldata argument.
 ///         stake / pay / claim need a votemap EIP-712 sig. withdraw / expiry are wallet-only.
 contract VoteMap {
@@ -395,7 +395,9 @@ contract VoteMap {
         }
         bool ok = _prefix(b, "https://x.com/") || _prefix(b, "https://www.x.com/")
             || _prefix(b, "https://threads.net/") || _prefix(b, "https://www.threads.net/")
-            || _prefix(b, "https://threads.com/") || _prefix(b, "https://www.threads.com/");
+            || _prefix(b, "https://threads.com/") || _prefix(b, "https://www.threads.com/")
+            || _prefix(b, "https://instagram.com/") || _prefix(b, "https://www.instagram.com/")
+            || _prefix(b, "https://tiktok.com/") || _prefix(b, "https://www.tiktok.com/");
         require(ok, "host");
     }
 

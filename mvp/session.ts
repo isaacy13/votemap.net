@@ -16,13 +16,3 @@ export function readSessionToken(): string {
 export function clearSession() {
     localStorage.removeItem(KEY);
 }
-
-export function setView(params: Record<string, string | null>) {
-    const u = new URL(window.location.href);
-    for (const [k, v] of Object.entries(params)) {
-        if (v === null || v === "") u.searchParams.delete(k);
-        else u.searchParams.set(k, v);
-    }
-    window.history.pushState({}, "", u.pathname + u.search);
-    window.dispatchEvent(new Event("votemap:nav"));
-}

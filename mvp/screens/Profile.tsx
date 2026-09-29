@@ -6,12 +6,14 @@ import { api, type Me } from '../api'
 import { signLinkMessage, submitClaim } from '../chain'
 import { addressUrl, apiUrl } from '../config'
 import { VoteMap, isNativeApp } from '../plugin'
-import { clearSession, readSessionToken, setView } from '../session'
+import { clearSession, readSessionToken } from '../session'
+import { useRouter } from 'next/navigation'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { Question } from '../ui/Question'
 
 export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | null) => void; effectsEnabled: boolean }) {
+    const router = useRouter()
     const [err, setErr] = useState('')
     const [socials, setSocials] = useState(me.socials)
     const [nativeAsk, setNativeAsk] = useState(false)
@@ -136,7 +138,7 @@ export function Profile({ me, onMe, effectsEnabled }: { me: Me; onMe: (m: Me | n
                 onClick={() => {
                     clearSession()
                     onMe(null)
-                    setView({ view: null, i: null })
+                    router.push('/')
                 }}
             >
                 Sign out

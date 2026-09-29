@@ -1,12 +1,12 @@
 # votemap app
 
-Production product at `/mvp`. The marketing landing at `/` is unchanged.
+Production product at `/` (`/browse`, `/signup`, `/me`, `/issue`). Old `/mvp?view=` URLs redirect.
 
 There is **no mock mode**. Missing chain, treasury, OAuth, SMS, or signer env is an error — not a fake login or fake chain.
 
 ## What it is
 
-Stake **USDC** on an **x.com or Threads** post. You only move your own line (tip-your-share). Live bounty = unexpired lines, rolled up by the **country snapped into storage** at stake time (Coinbase EAS for `msg.sender` — **no country argument**).
+Stake **USDC** on an **X, Threads, Instagram, or TikTok** post. You only move your own line (tip-your-share). Live bounty = unexpired lines, rolled up by the **country snapped into storage** at stake time (Coinbase EAS for `msg.sender` — **no country argument**).
 
 | Who | What |
 | --- | --- |
@@ -18,9 +18,9 @@ Stake **USDC** on an **x.com or Threads** post. You only move your own line (tip
 
 | Path | Why |
 | --- | --- |
-| `mvp/VoteMap.sol` | One factory. Remix without a votemap sig reverts on stake/pay/claim. |
-| `mvp/App.tsx` | `/mvp` UI (Chakra, landing look) |
-| `server/index.ts` | Portable HTTP: Google/Apple, SMS, user store, signer |
+| `mvp/VoteMap.sol` | One factory. Remix without a votemap sig reverts on stake/pay/claim. URL allowlist: X, Threads, Instagram, TikTok. |
+| `mvp/screens/` | App Router UI (`/`, `/browse`, `/signup`, `/me`, `/issue`) |
+| `server/index.ts` | Portable HTTP: Google/Apple, SMS, user store, signer, post snapshots |
 | `plugins/votemap/` | Capacitor plugin (Secure Enclave / Keystore + native HTTPS) |
 
 ## Required env (static app)
@@ -34,7 +34,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_BASE_RPC=https://sepolia.base.org
 ```
 
-`CHAIN` and `CONTRACT` are required or `/mvp` errors. USDC and treasury are read from the contract.
+`CHAIN` and `CONTRACT` are required or stake/issue views error. USDC and treasury are read from the contract.
 
 ## API env (never git)
 

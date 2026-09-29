@@ -76,9 +76,9 @@ export function SignInButtons({
     )
 }
 
-export function BrowsePill({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+export function BrowsePill({ href, onClick, children }: { href?: string; onClick?: () => void; children: ReactNode }) {
     return (
-        <Pill className={styles.browse} onClick={onClick}>
+        <Pill href={href} className={styles.browse} onClick={onClick}>
             {children}
         </Pill>
     )

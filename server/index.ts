@@ -6,10 +6,10 @@ import { base, baseSepolia } from "viem/chains";
 import { voteMapAbi } from "../mvp/abi";
 import { claimTypes, domain, payTypes, stakeTypes } from "../mvp/eip712";
 import { chainName, contractAddress, rpcUrl } from "../mvp/config";
-import { parsePostUrl } from "../mvp/urls";
 import { assertDeviceProof, fail } from "./proof";
 import * as store from "./store";
 import type { User } from "./store";
+import { assertPubliclyEmbeddable, canonicalizePost, publicSnap, snapshotFirstStake } from "./snapshot";
 
 const PORT = Number(process.env.PORT || 8787);
 
@@ -253,7 +253,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             email: payload.email || "",
             name: payload.name || "",
         });
-        return redirect(res, `${APP_ORIGINS[0]}/mvp?token=${tokenFor(user.id)}&view=signup`);
+        return redirect(res, `${APP_ORIGINS[0]}/signup?token=${tokenFor(user.id)}`);
     }
 
     if (req.method === "GET" && url.pathname === "/auth/apple") {
@@ -293,7 +293,37 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             email: payload.email || "",
             name: "",
         });
-        return redirect(res, `${APP_ORIGINS[0]}/mvp?token=${tokenFor(user.id)}&view=signup`);
+        return redirect(res, `${APP_ORIGINS[0]}/signup?token=${tokenFor(user.id)}`);
+    }
+
+    if (req.method === "GET" && url.pathname === "/posts/canonical") {
+        const raw = url.searchParams.get("url") || "";
+        const post = await canonicalizePost(raw);
+        return json(res, 200, { canonical: post.canonical, network: post.network, postId: post.postId });
+    }
+
+    if (req.method === "GET" && url.pathname === "/posts/snap") {
+        const raw = url.searchParams.get("url") || "";
+        const post = await canonicalizePost(raw);
+        const snap = await publicSnap(post.canonical);
+        return json(res, 200, snap || { network: post.network, handle: "handle" in post ? post.handle : null, postedAt: null });
+    }
+
+    if (req.method === "GET" && url.pathname === "/posts/snaps") {
+        const rows = await store.allSnaps();
+        const out: Record<string, { network: string; handle: string | null; text?: string; name?: string; postedAt: number | null; mediaUrl?: string; avatarUrl?: string }> = {};
+        for (const [k, v] of Object.entries(rows)) {
+            out[k] = {
+                network: v.network,
+                handle: v.handle,
+                text: v.text,
+                name: v.name,
+                postedAt: v.postedAt,
+                mediaUrl: v.mediaUrl,
+                avatarUrl: v.avatarUrl,
+            };
+        }
+        return json(res, 200, out);
     }
 
     if (req.method === "POST" && url.pathname === "/profile/gender") {
@@ -478,8 +508,10 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         await prove(req, body, u);
         const staker = getAddress(String(body.staker || ""));
         if (!u.wallets.some((w) => w.address === staker)) fail(400, "link this wallet");
-        const post = parsePostUrl(String(body.url || ""));
-        if (!post) fail(400, "x.com or Threads post URL only");
+        const originalUrl = String(body.url || "");
+        const post = await canonicalizePost(originalUrl);
+        const embed = await assertPubliclyEmbeddable(post);
+        await snapshotFirstStake(post, originalUrl, embed);
         const amount = BigInt(String(body.amount || "0"));
         const expiry = Number(body.expiry);
         if (amount < BigInt(1_000_000)) fail(400, "min 1 USDC");

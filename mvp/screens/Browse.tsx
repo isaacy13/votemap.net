@@ -4,16 +4,16 @@ import { Box, Text, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { listIssues, type Issue } from '../chain'
+import { apiUrl } from '../config'
+import { api } from '../api'
+import type { PostSnap } from '../postSnap'
+import { formatPostedAt } from '../urls'
 import { parsePostUrl } from '../urls'
-import { setView } from '../session'
-import { BigInput } from '../ui/BigInput'
 import { IssueCard } from '../ui/IssueCard'
-import { BrowsePill } from '../ui/SignInButtons'
-import { Question } from '../ui/Question'
-import { enter, swap } from '../ui/enter'
+import { OpenPostFab } from '../ui/OpenPostFab'
+import { enter, iosPush } from '../ui/enter'
 
 const MotionText = motion(Text)
-const MotionBox = motion(Box)
 const MotionVStack = motion(VStack)
 
 function screenshotIssues(): Issue[] | null {
@@ -36,15 +36,26 @@ function screenshotIssues(): Issue[] | null {
     }
 }
 
-function CatalogOpen({ onClick }: { onClick: () => void }) {
-    return <BrowsePill onClick={onClick}>Open a post</BrowsePill>
+function mergeSnap(issue: Issue, extra?: PostSnap | null): Issue {
+    if (!extra) return issue
+    const handle = extra.handle
+        ? extra.handle.startsWith('@')
+            ? extra.handle
+            : `@${extra.handle}`
+        : extra.handle
+    return {
+        ...issue,
+        snap: {
+            ...extra,
+            handle: handle ?? extra.handle,
+            date: extra.date || formatPostedAt(extra.postedAt),
+        },
+    }
 }
 
 export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
     const [issues, setIssues] = useState<Issue[] | null>(null)
     const [err, setErr] = useState('')
-    const [url, setUrl] = useState('')
-    const [asking, setAsking] = useState(false)
 
     useEffect(() => {
         let gone = false
@@ -58,8 +69,17 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
             }
         }
         listIssues()
-            .then((rows) => {
-                if (!gone) setIssues(rows)
+            .then(async (rows) => {
+                if (gone) return
+                let snaps: Record<string, PostSnap> = {}
+                if (apiUrl()) {
+                    try {
+                        snaps = await api('/posts/snaps')
+                    } catch {
+                        snaps = {}
+                    }
+                }
+                if (!gone) setIssues(rows.map((r) => mergeSnap(r, snaps[r.url])))
             })
             .catch((e: Error) => {
                 if (gone) return
@@ -71,43 +91,13 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
         }
     }, [])
 
-    function openUrl() {
-        const parsed = parsePostUrl(url)
-        if (!parsed) {
-            setErr('Paste an X or Threads post.')
-            return
-        }
-        setView({ view: 'issue', i: parsed.canonical })
-    }
-
     const list = issues ?? []
     const loaded = issues !== null
     const empty = loaded && list.length === 0
 
     return (
-        <AnimatePresence mode="wait">
-            {asking ? (
-                <MotionVStack key="ask" w="full" align="stretch" {...swap(effectsEnabled)}>
-                    <Question
-                        title="Which post?"
-                        onNext={openUrl}
-                        onBack={() => setAsking(false)}
-                        nextLabel="Open"
-                        effectsEnabled={effectsEnabled}
-                    >
-                        <BigInput
-                            placeholder="https://x.com/…/status/…"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                        />
-                        {err ? (
-                            <Text color="red.500" mt={3}>
-                                {err}
-                            </Text>
-                        ) : null}
-                    </Question>
-                </MotionVStack>
-            ) : (
+        <>
+            <AnimatePresence mode="wait">
                 <MotionVStack
                     key="catalog"
                     gap={4}
@@ -115,11 +105,8 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                     w="full"
                     maxW="720px"
                     mx="auto"
-                    {...swap(effectsEnabled)}
+                    {...iosPush(effectsEnabled, -1)}
                 >
-                    <MotionBox {...enter(effectsEnabled, 0.2)}>
-                        <CatalogOpen onClick={() => setAsking(true)} />
-                    </MotionBox>
                     <AnimatePresence mode="wait">
                         {empty ? (
                             <MotionText
@@ -145,23 +132,20 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                             >
                                 {list.map((issue, index) => (
                                     <Box key={issue.id} role="listitem">
-                                        <IssueCard
-                                            issue={issue}
-                                            index={index}
-                                            effectsEnabled={effectsEnabled}
-                                        />
+                                        <IssueCard issue={issue} index={index} effectsEnabled={effectsEnabled} />
                                     </Box>
                                 ))}
                             </MotionVStack>
                         ) : null}
                     </AnimatePresence>
-                    {err && !asking ? (
+                    {err ? (
                         <Text textAlign="center" color="red.500">
                             {err}
                         </Text>
                     ) : null}
                 </MotionVStack>
-            )}
-        </AnimatePresence>
+            </AnimatePresence>
+            <OpenPostFab effectsEnabled={effectsEnabled} />
+        </>
     )
 }

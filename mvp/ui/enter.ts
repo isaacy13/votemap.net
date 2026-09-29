@@ -36,3 +36,18 @@ export function swap(effectsEnabled: boolean): Pick<MotionProps, 'initial' | 'an
         transition: { duration: 0.45, ease: landingEase },
     }
 }
+
+/** Catalog ↔ Which post? native-style push. */
+export function iosPush(
+    effectsEnabled: boolean,
+    direction: 1 | -1,
+): Pick<MotionProps, 'initial' | 'animate' | 'exit' | 'transition'> {
+    if (!effectsEnabled) return { initial: false }
+    const x = direction * 56
+    return {
+        initial: { opacity: 0, x },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -x * 0.4 },
+        transition: { type: 'spring', stiffness: 420, damping: 38, mass: 0.85 },
+    }
+}

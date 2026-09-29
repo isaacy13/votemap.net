@@ -11,6 +11,7 @@ import { base, baseSepolia } from "viem/chains";
 import { voteMapAbi, erc20Abi } from "./abi";
 import { chainName, contractAddress, rpcUrl, isoFromBytes } from "./config";
 import { parsePostUrl, type ParsedPost } from "./urls";
+import type { PostSnap } from "./postSnap";
 
 export type StakeRow = {
     wallet: string;
@@ -28,6 +29,7 @@ export type Issue = {
     live: bigint;
     stakers: StakeRow[];
     byCountry: { country: string; live: bigint }[];
+    snap?: PostSnap;
 };
 
 function chain() {

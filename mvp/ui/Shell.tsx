@@ -1,9 +1,10 @@
 'use client'
 
-import { Box, Container, Flex, Link, Text } from '@chakra-ui/react'
+import { Box, Container, Flex, IconButton, Link, Text } from '@chakra-ui/react'
 import type { ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { FaChevronLeft } from 'react-icons/fa'
 import { Footer } from '@/components/landing/Footer'
-import { setView } from '../session'
 import { AccountControl } from './AccountControl'
 
 export function Wordmark() {
@@ -30,52 +31,81 @@ export function Shell({
     effectsEnabled,
     toggleEffects,
     handle,
+    backHref,
+    foldFooter = false,
 }: {
     children: ReactNode
     effectsEnabled: boolean
     toggleEffects: () => void
     handle?: string | null
+    backHref?: string
+    foldFooter?: boolean
 }) {
-    return (
-        <Box as="main" minH="100svh" display="flex" flexDir="column">
-            <Container maxW="container.xl" p={4} flex="1" display="flex" flexDir="column" position="relative" zIndex={1}>
-                <Box
-                    as="h1"
-                    position="absolute"
-                    w="1px"
-                    h="1px"
-                    p={0}
-                    m="-1px"
-                    overflow="hidden"
-                    clip="rect(0, 0, 0, 0)"
-                    whiteSpace="nowrap"
-                    borderWidth={0}
-                >
-                    votemap
-                </Box>
-                <Flex justify="space-between" align="center" gap={4} flexShrink={0}>
-                    <Link
-                        href="/mvp"
-                        _hover={{ opacity: 0.8 }}
-                        onClick={(e) => {
-                            e.preventDefault()
-                            setView({ view: null, i: null })
-                        }}
-                    >
+    const router = useRouter()
+
+    const chrome = (
+        <Container maxW="container.xl" p={4} flex="1" display="flex" flexDir="column" position="relative" zIndex={1}>
+            <Box
+                as="h1"
+                position="absolute"
+                w="1px"
+                h="1px"
+                p={0}
+                m="-1px"
+                overflow="hidden"
+                clip="rect(0, 0, 0, 0)"
+                whiteSpace="nowrap"
+                borderWidth={0}
+            >
+                votemap
+            </Box>
+            <Flex justify="space-between" align="center" gap={4} flexShrink={0}>
+                <Flex align="center" gap={1} minW={0}>
+                    {backHref ? (
+                        <IconButton
+                            aria-label="Back"
+                            onClick={() => router.push(backHref)}
+                            variant="ghost"
+                            rounded="full"
+                            size="sm"
+                            color="gray.700"
+                            _dark={{ color: 'gray.100' }}
+                            _hover={{ bg: 'blackAlpha.50', _dark: { bg: 'whiteAlpha.100' } }}
+                        >
+                            <FaChevronLeft />
+                        </IconButton>
+                    ) : null}
+                    <Link href="/" _hover={{ opacity: 0.8 }}>
                         <Wordmark />
                     </Link>
-                    <AccountControl handle={handle} />
                 </Flex>
-                <Box flex="1" w="full" pt={{ base: 8, md: 10 }}>
-                    {children}
+                <AccountControl handle={handle} />
+            </Flex>
+            <Box flex="1" w="full" pt={{ base: 8, md: 10 }} pb={foldFooter ? { base: 28, md: 32 } : 0}>
+                {children}
+            </Box>
+            {foldFooter ? null : (
+                <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} showSocial={false} showGithub />
+            )}
+        </Container>
+    )
+
+    if (foldFooter) {
+        return (
+            <Box as="main" display="flex" flexDir="column">
+                <Box minH="100svh" display="flex" flexDir="column">
+                    {chrome}
                 </Box>
-                <Footer
-                    effectsEnabled={effectsEnabled}
-                    toggleEffects={toggleEffects}
-                    showSocial={false}
-                    showGithub
-                />
-            </Container>
+                <Container maxW="container.xl" px={4} pb={{ base: 8, md: 10 }}>
+                    <Footer effectsEnabled={effectsEnabled} toggleEffects={toggleEffects} showSocial={false} showGithub />
+                </Container>
+            </Box>
+        )
+    }
+
+    return (
+        <Box as="main" minH="100svh" display="flex" flexDir="column">
+            {chrome}
         </Box>
     )
 }

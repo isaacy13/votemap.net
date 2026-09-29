@@ -8,7 +8,6 @@ import { VideoEmbed } from '@/components/landing/VideoEmbed'
 import { TweetEmbeds } from '@/components/landing/TweetEmbeds'
 import { Footer } from '@/components/landing/Footer'
 import { apiUrl } from '../config'
-import { setView } from '../session'
 import { AccountControl } from '../ui/AccountControl'
 import { BrowsePill, SignInButtons } from '../ui/SignInButtons'
 import { OrRule } from '../ui/OrRule'
@@ -59,7 +58,7 @@ export function Home({
                                         <Text color="red.500">Set the account API.</Text>
                                     )}
                                     {handle ? null : <OrRule effectsEnabled={effectsEnabled} />}
-                                    <BrowsePill onClick={() => setView({ view: 'browse', i: null })}>Browse</BrowsePill>
+                                    <BrowsePill href="/browse">Browse</BrowsePill>
                                 </VStack>
                             }
                         />

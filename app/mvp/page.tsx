@@ -1,12 +1,12 @@
 'use client'
 
 import { Suspense } from 'react'
-import { App } from '@/mvp/App'
+import MvpRedirect from '@/mvp/MvpRedirect'
 
 export default function MvpPage() {
     return (
         <Suspense>
-            <App />
+            <MvpRedirect />
         </Suspense>
     )
 }

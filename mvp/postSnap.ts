@@ -1,4 +1,4 @@
-import { postPreview, type ParsedPost } from './urls'
+import { formatPostedAt, postedAtMs, postPreview, type ParsedPost } from './urls'
 
 /** Off-chain card preview — not a live iframe. */
 export type PostSnap = {
@@ -8,6 +8,8 @@ export type PostSnap = {
     text?: string
     mediaUrl?: string
     avatarUrl?: string
+    postedAt?: number | null
+    date?: string | null
 }
 
 /** Known posts — avoids a live fetch for landing/issue tweets we already ship. */
@@ -50,10 +52,13 @@ export function snapFromTweet(tweet: {
 
 export function snapFromUrl(url: string, parsed: ParsedPost | null): PostSnap {
     const preview = postPreview(url, parsed)
-    const baked = parsed?.network === 'x' ? BAKED_SNAPS[parsed.postId] : undefined
+    const baked = parsed && 'postId' in parsed && parsed.network === 'x' ? BAKED_SNAPS[parsed.postId] : undefined
+    const postedAt = postedAtMs(parsed, url)
     return {
         network: preview.network,
         handle: preview.handle,
+        postedAt,
+        date: formatPostedAt(postedAt),
         ...baked,
     }
 }

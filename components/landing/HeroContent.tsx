@@ -11,9 +11,12 @@ const MotionStack = motion(Stack)
 export const HeroContent = ({
     effectsEnabled = true,
     actions,
+    overlapHeading = true,
 }: {
     effectsEnabled?: boolean
     actions?: ReactNode
+    /** Negative pull under the landing stroke heading. Off on inner pages. */
+    overlapHeading?: boolean
 }) => {
     const enter = (delay: number) =>
         effectsEnabled
@@ -32,7 +35,7 @@ export const HeroContent = ({
                 fontWeight="bold"
                 color="gray.800"
                 _dark={{ color: 'white' }}
-                mt={{ base: -2, md: -4, lg: -8 }}
+                mt={overlapHeading ? { base: -2, md: -4, lg: -8 } : 0}
                 {...enter(0.2)}
             >
                 democratize everything

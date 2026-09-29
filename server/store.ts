@@ -26,22 +26,38 @@ export type Challenge = { id: string; userId: string; bytes: string; exp: number
 
 export type Otp = { phone: string; userId: string; hash: string; exp: number };
 
+export type SnapRow = {
+    network: string;
+    postId: string;
+    canonical: string;
+    originalUrl: string;
+    handle: string | null;
+    postedAt: number | null;
+    text?: string;
+    name?: string;
+    mediaUrl?: string;
+    avatarUrl?: string;
+    at: number;
+};
+
 type Db = {
     users: User[];
     challenges: Challenge[];
     otps: Otp[];
+    snaps: Record<string, SnapRow>;
 };
 
 const path = process.env.VOTEMAP_DATA || new URL("../data/votemap.json", import.meta.url).pathname;
 
 function empty(): Db {
-    return { users: [], challenges: [], otps: [] };
+    return { users: [], challenges: [], otps: [], snaps: {} };
 }
 
 function load(): Db {
     if (!existsSync(path)) return empty();
     try {
-        return { ...empty(), ...JSON.parse(readFileSync(path, "utf8")) };
+        const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<Db>;
+        return { ...empty(), ...parsed, snaps: parsed.snaps || {} };
     } catch {
         return empty();
     }
@@ -160,6 +176,20 @@ export function putOtp(row: Otp): Promise<void> {
         db.otps = db.otps.filter((o) => o.exp > Date.now());
         db.otps.push(row);
     });
+}
+
+export function getSnap(canonical: string): Promise<SnapRow | undefined> {
+    return withDb((db) => db.snaps[canonical]);
+}
+
+export function putSnap(row: SnapRow): Promise<void> {
+    return withDb((db) => {
+        db.snaps[row.canonical] = row;
+    });
+}
+
+export function allSnaps(): Promise<Record<string, SnapRow>> {
+    return withDb((db) => ({ ...db.snaps }));
 }
 
 export function takeOtp(userId: string, phone: string): Promise<Otp | undefined> {

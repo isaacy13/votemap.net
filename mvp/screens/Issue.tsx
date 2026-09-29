@@ -17,8 +17,9 @@ import {
 } from '../chain'
 import { addressUrl, apiUrl, formatUsdc, parseUsdc, siteUrl, txUrl } from '../config'
 import { VoteMap, isNativeApp } from '../plugin'
-import { readSessionToken, setView } from '../session'
-import { parsePostUrl } from '../urls'
+import { readSessionToken } from '../session'
+import { issuePath, isKeyedPost, parsePostUrl } from '../urls'
+import { useRouter } from 'next/navigation'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { PostEmbed } from '../ui/PostEmbed'
@@ -39,9 +40,10 @@ export function IssueView({
     me: Me | null
     effectsEnabled: boolean
 }) {
+    const router = useRouter()
     const parsed = useMemo(() => parsePostUrl(canonical), [canonical])
-    const url = parsed?.canonical || canonical
-    const share = `${siteUrl()}/mvp?i=${encodeURIComponent(url)}`
+    const url = isKeyedPost(parsed) ? parsed.canonical : canonical
+    const share = `${siteUrl()}${issuePath(url)}`
     const [issue, setIssue] = useState<Issue | null>(null)
     const [err, setErr] = useState('')
     const [tx, setTx] = useState('')
@@ -152,9 +154,9 @@ export function IssueView({
         }
     }
 
-    if (!parsed) {
+    if (!isKeyedPost(parsed)) {
         return (
-            <Question title="Not an X or Threads post." onNext={() => setView({ view: 'browse', i: null })} nextLabel="Browse" effectsEnabled={effectsEnabled} />
+            <Question title="Not an X, Instagram, TikTok, or Threads post." onNext={() => router.push('/browse')} nextLabel="Browse" effectsEnabled={effectsEnabled} />
         )
     }
 

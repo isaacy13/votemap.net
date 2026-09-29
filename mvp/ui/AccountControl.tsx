@@ -1,9 +1,8 @@
 'use client'
 
 import { Link } from '@chakra-ui/react'
-import { setView } from '../session'
 
-/** Quiet avatar-only control — no “Account” label, no header junk. */
+/** Quiet avatar-only control — no “Account” label, no person-chip. */
 export function AccountControl({
     handle,
     photoUrl,
@@ -16,7 +15,7 @@ export function AccountControl({
 
     return (
         <Link
-            href={signedIn ? '/mvp?view=me' : '/mvp?view=signup'}
+            href={signedIn ? '/me' : '/signup'}
             aria-label={signedIn ? `Account @${handle}` : 'Account'}
             display="inline-flex"
             alignItems="center"
@@ -26,22 +25,20 @@ export function AccountControl({
             rounded="full"
             overflow="hidden"
             flexShrink={0}
-            bg={signedIn ? 'gray.200' : 'transparent'}
-            color="gray.700"
-            borderWidth="1px"
-            borderColor="gray.300"
+            borderWidth="2px"
             fontSize="sm"
             fontWeight="bold"
+            bg={signedIn ? 'gray.200' : 'white'}
+            color="gray.900"
+            borderColor="gray.900"
+            boxShadow="0 0 0 1px #111"
             _dark={{
-                bg: signedIn ? 'gray.700' : 'transparent',
-                color: 'gray.200',
-                borderColor: 'gray.600',
+                bg: signedIn ? 'gray.200' : 'gray.800',
+                color: signedIn ? 'gray.900' : 'white',
+                borderColor: 'white',
+                boxShadow: '0 0 0 1px #fff',
             }}
-            _hover={{ opacity: 0.8, textDecoration: 'none' }}
-            onClick={(e) => {
-                e.preventDefault()
-                setView({ view: signedIn ? 'me' : 'signup', i: null })
-            }}
+            _hover={{ opacity: 0.85, textDecoration: 'none' }}
         >
             {signedIn && photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

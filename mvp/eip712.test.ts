@@ -16,10 +16,14 @@ test("VoteMap.sol EIP-712 type strings stay in sync", () => {
     assert.ok(!sol.includes("function stake(") || sol.includes("bytes calldata votemapSig"));
     const prefixes = [...sol.matchAll(/_prefix\(b, "([^"]+)"\)/g)].map((m) => m[1]).sort();
     assert.deepEqual(prefixes, [
+        "https://instagram.com/",
         "https://threads.com/",
         "https://threads.net/",
+        "https://tiktok.com/",
+        "https://www.instagram.com/",
         "https://www.threads.com/",
         "https://www.threads.net/",
+        "https://www.tiktok.com/",
         "https://www.x.com/",
         "https://x.com/",
     ]);

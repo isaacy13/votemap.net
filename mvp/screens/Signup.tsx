@@ -2,9 +2,10 @@
 
 import { Stack, Text, VStack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
+import { HeroContent } from '@/components/landing/HeroContent'
 import { api, health, type Me } from '../api'
 import { apiUrl } from '../config'
-import { setView } from '../session'
+import { useRouter } from 'next/navigation'
 import { BigButton } from '../ui/BigButton'
 import { BigInput } from '../ui/BigInput'
 import { Question } from '../ui/Question'
@@ -27,6 +28,7 @@ function stepOf(me: Me | null): 'auth' | 'gender' | 'year' | 'phone' | 'otp' | '
 }
 
 export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: Me) => void; effectsEnabled: boolean }) {
+    const router = useRouter()
     const [err, setErr] = useState('')
     const [year, setYear] = useState('')
     const [phone, setPhone] = useState('+1')
@@ -43,8 +45,8 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
     }, [])
 
     useEffect(() => {
-        if (step === 'done' && me?.handle) setView({ view: 'me' })
-    }, [step, me?.handle])
+        if (step === 'done' && me?.handle) router.replace('/me')
+    }, [step, me?.handle, router])
 
     async function post(path: string, body: unknown) {
         setErr('')
@@ -61,15 +63,21 @@ export function Signup({ me, onMe, effectsEnabled }: { me: Me | null; onMe: (m: 
 
     if (step === 'auth') {
         return (
-            <Question title="Sign in" effectsEnabled={effectsEnabled}>
-                <VStack gap={3}>
-                    {oauth && !oauth.google && !oauth.apple ? (
-                        <Text color="red.500">Sign-in isn’t configured.</Text>
-                    ) : null}
-                    <SignInButtons googleHref={`${apiUrl()}/auth/google`} appleHref={`${apiUrl()}/auth/apple`} />
-                    {err ? <Text color="red.500">{err}</Text> : null}
-                </VStack>
-            </Question>
+            <VStack w="full" flex="1" justify="center" minH={{ base: '62vh', md: '68vh' }}>
+                <HeroContent
+                    effectsEnabled={effectsEnabled}
+                    overlapHeading={false}
+                    actions={
+                        <VStack gap={4} w="full" maxW="384px">
+                            {oauth && !oauth.google && !oauth.apple ? (
+                                <Text color="red.500">Sign-in isn’t configured.</Text>
+                            ) : null}
+                            <SignInButtons googleHref={`${apiUrl()}/auth/google`} appleHref={`${apiUrl()}/auth/apple`} />
+                            {err ? <Text color="red.500">{err}</Text> : null}
+                        </VStack>
+                    }
+                />
+            </VStack>
         )
     }
 

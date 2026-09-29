@@ -7,8 +7,8 @@ import { useTweet } from 'react-tweet'
 import { formatUsdc } from '../config'
 import type { Issue } from '../chain'
 import { snapFromTweet, snapFromUrl, type PostSnap } from '../postSnap'
-import { setView } from '../session'
-import type { ParsedPost } from '../urls'
+import { formatPostedAt, issuePath, type ParsedPost } from '../urls'
+import { useRouter } from 'next/navigation'
 import { listEnter } from './enter'
 
 const MotionBox = motion(Box)
@@ -66,12 +66,24 @@ export function Windowed({
 }
 
 /** Bake first; optional react-tweet JSON only when this windowed card is mounted and has no text. */
-function usePostSnap(url: string, parsed: ParsedPost | null): PostSnap {
+function usePostSnap(url: string, parsed: ParsedPost | null, extra?: PostSnap): PostSnap {
     const base = snapFromUrl(url, parsed)
-    const fetchId = parsed?.network === 'x' && !base.text ? parsed.postId : undefined
+    const fetchId = parsed?.network === 'x' && !base.text && !extra?.text ? parsed.postId : undefined
     const { data } = useTweet(fetchId)
-    if (!data) return base
-    return { ...base, ...snapFromTweet(data) }
+    const handle = extra?.handle
+        ? extra.handle.startsWith('@')
+            ? extra.handle
+            : `@${extra.handle}`
+        : extra?.handle
+    const merged: PostSnap = {
+        ...base,
+        ...extra,
+        handle: handle ?? extra?.handle ?? base.handle,
+        postedAt: extra?.postedAt ?? base.postedAt,
+    }
+    merged.date = extra?.date || formatPostedAt(merged.postedAt) || base.date
+    if (!data) return merged
+    return { ...merged, ...snapFromTweet(data), date: merged.date }
 }
 
 function IssueCardBody({
@@ -83,11 +95,12 @@ function IssueCardBody({
     index: number
     effectsEnabled: boolean
 }) {
-    const snap = usePostSnap(issue.url, issue.parsed)
+    const router = useRouter()
+    const snap = usePostSnap(issue.url, issue.parsed, issue.snap)
     const amount = `${formatUsdc(issue.live)} USDC`
     const who = snap.name ?? snap.handle ?? (snap.network === 'X' ? 'X post' : snap.network)
     const initial = (snap.handle || who).replace(/^@/, '').slice(0, 1).toUpperCase()
-    const aria = [snap.network, who, snap.text, amount].filter(Boolean).join(', ')
+    const aria = [snap.network, who, snap.date, snap.text, amount].filter(Boolean).join(', ')
 
     return (
         <MotionBox
@@ -103,7 +116,7 @@ function IssueCardBody({
             _dark={{ borderColor: 'gray.700', bg: 'gray.900' }}
             cursor="pointer"
             aria-label={aria}
-            onClick={() => setView({ view: 'issue', i: issue.url })}
+            onClick={() => router.push(issuePath(issue.url))}
             {...listEnter(effectsEnabled, index)}
             whileHover={effectsEnabled ? { y: -3, transition: { duration: 0.25 } } : undefined}
             whileTap={effectsEnabled ? { scale: 0.995 } : undefined}
@@ -137,8 +150,9 @@ function IssueCardBody({
                 </Flex>
                 <Box flex="1" minW={0}>
                     <Flex justify="space-between" align="baseline" gap={3} mb={0.5}>
-                        <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }}>
+                        <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }} truncate>
                             {snap.network}
+                            {snap.date ? ` · ${snap.date}` : ''}
                         </Text>
                         <Text fontSize="sm" fontWeight="semibold" flexShrink={0} letterSpacing="-0.02em">
                             {amount}
