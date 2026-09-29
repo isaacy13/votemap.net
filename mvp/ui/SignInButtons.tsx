@@ -54,19 +54,23 @@ export function SignInButtons({
 }) {
     return (
         <div className={styles.stack}>
-            <Pill href={googleHref} className={`${styles.start} ${styles.google} ${roboto.className}`}>
-                <Mark>
-                    {/* Official 4-color G — img so dark color-scheme cannot recolor the mark. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/gsi/google.svg" alt="" width={24} height={24} draggable={false} />
-                </Mark>
-                Sign in with Google
+            <Pill href={googleHref} className={`${styles.google} ${roboto.className}`}>
+                <span className={styles.row} data-pill-row>
+                    <Mark>
+                        {/* Official 4-color G — img so dark color-scheme cannot recolor the mark. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/gsi/google.svg" alt="" width={24} height={24} draggable={false} />
+                    </Mark>
+                    Sign in with Google
+                </span>
             </Pill>
-            <Pill href={appleHref} className={`${styles.start} ${styles.apple}`}>
-                <Mark>
-                    <AppleMark />
-                </Mark>
-                Sign in with Apple
+            <Pill href={appleHref} className={styles.apple}>
+                <span className={styles.row} data-pill-row>
+                    <Mark>
+                        <AppleMark />
+                    </Mark>
+                    Sign in with Apple
+                </span>
             </Pill>
         </div>
     )
@@ -74,7 +78,7 @@ export function SignInButtons({
 
 export function BrowsePill({ onClick, children }: { onClick: () => void; children: ReactNode }) {
     return (
-        <Pill className={`${styles.center}`} onClick={onClick}>
+        <Pill className={styles.browse} onClick={onClick}>
             {children}
         </Pill>
     )

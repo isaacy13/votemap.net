@@ -64,7 +64,7 @@ export function Shell({
                     >
                         <Wordmark />
                     </Link>
-                    <AccountControl handle={handle} signedOutLabel />
+                    <AccountControl handle={handle} />
                 </Flex>
                 <Box flex="1" w="full" pt={{ base: 8, md: 10 }}>
                     {children}
