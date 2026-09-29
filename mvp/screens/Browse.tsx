@@ -7,6 +7,7 @@ import { listIssues, type Issue } from '../chain'
 import { parsePostUrl } from '../urls'
 import { setView } from '../session'
 import { BigInput } from '../ui/BigInput'
+import { catalogPill, catalogPillHover } from '../ui/catalogPill'
 import { IssueCard } from '../ui/IssueCard'
 import { Question } from '../ui/Question'
 import { enter, swap } from '../ui/enter'
@@ -38,25 +39,16 @@ function screenshotIssues(): Issue[] | null {
 function CatalogOpen({ onClick }: { onClick: () => void }) {
     return (
         <Button
-            variant="outline"
-            size="lg"
-            h="12"
-            w="full"
-            px="8"
-            fontSize={{ base: 'lg', md: 'xl' }}
-            fontWeight="medium"
+            {...catalogPill}
             color="gray.700"
             borderColor="gray.300"
             _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
-            rounded="full"
             onClick={onClick}
             _hover={{
-                transform: 'translateY(-3px)',
-                shadow: 'md',
+                ...catalogPillHover,
                 color: 'gray.900',
                 _dark: { color: 'white' },
             }}
-            transition="all 0.2s"
         >
             Open a post
         </Button>

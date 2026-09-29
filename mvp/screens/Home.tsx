@@ -10,6 +10,7 @@ import { Footer } from '@/components/landing/Footer'
 import { apiUrl } from '../config'
 import { setView } from '../session'
 import { AccountControl } from '../ui/AccountControl'
+import { catalogPill, catalogPillHover } from '../ui/catalogPill'
 import { SignInButtons } from '../ui/SignInButtons'
 import { OrRule } from '../ui/OrRule'
 
@@ -52,7 +53,7 @@ export function Home({
                         <HeroContent
                             effectsEnabled={effectsEnabled}
                             actions={
-                                <VStack gap={6} w="full" maxW="384px">
+                                <VStack gap={6} w="full" maxW="384px" data-shot="home-pills">
                                     {handle ? null : api ? (
                                         <SignInButtons googleHref={`${api}/auth/google`} appleHref={`${api}/auth/apple`} />
                                     ) : (
@@ -60,25 +61,16 @@ export function Home({
                                     )}
                                     {handle ? null : <OrRule effectsEnabled={effectsEnabled} />}
                                     <Button
-                                        variant="outline"
-                                        size="lg"
-                                        h="12"
-                                        w="full"
-                                        px="8"
-                                        fontSize={{ base: 'lg', md: 'xl' }}
-                                        fontWeight="medium"
+                                        {...catalogPill}
                                         color="gray.700"
                                         borderColor="gray.300"
                                         _dark={{ color: 'gray.200', borderColor: 'gray.600' }}
-                                        rounded="full"
                                         onClick={() => setView({ view: 'browse', i: null })}
                                         _hover={{
-                                            transform: 'translateY(-3px)',
-                                            shadow: 'md',
+                                            ...catalogPillHover,
                                             color: 'gray.900',
                                             _dark: { color: 'white' },
                                         }}
-                                        transition="all 0.2s"
                                     >
                                         Browse
                                     </Button>
