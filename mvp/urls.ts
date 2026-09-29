@@ -140,13 +140,10 @@ export function parsePostUrl(raw: string): ParsedPost | null {
     }
 
     if (host === "vm.tiktok.com" || host === "vt.tiktok.com") {
-        if (/^\/[A-Za-z0-9_]+$/i.test(path) || path === "/") return { network: "tiktok", canonical: null, needsResolve: true };
         return { network: "tiktok", canonical: null, needsResolve: true };
     }
-    if ((host === "tiktok.com" || host.endsWith(".tiktok.com")) && /^\/t\/[^/]+$/i.test(path)) {
-        return { network: "tiktok", canonical: null, needsResolve: true };
-    }
-    if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+    if (host === "tiktok.com" || host === "m.tiktok.com") {
+        if (/^\/t\/[^/]+$/i.test(path)) return { network: "tiktok", canonical: null, needsResolve: true };
         const m = path.match(/^\/@([^/]+)\/(video|photo)\/(\d+)$/i);
         if (!m) return null;
         const handle = m[1].toLowerCase();
@@ -220,7 +217,7 @@ export function postPreview(
             }
             return { network: "Instagram", handle: null };
         }
-        if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+        if (host === "tiktok.com" || host === "m.tiktok.com") {
             const m = path.match(/^\/@([^/]+)\/(?:video|photo)\/\d+$/i);
             return { network: "TikTok", handle: m ? `@${m[1]}` : null };
         }
