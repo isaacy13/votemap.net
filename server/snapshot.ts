@@ -19,23 +19,55 @@ export async function canonicalizePost(raw: string): Promise<KeyedPost> {
     return parsed;
 }
 
-/** Hardcoded oEmbed origins only — query is the already-canonical post URL. */
-function oembedHref(post: KeyedPost): string {
-    const u =
-        post.network === "x"
-            ? new URL("https://publish.x.com/oembed")
-            : post.network === "tiktok"
-              ? new URL("https://www.tiktok.com/oembed")
-              : post.network === "threads"
-                ? new URL("https://graph.threads.net/oembed")
-                : new URL("https://www.instagram.com/oembed");
-    u.searchParams.set("url", post.canonical);
+function oembedEndpoint(network: KeyedPost["network"]): URL {
+    switch (network) {
+        case "x":
+            return new URL("https://publish.x.com/oembed");
+        case "tiktok":
+            return new URL("https://www.tiktok.com/oembed");
+        case "threads":
+            return new URL("https://graph.threads.net/oembed");
+        default:
+            return new URL("https://www.instagram.com/oembed");
+    }
+}
+
+const X_ID = /^\d{5,32}$/;
+const TT_ID = /^\d{5,32}$/;
+const TT_HANDLE = /^[A-Za-z0-9._]{1,24}$/;
+const IG_ID = /^[A-Za-z0-9_-]{5,64}$/;
+const THREADS_HANDLE = /^[A-Za-z0-9._]{1,30}$/;
+const THREADS_ID = /^[A-Za-z0-9_-]{5,64}$/;
+
+/** Hardcoded oEmbed origin; query rebuilt from constants + parsed ids (never raw user HTML). */
+function oembedHref(post: KeyedPost): string | null {
+    const u = oembedEndpoint(post.network);
+    if (post.network === "x") {
+        if (!X_ID.test(post.postId)) return null;
+        u.searchParams.set("url", "https://x.com/i/status/" + post.postId);
+        return u.href;
+    }
+    if (post.network === "tiktok") {
+        if (!TT_HANDLE.test(post.handle) || !TT_ID.test(post.postId)) return null;
+        u.searchParams.set("url", "https://www.tiktok.com/@" + post.handle + "/" + post.kind + "/" + post.postId);
+        return u.href;
+    }
+    if (post.network === "threads") {
+        if (!THREADS_HANDLE.test(post.handle) || !THREADS_ID.test(post.postId)) return null;
+        u.searchParams.set("url", "https://www.threads.net/@" + post.handle + "/post/" + post.postId);
+        return u.href;
+    }
+    if (!IG_ID.test(post.postId)) return null;
+    const kind = post.kind === "reel" ? "reel" : "p";
+    u.searchParams.set("url", "https://www.instagram.com/" + kind + "/" + post.postId);
     return u.href;
 }
 
 async function fetchOembed(post: KeyedPost): Promise<Record<string, unknown> | null> {
+    const href = oembedHref(post);
+    if (!href) return null;
     try {
-        const res = await fetch(oembedHref(post), {
+        const res = await fetch(href, {
             method: "GET",
             redirect: "error",
             headers: { "user-agent": UA, accept: "application/json" },
@@ -55,46 +87,18 @@ export async function assertPubliclyEmbeddable(post: KeyedPost): Promise<Record<
     return o;
 }
 
-/** One-pass HTML entities — never decode `&amp;` then `&quot;` in a second pass. */
-function decodeEntities(s: string): string {
-    return s.replace(/&(?:amp|quot|#39|lt|gt);/g, (m) => {
-        switch (m) {
-            case "&amp;":
-                return "&";
-            case "&quot;":
-                return '"';
-            case "&#39;":
-                return "'";
-            case "&lt;":
-                return "<";
-            case "&gt;":
-                return ">";
-            default:
-                return m;
-        }
-    });
-}
-
-function meta(html: string, key: string): string | null {
-    if (!/^[a-zA-Z:]+$/.test(key)) return null;
-    const escaped = key.replace(":", "\\:");
-    const prop =
-        html.match(new RegExp(`property=["']${escaped}["'][^>]*content=["']([^"']{0,512})`, "i")) ||
-        html.match(new RegExp(`content=["']([^"']{0,512})["'][^>]*property=["']${escaped}["']`, "i"));
-    const name = html.match(new RegExp(`name=["']${escaped}["'][^>]*content=["']([^"']{0,512})`, "i"));
-    const raw = prop?.[1] || name?.[1];
-    return raw ? decodeEntities(raw) : null;
-}
-
-function igFromOg(description: string | null): { handle: string | null; text: string | null } {
-    if (!description) return { handle: null, text: null };
-    const m = description.match(/-\s+([A-Za-z0-9._]{1,30})\s+on\s+[^:]{1,40}:\s+"([^"]{0,500})"/);
-    if (m) return { handle: m[1], text: m[2] };
-    return { handle: null, text: description };
+/** JSON string fields only. Reject anything that looks like markup — never regex-strip or unescape HTML. */
+function jsonString(o: Record<string, unknown>, key: string): string | null {
+    const v = o[key];
+    if (typeof v !== "string") return null;
+    if (v.length === 0 || v.length >= 4000) return null;
+    if (v.includes("<") || v.includes(">")) return null;
+    return v;
 }
 
 function xHandleFromOembed(o: Record<string, unknown>): string | null {
-    const author = String(o.author_url || "");
+    const author = jsonString(o, "author_url");
+    if (!author) return null;
     let u: URL;
     try {
         u = new URL(author);
@@ -104,9 +108,23 @@ function xHandleFromOembed(o: Record<string, unknown>): string | null {
     if (u.protocol !== "https:") return null;
     const host = u.hostname.toLowerCase();
     if (host !== "x.com" && host !== "www.x.com" && host !== "twitter.com" && host !== "www.twitter.com") return null;
-    const m = u.pathname.match(/^\/([^/]+)\/?$/);
+    const m = u.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
     if (!m || m[1] === "i") return null;
     return m[1];
+}
+
+function tiktokCdnThumb(raw: string): string | null {
+    let u: URL;
+    try {
+        u = new URL(raw);
+    } catch {
+        return null;
+    }
+    if (u.protocol !== "https:") return null;
+    const labels = u.hostname.toLowerCase().split(".");
+    if (labels.length < 3) return null;
+    if (labels[labels.length - 2] !== "tiktokcdn" || labels[labels.length - 1] !== "com") return null;
+    return u.href;
 }
 
 function asSnap(row: SnapRow): PostSnap {
@@ -120,10 +138,6 @@ function asSnap(row: SnapRow): PostSnap {
         avatarUrl: row.avatarUrl,
         postedAt: row.postedAt ?? undefined,
     };
-}
-
-function htmlFromOembed(o: Record<string, unknown>): string {
-    return typeof o.html === "string" ? o.html : "";
 }
 
 export async function buildSnap(post: KeyedPost, originalUrl: string, embed: Record<string, unknown> = {}): Promise<SnapRow> {
@@ -144,38 +158,30 @@ export async function buildSnap(post: KeyedPost, originalUrl: string, embed: Rec
     };
 
     const o = Object.keys(embed).length > 0 ? embed : (await fetchOembed(post)) || {};
+    // Intentionally ignore o.html — incomplete tag-stripping is not sanitization.
 
     if (post.network === "x") {
         row.handle = row.handle || xHandleFromOembed(o);
-        if (typeof o.author_name === "string") row.name = row.name || o.author_name;
-        const html = htmlFromOembed(o);
-        if (!row.text && html) {
-            const t = html.match(/<p>([\s\S]{1,2000}?)<\/p>/i);
-            if (t) row.text = decodeEntities(t[1].replace(/<[^>]+>/g, ""));
-        }
+        row.name = row.name || jsonString(o, "author_name") || undefined;
     }
 
     if (post.network === "tiktok") {
-        if (typeof o.author_unique_id === "string") row.handle = row.handle || o.author_unique_id;
-        if (typeof o.author_name === "string") row.name = row.name || o.author_name;
-        if (typeof o.title === "string") row.text = row.text || o.title;
-        if (typeof o.thumbnail_url === "string") row.mediaUrl = row.mediaUrl || o.thumbnail_url;
-    }
-
-    if (post.network === "instagram") {
-        if (typeof o.author_name === "string") row.handle = row.handle || o.author_name.replace(/^@/, "");
-        if (typeof o.title === "string") row.text = row.text || o.title;
-        const html = htmlFromOembed(o);
-        if (html) {
-            const og = igFromOg(meta(html, "og:description"));
-            row.handle = row.handle || og.handle;
-            row.text = row.text || og.text || meta(html, "og:title") || undefined;
+        row.handle = row.handle || jsonString(o, "author_unique_id");
+        row.name = row.name || jsonString(o, "author_name") || undefined;
+        row.text = row.text || jsonString(o, "title") || undefined;
+        const thumb = jsonString(o, "thumbnail_url");
+        if (thumb) {
+            const cdn = tiktokCdnThumb(thumb);
+            if (cdn) row.mediaUrl = cdn;
         }
     }
 
-    if (row.handle && !row.handle.startsWith("@")) {
-        /* stored without @ */
+    if (post.network === "instagram") {
+        const author = jsonString(o, "author_name");
+        if (author) row.handle = row.handle || author.replace(/^@/, "");
+        row.text = row.text || jsonString(o, "title") || undefined;
     }
+
     return row;
 }
 

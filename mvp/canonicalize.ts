@@ -1,85 +1,100 @@
+import https from "node:https";
+import type { IncomingMessage, RequestOptions } from "node:http";
 import { isKeyedPost, isTikTokShort, parsePostUrl } from "./urls";
-import { tiktokRequestUrl, UA } from "./safeUrl";
+import { isTikTokHop, tiktokFromLocation, tiktokPermalinkHref, tiktokShortHop, type TikTokHop, UA } from "./safeUrl";
 
 function fail(status: number, error: string): never {
     throw Object.assign(new Error(error), { status });
 }
 
 const MAX_HOPS = 5;
+const CODE = /^[A-Za-z0-9]{4,32}$/;
+const HOP_HEADERS = { "user-agent": UA, accept: "text/html" };
 
-async function fetchTikTokHop(url: string): Promise<Response> {
-    const safe = tiktokRequestUrl(url);
-    if (!safe) fail(400, "TikTok short link did not resolve");
-    return fetch(safe, {
-        method: "GET",
-        redirect: "manual",
-        headers: { "user-agent": UA, accept: "text/html" },
-        signal: AbortSignal.timeout(10_000),
-    });
-}
-
-function permalinkFrom(raw: string, base?: string): string | null {
-    let abs = raw;
-    try {
-        abs = base ? new URL(raw, base).toString() : new URL(raw).toString();
-    } catch {
-        return null;
-    }
-    const p = parsePostUrl(abs);
-    if (isKeyedPost(p) && p.network === "tiktok") return p.canonical;
+function readLocation(res: IncomingMessage): string | null {
+    const loc = res.headers.location;
+    if (typeof loc === "string" && loc.length > 0) return loc;
+    if (Array.isArray(loc) && loc[0]) return loc[0];
     return null;
 }
 
+function httpsLocation(opts: RequestOptions): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+        const req = https.request(opts, (res) => {
+            res.resume();
+            resolve(readLocation(res));
+        });
+        req.setTimeout(10_000, () => {
+            req.destroy();
+            reject(new Error("timeout"));
+        });
+        req.on("error", reject);
+        req.end();
+    });
+}
+
 /**
- * Follow vm. / vt. / /t/ to a /@user/video|photo/ permalink.
- * Each hop is rebuilt onto an allowlisted TikTok host. Redirects are not followed by fetch.
- * Never return the short URL — pots must not key on it.
+ * Literal hostname + charset-checked id. Never fetch(userString) or fetch(Location).
+ * CodeQL does not treat allowlisted host concat as sanitizing fetch()'s URL argument.
+ */
+async function hopLocation(hop: TikTokHop): Promise<string | null> {
+    const code = hop.code;
+    if (!CODE.test(code)) fail(400, "TikTok short link did not resolve");
+    if (hop.fetch === "vm") {
+        return httpsLocation({
+            protocol: "https:",
+            hostname: "vm.tiktok.com",
+            path: "/" + code,
+            method: "GET",
+            headers: HOP_HEADERS,
+        });
+    }
+    if (hop.fetch === "vt") {
+        return httpsLocation({
+            protocol: "https:",
+            hostname: "vt.tiktok.com",
+            path: "/" + code,
+            method: "GET",
+            headers: HOP_HEADERS,
+        });
+    }
+    return httpsLocation({
+        protocol: "https:",
+        hostname: "www.tiktok.com",
+        path: "/t/" + code,
+        method: "GET",
+        headers: HOP_HEADERS,
+    });
+}
+
+/**
+ * Resolve vm. / vt. / /t/ to a /@user/video|photo/ permalink.
+ * Location is parsed to ids; the next request is rebuilt from constants + id.
  */
 export async function resolveTikTokShort(raw: string): Promise<string> {
     const first = parsePostUrl(raw);
     if (isKeyedPost(first) && first.network === "tiktok") return first.canonical;
     if (!isTikTokShort(first)) fail(400, "not a TikTok short link");
 
-    let current = tiktokRequestUrl(raw);
-    if (!current) fail(400, "TikTok short link did not resolve");
+    let hop = tiktokShortHop(raw);
+    if (!hop) fail(400, "TikTok short link did not resolve");
 
-    for (let hop = 0; hop < MAX_HOPS; hop++) {
-        const keyed = permalinkFrom(current);
-        if (keyed) return keyed;
-
-        let res: Response;
+    for (let i = 0; i < MAX_HOPS; i++) {
+        let loc: string | null;
         try {
-            res = await fetchTikTokHop(current);
+            loc = await hopLocation(hop);
         } catch {
             fail(400, "TikTok short link did not resolve");
         }
-
-        const loc = res.headers.get("location");
-        if (loc) {
-            const nextAbs = (() => {
-                try {
-                    return new URL(loc, current).toString();
-                } catch {
-                    return "";
-                }
-            })();
-            const keyedLoc = permalinkFrom(nextAbs);
-            if (keyedLoc) return keyedLoc;
-            const next = tiktokRequestUrl(nextAbs);
-            if (!next) fail(400, "TikTok short link did not resolve");
-            current = next;
-            continue;
+        if (!loc) fail(400, "TikTok short link did not resolve");
+        const next = tiktokFromLocation(loc);
+        if (!next) fail(400, "TikTok short link did not resolve");
+        if (!isTikTokHop(next)) {
+            const permalink = tiktokPermalinkHref(next);
+            if (!permalink) fail(400, "TikTok short link did not resolve");
+            return permalink;
         }
-
-        if (res.status >= 200 && res.status < 300) {
-            const html = await res.text().catch(() => "");
-            const og =
-                html.match(/property=["']og:url["'][^>]*content=["']([^"']{8,512})/i) ||
-                html.match(/content=["']([^"']{8,512})["'][^>]*property=["']og:url["']/i);
-            const keyedOg = og?.[1] ? permalinkFrom(og[1], current) : null;
-            if (keyedOg) return keyedOg;
-        }
-        fail(400, "TikTok short link did not resolve");
+        hop = next;
     }
     fail(400, "TikTok short link did not resolve");
 }
