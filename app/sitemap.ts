@@ -14,5 +14,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       images: [`${SITE_URL}/images/og-image.png`],
     },
+    {
+      url: `${SITE_URL}/browse`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/signup`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
   ]
 }
