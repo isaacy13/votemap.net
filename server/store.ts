@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import { potHash } from "../mvp/issueId";
 
 export type Wallet = { address: string; linkedAt: number };
 
@@ -30,6 +31,7 @@ export type SnapRow = {
     network: string;
     postId: string;
     canonical: string;
+    issueId: string;
     originalUrl: string;
     handle: string | null;
     postedAt: number | null;
@@ -39,6 +41,42 @@ export type SnapRow = {
     avatarUrl?: string;
     at: number;
 };
+
+export type IndexQuery = {
+    limit?: number;
+    before?: number;
+    network?: string;
+    handle?: string;
+};
+
+const INDEX_CAP = 50;
+
+function normHandle(h: string | null | undefined): string {
+    return (h || "").replace(/^@/, "").toLowerCase();
+}
+
+function withPot(row: SnapRow): SnapRow {
+    return { ...row, issueId: row.issueId || potHash(row.canonical) };
+}
+
+/** Paged browse index — LIMIT 50. Sort postedAt desc. */
+export function selectIndex(rows: SnapRow[], q: IndexQuery = {}): SnapRow[] {
+    const limit = Math.min(Math.max(1, Number(q.limit) || INDEX_CAP), INDEX_CAP);
+    const network = (q.network || "").toLowerCase();
+    const handle = normHandle(q.handle);
+    const before = q.before && Number.isFinite(q.before) ? q.before : 0;
+    return rows
+        .filter((r) => {
+            if (network && r.network.toLowerCase() !== network) return false;
+            if (handle && normHandle(r.handle) !== handle) return false;
+            const t = r.postedAt || r.at;
+            if (before && t >= before) return false;
+            return true;
+        })
+        .sort((a, b) => (b.postedAt || b.at) - (a.postedAt || a.at))
+        .slice(0, limit)
+        .map(withPot);
+}
 
 type Db = {
     users: User[];
@@ -179,17 +217,58 @@ export function putOtp(row: Otp): Promise<void> {
 }
 
 export function getSnap(canonical: string): Promise<SnapRow | undefined> {
-    return withDb((db) => db.snaps[canonical]);
-}
-
-export function putSnap(row: SnapRow): Promise<void> {
     return withDb((db) => {
-        db.snaps[row.canonical] = row;
+        const row = db.snaps[canonical];
+        return row ? withPot(row) : undefined;
     });
 }
 
+/**
+ * Write-once under `row.canonical` only. `originalUrl` is never a lookup key.
+ * A swapped paste cannot occupy or overwrite another pot's row.
+ */
+export function applySnapWrite(snaps: Record<string, SnapRow>, row: SnapRow): void {
+    const key = row.canonical;
+    if (!key) return;
+    const next = withPot({ ...row, canonical: key, issueId: potHash(key), originalUrl: key });
+    const existing = snaps[key];
+    if (!existing) {
+        snaps[key] = next;
+        return;
+    }
+    snaps[key] = {
+        ...existing,
+        canonical: existing.canonical,
+        issueId: existing.issueId || next.issueId,
+        originalUrl: existing.canonical,
+        postId: existing.postId || next.postId,
+        network: existing.network || next.network,
+        handle: existing.handle || next.handle,
+        text: existing.text || next.text,
+        name: existing.name || next.name,
+        mediaUrl: existing.mediaUrl || next.mediaUrl,
+        avatarUrl: existing.avatarUrl || next.avatarUrl,
+        postedAt: existing.postedAt ?? next.postedAt,
+    };
+}
+
+/** Write-once keyed by canonical permalink. A swapped URL cannot occupy another pot's row. */
+export function putSnap(row: SnapRow): Promise<void> {
+    return withDb((db) => {
+        applySnapWrite(db.snaps, row);
+    });
+}
+
+export function listIndex(q: IndexQuery = {}): Promise<SnapRow[]> {
+    return withDb((db) => selectIndex(Object.values(db.snaps), q));
+}
+
 export function allSnaps(): Promise<Record<string, SnapRow>> {
-    return withDb((db) => ({ ...db.snaps }));
+    return withDb((db) => {
+        const out: Record<string, SnapRow> = {};
+        for (const [k, v] of Object.entries(db.snaps)) out[k] = withPot(v);
+        return out;
+    });
 }
 
 export function takeOtp(userId: string, phone: string): Promise<Otp | undefined> {

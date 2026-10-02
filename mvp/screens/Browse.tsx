@@ -3,25 +3,39 @@
 import { Box, Text, VStack } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { listIssues, type Issue } from '../chain'
-import { apiUrl } from '../config'
+import { liveForCanonical, type Issue } from '../chain'
+import { apiUrl, contractAddress } from '../config'
 import { api } from '../api'
+import { potHash } from '../issueId'
 import type { PostSnap } from '../postSnap'
 import { formatPostedAt } from '../urls'
 import { parsePostUrl } from '../urls'
 import { IssueCard } from '../ui/IssueCard'
 import { OpenPostFab } from '../ui/OpenPostFab'
 import { enter, iosPush } from '../ui/enter'
+import type { Hex } from 'viem'
 
 const MotionText = motion(Text)
 const MotionVStack = motion(VStack)
+
+type IndexCard = {
+    canonical: string
+    issueId?: string
+    network: string
+    handle: string | null
+    text?: string
+    name?: string
+    postedAt: number | null
+    mediaUrl?: string
+    avatarUrl?: string
+}
 
 function screenshotIssues(): Issue[] | null {
     if (typeof window === 'undefined') return null
     try {
         const raw = sessionStorage.getItem('votemap.screenshotIssues')
         if (!raw) return null
-        const rows = JSON.parse(raw) as { id: `0x${string}`; url: string; live: string }[]
+        const rows = JSON.parse(raw) as { id: `0x${string}`; url: string; live: string; snap?: PostSnap }[]
         return rows.map((r) => ({
             id: r.id,
             url: r.url,
@@ -30,25 +44,32 @@ function screenshotIssues(): Issue[] | null {
             live: BigInt(r.live),
             stakers: [],
             byCountry: [],
+            snap: r.snap,
         }))
     } catch {
         return null
     }
 }
 
-function mergeSnap(issue: Issue, extra?: PostSnap | null): Issue {
-    if (!extra) return issue
-    const handle = extra.handle
-        ? extra.handle.startsWith('@')
-            ? extra.handle
-            : `@${extra.handle}`
-        : extra.handle
+function cardFromIndex(row: IndexCard, live: bigint, id: Hex): Issue {
+    const handle = row.handle ? (row.handle.startsWith('@') ? row.handle : `@${row.handle}`) : null
     return {
-        ...issue,
+        id,
+        url: row.canonical,
+        parsed: parsePostUrl(row.canonical),
+        total: live,
+        live,
+        stakers: [],
+        byCountry: [],
         snap: {
-            ...extra,
-            handle: handle ?? extra.handle,
-            date: extra.date || formatPostedAt(extra.postedAt),
+            network: row.network,
+            handle,
+            text: row.text,
+            name: row.name,
+            postedAt: row.postedAt,
+            date: formatPostedAt(row.postedAt),
+            mediaUrl: row.mediaUrl,
+            avatarUrl: row.avatarUrl,
         },
     }
 }
@@ -68,18 +89,33 @@ export function Browse({ effectsEnabled }: { effectsEnabled: boolean }) {
                 gone = true
             }
         }
-        listIssues()
-            .then(async (rows) => {
+        if (!apiUrl()) {
+            Promise.resolve().then(() => {
+                if (!gone) setIssues([])
+            })
+            return () => {
+                gone = true
+            }
+        }
+        api<{ rows: IndexCard[] }>('/posts/index?limit=50')
+            .then(async (page) => {
                 if (gone) return
-                let snaps: Record<string, PostSnap> = {}
-                if (apiUrl()) {
-                    try {
-                        snaps = await api('/posts/snaps')
-                    } catch {
-                        snaps = {}
+                const rows = page.rows || []
+                const out: Issue[] = []
+                for (const row of rows) {
+                    const fallback = (row.issueId || potHash(row.canonical)) as Hex
+                    let live = BigInt(0)
+                    let id = fallback
+                    if (contractAddress()) {
+                        const chain = await liveForCanonical(row.canonical)
+                        if (chain) {
+                            live = chain.live
+                            id = chain.id
+                        }
                     }
+                    out.push(cardFromIndex(row, live, id))
                 }
-                if (!gone) setIssues(rows.map((r) => mergeSnap(r, snaps[r.url])))
+                if (!gone) setIssues(out)
             })
             .catch((e: Error) => {
                 if (gone) return

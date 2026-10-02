@@ -9,7 +9,7 @@ import { chainName, contractAddress, rpcUrl } from "../mvp/config";
 import { assertDeviceProof, fail } from "./proof";
 import * as store from "./store";
 import type { User } from "./store";
-import { assertPubliclyEmbeddable, canonicalizePost, publicSnap, snapshotFirstStake } from "./snapshot";
+import { assertPubliclyEmbeddable, canonicalizePost, publicSnap, snapshotFirstStake, asIndexCard, type IndexCard } from "./snapshot";
 
 const PORT = Number(process.env.PORT || 8787);
 
@@ -306,24 +306,23 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         const raw = url.searchParams.get("url") || "";
         const post = await canonicalizePost(raw);
         const snap = await publicSnap(post.canonical);
-        return json(res, 200, snap || { network: post.network, handle: "handle" in post ? post.handle : null, postedAt: null });
+        return json(res, 200, snap || { network: post.network === "x" ? "X" : post.network === "threads" ? "Threads" : post.network === "instagram" ? "Instagram" : "TikTok", handle: null, postedAt: null });
     }
 
-    if (req.method === "GET" && url.pathname === "/posts/snaps") {
-        const rows = await store.allSnaps();
-        const out: Record<string, { network: string; handle: string | null; text?: string; name?: string; postedAt: number | null; mediaUrl?: string; avatarUrl?: string }> = {};
-        for (const [k, v] of Object.entries(rows)) {
-            out[k] = {
-                network: v.network,
-                handle: v.handle,
-                text: v.text,
-                name: v.name,
-                postedAt: v.postedAt,
-                mediaUrl: v.mediaUrl,
-                avatarUrl: v.avatarUrl,
-            };
+    if (req.method === "GET" && (url.pathname === "/posts/index" || url.pathname === "/posts/snaps")) {
+        const network = url.searchParams.get("network") || undefined;
+        const handle = url.searchParams.get("handle") || undefined;
+        const beforeRaw = url.searchParams.get("before");
+        const before = beforeRaw ? Number(beforeRaw) : undefined;
+        const rows = await store.listIndex({ limit: 50, network, handle, before });
+        const cards = rows.map(asIndexCard);
+        const next = cards.length === 50 ? (rows[rows.length - 1].postedAt || rows[rows.length - 1].at) : null;
+        if (url.pathname === "/posts/snaps") {
+            const out: Record<string, IndexCard> = {};
+            for (const c of cards) out[c.canonical] = c;
+            return json(res, 200, out);
         }
-        return json(res, 200, out);
+        return json(res, 200, { rows: cards, next });
     }
 
     if (req.method === "POST" && url.pathname === "/profile/gender") {
@@ -511,7 +510,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
         const originalUrl = String(body.url || "");
         const post = await canonicalizePost(originalUrl);
         const embed = await assertPubliclyEmbeddable(post);
-        await snapshotFirstStake(post, originalUrl, embed);
+        await snapshotFirstStake(post, embed);
         const amount = BigInt(String(body.amount || "0"));
         const expiry = Number(body.expiry);
         if (amount < BigInt(1_000_000)) fail(400, "min 1 USDC");

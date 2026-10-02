@@ -12,6 +12,7 @@ import { voteMapAbi, erc20Abi } from "./abi";
 import { chainName, contractAddress, rpcUrl, isoFromBytes } from "./config";
 import { parsePostUrl, type ParsedPost } from "./urls";
 import type { PostSnap } from "./postSnap";
+import { potHash } from "./issueId";
 
 export type StakeRow = {
     wallet: string;
@@ -154,6 +155,31 @@ async function loadIssue(id: Hex, urlHint?: string): Promise<Issue | null> {
     for (const s of liveRows) map.set(s.country || "—", (map.get(s.country || "—") ?? BigInt(0)) + s.amount);
     const byCountry = [...map.entries()].map(([country, liveAmt]) => ({ country, live: liveAmt }));
     return { id, url, parsed: parsePostUrl(url), total, live, stakers, byCountry };
+}
+
+export async function liveForCanonical(canonical: string): Promise<{ id: Hex; live: bigint } | null> {
+    const id = potHash(canonical);
+    try {
+        const address = factory();
+        const client = pub();
+        const stored = (await client.readContract({
+            address,
+            abi: voteMapAbi,
+            functionName: "issueUrl",
+            args: [id],
+        })) as string;
+        if (!stored) return { id, live: BigInt(0) };
+        if (stored !== canonical) return null;
+        const live = (await client.readContract({
+            address,
+            abi: voteMapAbi,
+            functionName: "liveBounty",
+            args: [id],
+        })) as bigint;
+        return { id, live };
+    } catch {
+        return { id, live: BigInt(0) };
+    }
 }
 
 export async function listIssues(): Promise<Issue[]> {

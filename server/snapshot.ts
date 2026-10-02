@@ -1,4 +1,5 @@
 import { BAKED_SNAPS, type PostSnap } from "../mvp/postSnap";
+import { potHash } from "../mvp/issueId";
 import { resolveTikTokShort } from "../mvp/canonicalize";
 import { isKeyedPost, isTikTokShort, parsePostUrl, postedAtMs, type KeyedPost } from "../mvp/urls";
 import { UA } from "../mvp/safeUrl";
@@ -140,15 +141,26 @@ function asSnap(row: SnapRow): PostSnap {
     };
 }
 
-export async function buildSnap(post: KeyedPost, originalUrl: string, embed: Record<string, unknown> = {}): Promise<SnapRow> {
+/**
+ * Handle only when it is part of the canonical permalink (Threads, TikTok, IG stories).
+ * X and Instagram `/p`/`/reel` drop the user from the pot key — never take that path from the paste.
+ */
+function handleFromPermalink(post: KeyedPost): string | null {
+    if (post.network === "x") return null;
+    if (post.network === "instagram" && post.kind !== "stories") return null;
+    return post.handle || null;
+}
+
+export async function buildSnap(post: KeyedPost, embed?: Record<string, unknown>): Promise<SnapRow> {
     const postedAt = postedAtMs(post);
     const baked = post.network === "x" ? BAKED_SNAPS[post.postId] : undefined;
     const row: SnapRow = {
         network: post.network,
         postId: post.postId,
         canonical: post.canonical,
-        originalUrl,
-        handle: ("handle" in post ? post.handle : null) || baked?.handle?.replace(/^@/, "") || null,
+        issueId: potHash(post.canonical),
+        originalUrl: post.canonical,
+        handle: handleFromPermalink(post) || baked?.handle?.replace(/^@/, "") || null,
         postedAt,
         text: baked?.text,
         name: baked?.name,
@@ -157,7 +169,7 @@ export async function buildSnap(post: KeyedPost, originalUrl: string, embed: Rec
         at: Date.now(),
     };
 
-    const o = Object.keys(embed).length > 0 ? embed : (await fetchOembed(post)) || {};
+    const o = embed !== undefined ? embed : (await fetchOembed(post)) || {};
     // Intentionally ignore o.html — incomplete tag-stripping is not sanitization.
 
     if (post.network === "x") {
@@ -182,28 +194,20 @@ export async function buildSnap(post: KeyedPost, originalUrl: string, embed: Rec
         row.text = row.text || jsonString(o, "title") || undefined;
     }
 
+    if (post.network === "threads") {
+        row.text = row.text || jsonString(o, "title") || undefined;
+        row.name = row.name || jsonString(o, "author_name") || undefined;
+    }
+
     return row;
 }
 
-/** Write once on first stake. Fetch failure must not block the stake. */
-export async function snapshotFirstStake(post: KeyedPost, originalUrl: string, embed: Record<string, unknown> = {}): Promise<void> {
+/** Write once on first stake, keyed by canonical permalink. Signer oEmbed only — not client handle/text/date. */
+export async function snapshotFirstStake(post: KeyedPost, embed: Record<string, unknown>): Promise<void> {
     try {
         const existing = await store.getSnap(post.canonical);
         if (existing?.text && existing.handle) return;
-        const row = await buildSnap(post, originalUrl, embed);
-        if (existing) {
-            await store.putSnap({
-                ...existing,
-                handle: existing.handle || row.handle,
-                text: existing.text || row.text,
-                name: existing.name || row.name,
-                mediaUrl: existing.mediaUrl || row.mediaUrl,
-                avatarUrl: existing.avatarUrl || row.avatarUrl,
-                postedAt: existing.postedAt ?? row.postedAt,
-                originalUrl: existing.originalUrl || originalUrl,
-            });
-            return;
-        }
+        const row = await buildSnap(post, embed);
         await store.putSnap(row);
     } catch {
         /* still stake */
@@ -213,4 +217,30 @@ export async function snapshotFirstStake(post: KeyedPost, originalUrl: string, e
 export async function publicSnap(canonical: string): Promise<PostSnap | null> {
     const row = await store.getSnap(canonical);
     return row ? asSnap(row) : null;
+}
+
+export type IndexCard = {
+    canonical: string;
+    issueId: string;
+    network: string;
+    handle: string | null;
+    text?: string;
+    name?: string;
+    postedAt: number | null;
+    mediaUrl?: string;
+    avatarUrl?: string;
+};
+
+export function asIndexCard(row: store.SnapRow): IndexCard {
+    return {
+        canonical: row.canonical,
+        issueId: row.issueId,
+        network: row.network === "x" ? "X" : row.network === "threads" ? "Threads" : row.network === "instagram" ? "Instagram" : row.network === "tiktok" ? "TikTok" : row.network,
+        handle: row.handle ? (row.handle.startsWith("@") ? row.handle : `@${row.handle}`) : null,
+        text: row.text,
+        name: row.name,
+        postedAt: row.postedAt,
+        mediaUrl: row.mediaUrl,
+        avatarUrl: row.avatarUrl,
+    };
 }

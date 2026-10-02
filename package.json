@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "api": "tsx server/index.ts",
-    "test:mvp": "tsx --test mvp/urls.test.ts mvp/postSnap.test.ts mvp/eip712.test.ts mvp/safeUrl.test.ts server/proof.test.ts server/snapshot.test.ts"
+    "test:mvp": "tsx --test mvp/urls.test.ts mvp/postSnap.test.ts mvp/eip712.test.ts mvp/safeUrl.test.ts mvp/issueId.test.ts server/proof.test.ts server/snapshot.test.ts"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.3",

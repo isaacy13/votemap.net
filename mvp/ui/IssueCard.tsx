@@ -3,11 +3,9 @@
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useTweet } from 'react-tweet'
 import { formatUsdc } from '../config'
 import type { Issue } from '../chain'
-import { snapFromTweet, snapFromUrl, type PostSnap } from '../postSnap'
-import { formatPostedAt, issuePath, type ParsedPost } from '../urls'
+import { formatPostedAt, issuePath, networkLabel } from '../urls'
 import { useRouter } from 'next/navigation'
 import { listEnter } from './enter'
 
@@ -39,7 +37,6 @@ export function Windowed({
                     setShown(true)
                     return
                 }
-                // Keep above-the-fold rows mounted — IO can false-negative in short viewports.
                 if (eager) return
                 const h = el.getBoundingClientRect().height
                 if (h > 8) setPh(h)
@@ -65,27 +62,6 @@ export function Windowed({
     )
 }
 
-/** Bake first; optional react-tweet JSON only when this windowed card is mounted and has no text. */
-function usePostSnap(url: string, parsed: ParsedPost | null, extra?: PostSnap): PostSnap {
-    const base = snapFromUrl(url, parsed)
-    const fetchId = parsed?.network === 'x' && !base.text && !extra?.text ? parsed.postId : undefined
-    const { data } = useTweet(fetchId)
-    const handle = extra?.handle
-        ? extra.handle.startsWith('@')
-            ? extra.handle
-            : `@${extra.handle}`
-        : extra?.handle
-    const merged: PostSnap = {
-        ...base,
-        ...extra,
-        handle: handle ?? extra?.handle ?? base.handle,
-        postedAt: extra?.postedAt ?? base.postedAt,
-    }
-    merged.date = extra?.date || formatPostedAt(merged.postedAt) || base.date
-    if (!data) return merged
-    return { ...merged, ...snapFromTweet(data), date: merged.date }
-}
-
 function IssueCardBody({
     issue,
     index,
@@ -96,11 +72,14 @@ function IssueCardBody({
     effectsEnabled: boolean
 }) {
     const router = useRouter()
-    const snap = usePostSnap(issue.url, issue.parsed, issue.snap)
+    const snap = issue.snap
+    const network = snap?.network || networkLabel(issue.parsed?.network)
+    const handle = snap?.handle || null
+    const date = snap?.date || formatPostedAt(snap?.postedAt)
+    const who = handle || network
+    const initial = (handle || who).replace(/^@/, '').slice(0, 1).toUpperCase()
     const amount = `${formatUsdc(issue.live)} USDC`
-    const who = snap.name ?? snap.handle ?? (snap.network === 'X' ? 'X post' : snap.network)
-    const initial = (snap.handle || who).replace(/^@/, '').slice(0, 1).toUpperCase()
-    const aria = [snap.network, who, snap.date, snap.text, amount].filter(Boolean).join(', ')
+    const aria = [network, who, date, snap?.text, amount].filter(Boolean).join(', ')
 
     return (
         <MotionBox
@@ -141,7 +120,7 @@ function IssueCardBody({
                     flexShrink={0}
                     _dark={{ bg: 'gray.800', color: 'gray.200' }}
                 >
-                    {snap.avatarUrl ? (
+                    {snap?.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={snap.avatarUrl} alt="" width={36} height={36} draggable={false} />
                     ) : (
@@ -151,24 +130,17 @@ function IssueCardBody({
                 <Box flex="1" minW={0}>
                     <Flex justify="space-between" align="baseline" gap={3} mb={0.5}>
                         <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }} truncate>
-                            {snap.network}
-                            {snap.date ? ` · ${snap.date}` : ''}
+                            {network}
+                            {date ? ` · ${date}` : ''}
                         </Text>
                         <Text fontSize="sm" fontWeight="semibold" flexShrink={0} letterSpacing="-0.02em">
                             {amount}
                         </Text>
                     </Flex>
-                    <Flex gap={2} align="baseline" minW={0}>
-                        <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="medium" truncate>
-                            {who}
-                        </Text>
-                        {snap.name && snap.handle ? (
-                            <Text fontSize="sm" color="gray.500" _dark={{ color: 'gray.400' }} truncate>
-                                {snap.handle}
-                            </Text>
-                        ) : null}
-                    </Flex>
-                    {snap.text ? (
+                    <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="medium" truncate>
+                        {who}
+                    </Text>
+                    {snap?.text ? (
                         <Text
                             mt={2}
                             fontSize={{ base: 'sm', md: 'md' }}
@@ -181,7 +153,7 @@ function IssueCardBody({
                         </Text>
                     ) : null}
                 </Box>
-                {snap.mediaUrl ? (
+                {snap?.mediaUrl ? (
                     <Box
                         w="72px"
                         h="72px"
