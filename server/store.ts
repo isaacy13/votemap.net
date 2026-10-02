@@ -2,6 +2,17 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { potHash } from "../mvp/issueId";
+import {
+    SOCIAL_NETS,
+    asPublicLinks,
+    httpsHref,
+    isSocialNet,
+    socialLabel,
+    socialProfileUrl,
+    type Binds,
+    type ProfileLink,
+    type PublicCard,
+} from "../mvp/profile";
 
 export type Wallet = { address: string; linkedAt: number };
 
@@ -19,6 +30,10 @@ export type User = {
     payout: string | null;
     wallets: Wallet[];
     socials: { x: string; threads: string; instagram: string; tiktok: string };
+    /** Bio binds — not the public link list. Hiding a link does not remove these. */
+    binds: Binds;
+    /** Public page rows. Pay lookup does not read this. */
+    links: ProfileLink[];
     device: { pubkey: string; platform: string; at: number } | null;
     createdAt: number;
 };
@@ -57,6 +72,91 @@ function normHandle(h: string | null | undefined): string {
 
 function withPot(row: SnapRow): SnapRow {
     return { ...row, issueId: row.issueId || potHash(row.canonical) };
+}
+
+function bad(message: string, status = 400): never {
+    throw Object.assign(new Error(message), { status });
+}
+
+/** Fill missing profile fields. Re-attach bind slots; omitted slots come back hidden — bind stays. */
+export function withProfile(u: User): User {
+    if (!u.binds) u.binds = {};
+    if (!Array.isArray(u.links)) u.links = [];
+    for (const net of SOCIAL_NETS) {
+        const b = u.binds[net];
+        if (!b?.handle) continue;
+        const url = socialProfileUrl(net, b.handle);
+        const existing = u.links.find((l) => l.bindNetwork === net);
+        if (existing) {
+            existing.url = url;
+            continue;
+        }
+        u.links.push({
+            id: `bind-${net}`,
+            label: socialLabel(net),
+            url,
+            order: u.links.length,
+            hidden: false,
+            bindNetwork: net,
+        });
+    }
+    return u;
+}
+
+export function applyLinkPatch(u: User, raw: unknown): void {
+    withProfile(u);
+    if (!Array.isArray(raw)) bad("links");
+    if (raw.length > 20) bad("too many links");
+    const next: ProfileLink[] = [];
+    const seenBind = new Set<string>();
+    for (const row of raw) {
+        const r = row && typeof row === "object" ? (row as Record<string, unknown>) : {};
+        const label = String(r.label || "")
+            .trim()
+            .slice(0, 40);
+        if (!label) bad("label");
+        const bindNetwork = isSocialNet(r.bindNetwork) ? r.bindNetwork : null;
+        const bind = bindNetwork ? u.binds[bindNetwork] : undefined;
+        let url: string | null;
+        let net = bindNetwork;
+        if (net && bind?.handle) {
+            if (seenBind.has(net)) bad("duplicate bind slot");
+            seenBind.add(net);
+            url = socialProfileUrl(net, bind.handle);
+        } else {
+            net = null;
+            url = httpsHref(String(r.url || ""));
+        }
+        if (!url) bad("https url only");
+        const id = typeof r.id === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(r.id) ? r.id : randomUUID();
+        next.push({
+            id,
+            label,
+            url,
+            order: next.length,
+            hidden: Boolean(r.hidden),
+            bindNetwork: net,
+        });
+    }
+    for (const net of SOCIAL_NETS) {
+        const b = u.binds[net];
+        if (!b?.handle || seenBind.has(net)) continue;
+        next.push({
+            id: `bind-${net}`,
+            label: socialLabel(net),
+            url: socialProfileUrl(net, b.handle),
+            order: next.length,
+            hidden: true,
+            bindNetwork: net,
+        });
+    }
+    u.links = next.map((l, i) => ({ ...l, order: i }));
+}
+
+export function publicCard(u: User, now = Date.now()): PublicCard | null {
+    const row = withProfile(u);
+    if (!row.handle) return null;
+    return { handle: row.handle, links: asPublicLinks(row, now) };
 }
 
 /** Paged browse index — LIMIT 50. Sort postedAt desc. */
@@ -120,20 +220,23 @@ function withDb<T>(fn: (db: Db) => T): Promise<T> {
 }
 
 export function publicUser(u: User) {
+    const row = withProfile(u);
     return {
-        id: u.id,
-        provider: u.provider,
-        email: u.email,
-        name: u.name,
-        gender: u.gender,
-        birthYear: u.birthYear,
-        phone: u.phone,
-        phoneVerified: u.phoneVerified,
-        handle: u.handle,
-        payout: u.payout,
-        wallets: u.wallets,
-        socials: u.socials,
-        hasDevice: Boolean(u.device),
+        id: row.id,
+        provider: row.provider,
+        email: row.email,
+        name: row.name,
+        gender: row.gender,
+        birthYear: row.birthYear,
+        phone: row.phone,
+        phoneVerified: row.phoneVerified,
+        handle: row.handle,
+        payout: row.payout,
+        wallets: row.wallets,
+        socials: row.socials,
+        binds: row.binds,
+        links: row.links,
+        hasDevice: Boolean(row.device),
     };
 }
 
@@ -160,6 +263,8 @@ export function upsertOidc(input: {
                 payout: null,
                 wallets: [],
                 socials: { x: "", threads: "", instagram: "", tiktok: "" },
+                binds: {},
+                links: [],
                 device: null,
                 createdAt: Date.now(),
             };
@@ -168,18 +273,30 @@ export function upsertOidc(input: {
             u.email = input.email || u.email;
             if (input.name) u.name = input.name;
         }
-        return u;
+        return withProfile(u);
     });
 }
 
 export function getUser(id: string): Promise<User | undefined> {
-    return withDb((db) => db.users.find((u) => u.id === id));
+    return withDb((db) => {
+        const u = db.users.find((x) => x.id === id);
+        return u ? withProfile(u) : undefined;
+    });
+}
+
+export function getUserByHandle(handle: string): Promise<User | undefined> {
+    const h = normHandle(handle);
+    return withDb((db) => {
+        const u = db.users.find((x) => x.handle === h);
+        return u ? withProfile(u) : undefined;
+    });
 }
 
 export function updateUser(id: string, patch: (u: User) => void): Promise<User> {
     return withDb((db) => {
         const u = db.users.find((x) => x.id === id);
         if (!u) throw new Error("no user");
+        withProfile(u);
         patch(u);
         return u;
     });

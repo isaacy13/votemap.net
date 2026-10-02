@@ -1,5 +1,6 @@
 import { apiUrl } from "./config";
 import { readSessionToken } from "./session";
+import type { Binds, ProfileLink } from "./profile";
 
 export type Me = {
     id: string;
@@ -14,6 +15,8 @@ export type Me = {
     payout: string | null;
     wallets: { address: string; linkedAt: number }[];
     socials: { x: string; threads: string; instagram: string; tiktok: string };
+    binds: Binds;
+    links: ProfileLink[];
     hasDevice: boolean;
 };
 

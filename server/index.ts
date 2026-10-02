@@ -10,6 +10,7 @@ import { assertDeviceProof, fail } from "./proof";
 import * as store from "./store";
 import type { User } from "./store";
 import { assertPubliclyEmbeddable, canonicalizePost, publicSnap, snapshotFirstStake, asIndexCard, type IndexCard } from "./snapshot";
+import { HANDLE_RE, handleFromSearch, normHandle as normProfileHandle } from "../mvp/profile";
 
 const PORT = Number(process.env.PORT || 8787);
 
@@ -210,6 +211,18 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
     if (req.method === "GET" && url.pathname === "/me") {
         const u = await needUser(req);
         return json(res, 200, store.publicUser(u));
+    }
+
+    if (req.method === "GET" && (url.pathname === "/u" || url.pathname.startsWith("/u/"))) {
+        const fromPath = url.pathname.startsWith("/u/") ? url.pathname.slice(3) : "";
+        const handle = HANDLE_RE.test(normProfileHandle(fromPath))
+            ? normProfileHandle(fromPath)
+            : handleFromSearch(url.searchParams);
+        if (!handle) fail(400, "handle");
+        const u = await store.getUserByHandle(handle);
+        const card = u ? store.publicCard(u) : null;
+        if (!card) fail(404, "no such profile");
+        return json(res, 200, card);
     }
 
     if (req.method === "GET" && url.pathname === "/auth/google") {
@@ -440,6 +453,16 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
             for (const k of ["x", "threads", "instagram", "tiktok"] as const) {
                 if (typeof body[k] === "string") row.socials[k] = String(body[k]).trim().replace(/^@/, "");
             }
+        });
+        return json(res, 200, store.publicUser(next));
+    }
+
+    if (req.method === "POST" && url.pathname === "/profile/links") {
+        const u = await needUser(req);
+        if (!u.handle) fail(400, "finish signup");
+        const body = await readBody(req);
+        const next = await store.updateUser(u.id, (row) => {
+            store.applyLinkPatch(row, body.links);
         });
         return json(res, 200, store.publicUser(next));
     }

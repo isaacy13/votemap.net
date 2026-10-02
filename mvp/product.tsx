@@ -29,6 +29,8 @@ function screenshotMe(): Me | null {
             payout: null,
             wallets: [],
             socials: { x: '', threads: '', instagram: '', tiktok: '' },
+            binds: {},
+            links: [],
             hasDevice: true,
         }
     } catch {
