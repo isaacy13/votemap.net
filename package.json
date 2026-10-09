@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test lib/bio-bind.test.ts lib/bio-bind.live.test.ts"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.35.0",
