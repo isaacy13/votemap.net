@@ -2,11 +2,16 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   bioHasHandleToken,
+  BIO_RENEW_MS,
+  claimIsTaken,
+  DAY_MS,
   isLoginOrChallenge,
   nextRetrieveFailedRetry,
+  planAutomaticRechecks,
   profileBioText,
   readProfileBio,
   recheckLapsesBind,
+  runProfileCheck,
   scheduleBioReads,
   type BioNetwork,
   type ProfileFetchClient,
@@ -316,5 +321,188 @@ describe("scheduleBioReads", () => {
     });
     assert.ok(retry > now);
     assert.ok(retry - now >= gapMs);
+  });
+});
+
+describe("claimIsTaken", () => {
+  const claimed = [{ accountId: "alice", url: "https://x.com/Ed" }];
+
+  it("rejects a profile already claimed by someone else or by the same account", () => {
+    assert.equal(claimIsTaken("https://x.com/ed", [{ accountId: "bob", url: "https://x.com/ed" }]), true);
+    assert.equal(claimIsTaken("https://x.com/ed", claimed), true);
+  });
+
+  it("treats x.com and twitter.com as one claim, case-insensitively", () => {
+    assert.equal(claimIsTaken("https://twitter.com/ED", claimed), true);
+    assert.equal(claimIsTaken("https://X.com/ed", claimed), true);
+  });
+
+  it("allows a different handle and the same handle on another network", () => {
+    assert.equal(claimIsTaken("https://x.com/edward", claimed), false);
+    assert.equal(claimIsTaken("https://instagram.com/ed", claimed), false);
+  });
+
+  it("does not fold www into the apex host", () => {
+    assert.equal(claimIsTaken("https://www.x.com/ed", claimed), false);
+    const shop = [{ accountId: "alice", url: "https://Shop.Example/Menu" }];
+    assert.equal(claimIsTaken("https://shop.example/menu", shop), true);
+    assert.equal(claimIsTaken("https://www.shop.example/menu", shop), false);
+  });
+
+  it("keeps the bio token match case-sensitive", () => {
+    assert.equal(bioHasHandleToken("votemap/@ed", "ed"), true);
+    assert.equal(bioHasHandleToken("votemap/@Ed", "ed"), false);
+    assert.equal(bioHasHandleToken("votemap/@edward", "ed"), false);
+  });
+});
+
+describe("planAutomaticRechecks", () => {
+  const now = 1_000_000;
+  const endOfDay = now + DAY_MS;
+  const gapMs = 60_000;
+
+  it("does not schedule tag_missing until the user confirms the fix", () => {
+    const waiting = planAutomaticRechecks({
+      binds: [{ id: "a", host: "x.com", result: "tag_missing" }],
+      now,
+      endOfDay,
+      gapMs,
+    });
+    assert.deepEqual(waiting, []);
+
+    const confirmed = planAutomaticRechecks({
+      binds: [{ id: "a", host: "x.com", result: "tag_missing", confirmedFix: true }],
+      now,
+      endOfDay,
+      gapMs,
+    });
+    assert.equal(confirmed.length, 1);
+    assert.ok(confirmed[0].at > now);
+  });
+
+  it("retries retrieve_failed later the same day without lapsing, and renews success", () => {
+    const slots = planAutomaticRechecks({
+      binds: [
+        { id: "miss", host: "instagram.com", result: "retrieve_failed" },
+        { id: "ok", host: "x.com", result: "success" },
+      ],
+      now,
+      endOfDay,
+      gapMs,
+    });
+    const missed = slots.find((slot) => slot.id === "miss");
+    const renewed = slots.find((slot) => slot.id === "ok");
+    assert.ok(missed);
+    assert.ok(missed.at > now);
+    assert.ok(missed.at <= endOfDay);
+    assert.equal(recheckLapsesBind("retrieve_failed"), false);
+    assert.equal(recheckLapsesBind("tag_missing"), true);
+    assert.equal(renewed?.at, now + BIO_RENEW_MS);
+  });
+});
+
+describe("runProfileCheck", () => {
+  const profileUrl = "https://x.com/ed";
+  const handle = "ed";
+
+  function tally() {
+    const calls = { client: 0, server: 0 };
+    const clientRead = (result: "success" | "tag_missing" | "retrieve_failed") => () => {
+      calls.client += 1;
+      return result;
+    };
+    const fetchProfile: ProfileFetchClient = () => {
+      calls.server += 1;
+      return {
+        status: 200,
+        responseUrl: profileUrl,
+        body: page("x", "votemap/@ed"),
+      };
+    };
+    return { calls, clientRead, fetchProfile };
+  }
+
+  it("runs the server fetch only after the client reports success", async () => {
+    for (const result of ["tag_missing", "retrieve_failed"] as const) {
+      const { calls, clientRead, fetchProfile } = tally();
+      const outcome = await runProfileCheck({
+        mode: "immediate",
+        accountId: "alice",
+        profileUrl,
+        handle,
+        now: 0,
+        clientRead: clientRead(result),
+        fetchProfile,
+      });
+      assert.deepEqual(outcome, { status: "checked", result });
+      assert.equal(calls.client, 1);
+      assert.equal(calls.server, 0);
+    }
+
+    const { calls, clientRead, fetchProfile } = tally();
+    const outcome = await runProfileCheck({
+      mode: "immediate",
+      accountId: "alice",
+      profileUrl,
+      handle,
+      now: 0,
+      clientRead: clientRead("success"),
+      fetchProfile,
+    });
+    assert.equal(outcome.status, "checked");
+    assert.equal(outcome.result, "success");
+    assert.equal(calls.client, 1);
+    assert.equal(calls.server, 1);
+  });
+
+  it("runs a scheduled check on the server with no client", async () => {
+    const { calls, clientRead, fetchProfile } = tally();
+    const outcome = await runProfileCheck({
+      mode: "scheduled",
+      accountId: "alice",
+      profileUrl,
+      handle,
+      now: 0,
+      clientRead: clientRead("tag_missing"),
+      fetchProfile,
+    });
+    assert.equal(outcome.status, "checked");
+    assert.equal(outcome.result, "success");
+    assert.equal(calls.client, 0);
+    assert.equal(calls.server, 1);
+  });
+
+  it("rejects a second immediate check inside 24 hours and allows it after", async () => {
+    const now = 5_000_000;
+    const prior = [{ accountId: "alice", url: profileUrl, at: now - 60_000 }];
+    const early = tally();
+    const rejected = await runProfileCheck({
+      mode: "immediate",
+      accountId: "alice",
+      profileUrl: "https://twitter.com/ED",
+      handle,
+      now,
+      priorImmediateChecks: prior,
+      clientRead: early.clientRead("success"),
+      fetchProfile: early.fetchProfile,
+    });
+    assert.deepEqual(rejected, { status: "rejected" });
+    assert.equal(early.calls.client, 0);
+    assert.equal(early.calls.server, 0);
+
+    const later = tally();
+    const allowed = await runProfileCheck({
+      mode: "immediate",
+      accountId: "alice",
+      profileUrl,
+      handle,
+      now: prior[0].at + DAY_MS,
+      priorImmediateChecks: prior,
+      clientRead: later.clientRead("success"),
+      fetchProfile: later.fetchProfile,
+    });
+    assert.equal(allowed.status, "checked");
+    assert.equal(later.calls.client, 1);
+    assert.equal(later.calls.server, 1);
   });
 });

@@ -280,3 +280,117 @@ export function nextRetrieveFailedRetry(args: {
   }
   return waited;
 }
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+/** Success renews the bind for another 60 days. */
+export const BIO_RENEW_MS = 60 * DAY_MS;
+
+export type ClaimRecord = { accountId: string; url: string };
+
+function profileHandle(pathname: string): string | null {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length !== 1) return null;
+  const handle = parts[0].replace(/^@/, "");
+  if (!/^[A-Za-z0-9_]+$/.test(handle)) return null;
+  return handle;
+}
+
+/**
+ * Claim identity. Social handles are case-insensitive. x.com and twitter.com
+ * share one claim. www is not folded into the apex host.
+ */
+export function claimKey(url: string): string | null {
+  const parsed = parsedHttpUrl(url);
+  if (!parsed) return null;
+  const network = networkForHost(parsed.hostname);
+  if (network) {
+    const handle = profileHandle(parsed.pathname);
+    if (handle) return `social:${network}:${handle.toLowerCase()}`;
+  }
+  const path = (parsed.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  return `website:${parsed.protocol}//${parsed.hostname.toLowerCase()}${path}`;
+}
+
+/** True when this profile or shop URL is already claimed, including by the same account. */
+export function claimIsTaken(url: string, existing: readonly ClaimRecord[]): boolean {
+  const key = claimKey(url);
+  if (!key) return true;
+  return existing.some((claim) => claimKey(claim.url) === key);
+}
+
+export type RecheckBind = {
+  id: string;
+  host: string;
+  result: BioReadResult;
+  /** Set after the user confirms they fixed a missing tag. */
+  confirmedFix?: boolean;
+};
+
+/**
+ * tag_missing is not scheduled again until confirmedFix.
+ * retrieve_failed retries later the same day. Success renews 60 days out.
+ */
+export function planAutomaticRechecks(args: {
+  binds: readonly RecheckBind[];
+  now: number;
+  endOfDay: number;
+  gapMs: number;
+  hostReadyAt?: Readonly<Record<string, number>>;
+}): ScheduledBioRead[] {
+  const dueToday = args.binds.filter((bind) => {
+    if (bind.result === "tag_missing") return bind.confirmedFix === true;
+    return bind.result === "retrieve_failed";
+  });
+  const spread = scheduleBioReads({
+    binds: dueToday.map(({ id, host }) => ({ id, host })),
+    now: args.now,
+    endOfDay: args.endOfDay,
+    gapMs: args.gapMs,
+    hostReadyAt: args.hostReadyAt,
+  });
+  const renewals = args.binds
+    .filter((bind) => bind.result === "success")
+    .map((bind) => ({ id: bind.id, host: bind.host, at: args.now + BIO_RENEW_MS }));
+  return [...spread, ...renewals];
+}
+
+export type ImmediateCheck = { accountId: string; url: string; at: number };
+
+export type ProfileCheckOutcome =
+  | { status: "rejected" }
+  | { status: "checked"; result: BioReadResult };
+
+/**
+ * Immediate: the client runs first. The server fetch runs only after client success.
+ * Scheduled: server fetch only. A repeat immediate check inside 24 hours does not fetch.
+ */
+export async function runProfileCheck(args: {
+  mode: "immediate" | "scheduled";
+  accountId: string;
+  profileUrl: string;
+  handle: string;
+  now: number;
+  priorImmediateChecks?: readonly ImmediateCheck[];
+  clientRead?: () => BioReadResult | Promise<BioReadResult>;
+  fetchProfile: ProfileFetchClient;
+}): Promise<ProfileCheckOutcome> {
+  if (args.mode === "immediate") {
+    const key = claimKey(args.profileUrl);
+    const blocked = (args.priorImmediateChecks ?? []).some((prior) => {
+      if (prior.accountId !== args.accountId) return false;
+      if (claimKey(prior.url) !== key) return false;
+      return args.now - prior.at < DAY_MS;
+    });
+    if (blocked) return { status: "rejected" };
+    if (!args.clientRead) return { status: "rejected" };
+    const clientResult = await args.clientRead();
+    if (clientResult !== "success") return { status: "checked", result: clientResult };
+  }
+
+  const result = await readProfileBio({
+    profileUrl: args.profileUrl,
+    handle: args.handle,
+    fetchProfile: args.fetchProfile,
+  });
+  return { status: "checked", result };
+}
