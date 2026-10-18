@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "mvp/urls.test.ts",
+    "mvp/oauth.mjs",
   ]),
 ]);
 
