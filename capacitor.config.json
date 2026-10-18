@@ -1,0 +1,9 @@
+{
+  "appId": "net.votemap.app",
+  "appName": "votemap",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  }
+}

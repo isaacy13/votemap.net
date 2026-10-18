@@ -5,15 +5,15 @@ import { motion } from 'framer-motion'
 
 const MotionBox = motion(Box)
 
-export const VideoEmbed = () => {
+export const VideoEmbed = ({ effectsEnabled = true }: { effectsEnabled?: boolean }) => {
     return (
         <MotionBox
             w="full"
             maxW="720px"
             mx="auto"
-            initial={{ opacity: 0, y: 20 }}
+            initial={effectsEnabled ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
+            transition={effectsEnabled ? { duration: 0.8, delay: 0.8, ease: 'easeOut' } : { duration: 0 }}
         >
             <Box
                 position="relative"

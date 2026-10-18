@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "plugins/votemap/android/**",
+    "plugins/votemap/ios/**",
+    "ios/**",
+    "android/**",
+    "data/**",
   ]),
 ]);
 
