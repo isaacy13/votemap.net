@@ -2,6 +2,8 @@
 
 Guidance for coding agents working on this repo.
 
+Product rules live in [spec/README.md](spec/README.md).
+
 ## Pull / merge requests — always use the template
 
 **Every PR/MR body must follow `.github/PULL_REQUEST_TEMPLATE.md`.** Do not invent a free-form description.
