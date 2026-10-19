@@ -10,7 +10,7 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 
 ## 1. User flow
 
-**Sign in:** Google or Apple (OIDC) → gender, birth year, SMS OTP → unique votemap handle (**FCFS**) + unique E.164.
+**Sign in:** Google or Apple (OIDC) → unique votemap handle (**FCFS**, permanent). No phone, no SMS. Optional gender and birth year are asked after the first pledge, for aggregate analytics only.
 
 **Bind (v0, hybrid):** X and TikTok: publish a post with **`votemap/@handle` or `votemap.net/handle`** and paste its link (read through free oEmbed). Threads: sign in with Threads OAuth. Instagram (personal too): put the token in the **bio**. **No comment on `@vote_map`. No other fallback.** **No other social OAuth, no cold-DM, no paid X API.** One social @ → one votemap account. Cards / pay UI: **verified social @ primary**, votemap handle **muted**. No bind → votemap handle only (not fake-verified) and **cannot be paid**.
 
@@ -43,9 +43,8 @@ flowchart TB
   Home --> Divider["── divider ──"]
   Divider --> Browse["Browse — sign in or browse"]
 
-  Google --> Form["Gender, birth year, SMS OTP"]
-  Apple --> Form
-  Form --> Handle["votemap handle — FCFS"]
+  Google --> Handle
+  Apple --> Handle["votemap handle — FCFS"]
   Handle --> Bind["Bind · X / TikTok post with token<br/>Threads OAuth · Instagram bio token<br/>verified for 60 days until next check"]
   Bind --> Page["Public · votemap.net/@handle<br/>bio socials verified · website if string on site<br/>street + other links unverified · hide ≠ unbind<br/>shop can show in v0"]
   Page --> Browse
@@ -95,7 +94,7 @@ flowchart TB
   class Home home
   class Google google
   class Apple apple
-  class Form,Handle,Bind,Page,Face,Wallet,Pledge info
+  class Handle,Bind,Page,Face,Wallet,Pledge info
   class Browse,Catalog,OpenPost,URLs,Claim,Pay ok
   class Readonly,QR,Divider,Cancel grey
 ```
