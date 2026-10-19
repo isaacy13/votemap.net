@@ -18,6 +18,6 @@ Not v0, and not later work either. v0 has no custody (2026-10-19): no escrow, no
 
 ## General hop explorer
 
-v0: named who-paid-whom ([requirements](./requirements.md) item 26). Rows are **pledge** and **cancel** (from the stored wallet-signed messages) and **pay** (from the router’s `Paid` events, only after the tx is on Base), with the **action label**. Handles are the names at that moment. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). **Score** (visible only): share of these rows whose wallets are votemap accounts. No fee discount / rank prize / new fee. Off-platform hops are **not** in this score. Bound IG / X / Threads / TikTok from the pay lookup. No archive node, no general USDC indexer. That named view is **v0**, not later.
+v0: named who-paid-whom ([requirements](./requirements.md) item 26). Rows are **pledge** and **cancel** (from the stored wallet-signed messages) and **pay** (from the router’s `Paid` events, only after the tx is on Base), with the **action label**. Handles are the names at that moment. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown. Bound IG / X / Threads / TikTok from the pay lookup. No archive node, no general USDC indexer. That named view is **v0**, not later.
 
 Later: a general in-app hop explorer **beyond** those hops (USDC that left votemap). Not solved.
