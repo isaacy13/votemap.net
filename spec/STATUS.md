@@ -2,6 +2,7 @@
 
 ## Building
 
+- [ ] [Requirements](requirements.md) — no custody (pledge + direct pay), no PII on-chain, isolated fetcher, pay signature fix, one payee per pay, no payouts to public officials (2026-10-19 review)
 - [ ] [Spec export](https://github.com/isaacy13/votemap.net) — markdown spec for outside agents, separate draft PR
 
 - [ ] [Production PR](https://github.com/isaacy13/votemap.net/pull/102) — public profile on `e4b18d6`; CI green

@@ -2,13 +2,13 @@
 
 **Solved / v0** — [requirements](./requirements.md) items 22–25. Later (not solved, unfinished): [later.md](./later.md). Open questions: [open.md](./open.md). Save upfront. Don’t re-lookup all posts. Efficient, cheap, secure. **Don’t change the app in this note.**
 
-**First stake:** the **signer** fetches the snapshot from **exact-host-allowlisted** oEmbed / permalink hosts. **Never trust client-supplied handle / text / date.** One row: `network`, `handle`, `postedAt`, pot hash, one-line text. Browse = paged index (`LIMIT 50`). No refetch of 1M posts.
+**First pledge:** the **fetcher** fetches the snapshot from **exact-host-allowlisted** oEmbed / permalink hosts. **Never trust client-supplied handle / text / date.** One row: `network`, `handle`, `postedAt`, pot hash, one-line text. Browse = paged index (`LIMIT 50`). No refetch of 1M posts.
 
-**Pot key** = canonical URL. Changing the URL = a different pot; cannot overwrite another post’s row. Resolve TikTok shorts once, then key the permalink. At stake time: private / deleted / not embeddable → **no pot** ([requirements](./requirements.md) item 22). After money is in: [open](./open.md). **Malicious URL is solvable this way** — not an open cheat.
+**Pot key** = canonical URL. Changing the URL = a different pot; cannot overwrite another post’s row. Resolve TikTok shorts once, then key the permalink. At first pledge: private / deleted / not embeddable → **no pot** ([requirements](./requirements.md) item 22). After pledges are in: [open](./open.md). **Malicious URL is solvable this way** — not an open cheat.
 
-**v0 social bind:** [requirements](./requirements.md) item 6. **Bio only. No comment fallback. No social OAuth, no cold-DM, no paid X API.** **Pay picker** = verified social @ → confirm → claimed wallet. **Public page** is `votemap.net/@handle` (links **and shop catalog**). Bio text stays `votemap/@handle` or `votemap.net/handle`. Verified marks in v0 are only TikTok, X, Threads, and Instagram, via the bio rule (`votemap/@handle` or `votemap.net/handle` in that account bio, 60 days, daily job on due binds only), and a website only if that site itself shows `votemap/@handle` or `votemap.net/handle` (same two strings, same 60-day window, same daily job: re-check when due, string still there → another 60 days, gone → lapses; do not fetch early; do not verify every URL). A street address and any other link stay unverified. Showing the website on the public page is optional. Hiding it does not unbind it. The 60-day lag is accepted v0, not open. Shop on the page is v0: products (name, USDC price, physical or not, short text; off-chain; not a token). Not shipping, tax, themes, inventory sync, or staff accounts. License stays later.
+**v0 social bind:** [requirements](./requirements.md) item 6. **Bio only. No comment fallback. No social OAuth, no cold-DM, no paid X API.** **Pay picker** = verified social @ → confirm → payout wallet. **Public page** is `votemap.net/@handle` (links **and shop catalog**). Bio text stays `votemap/@handle` or `votemap.net/handle`. Verified marks in v0 are only TikTok, X, Threads, and Instagram, via the bio rule (`votemap/@handle` or `votemap.net/handle` in that account bio, 60 days, daily job on due binds only), and a website only if that site itself shows `votemap/@handle` or `votemap.net/handle` (same two strings, same 60-day window, same daily job: re-check when due, string still there → another 60 days, gone → lapses; do not fetch early; do not verify every URL). A street address and any other link stay unverified. Showing the website on the public page is optional. Hiding it does not unbind it. The 60-day lag is accepted v0, not open. Shop on the page is v0: products (name, USDC price, physical or not, short text; off-chain; not a token). Not shipping, tax, themes, inventory sync, or staff accounts. License stays later.
 
-**Why not scrape the live embed:** official widgets become **cross-origin iframes after hydrate**. Parent JS cannot read handle / date / caption from them. Snapshot at first stake. Issue page may still render the embed.
+**Why not scrape the live embed:** official widgets become **cross-origin iframes after hydrate**. Parent JS cannot read handle / date / caption from them. Snapshot at first pledge. Issue page may still render the embed.
 
 Checked live 2026-09-29. How IDs decode is below.
 
@@ -16,14 +16,14 @@ Checked live 2026-09-29. How IDs decode is below.
 
 ## One-glance
 
-| | Handle from URL? | Date from ID? | What JS actually gets | Snapshot at first stake |
+| | Handle from URL? | Date from ID? | What JS actually gets | Snapshot at first pledge |
 | --- | --- | --- | --- | --- |
 | **X** | Only if paste still has `/{user}/status/`. Canonical `/i/status/{id}` has **none**. | **Yes** (Snowflake, ms) | **`react-tweet` = native DOM** from JSON. Official `widgets.js` = **iframe**. | Handle (+ text for cards) |
 | **Threads** | **Yes** on `/@{user}/post/…`. No on short `/t/{code}`. | **Unofficial** shortcode (~1s) | oEmbed is a “View on Threads” shell → **iframe** | Text (handle already in URL) |
 | **Instagram** | Only if paste is `/{user}/p/` or `/{user}/reel/`. Usual `/p/{code}` / `/reel/{code}` has **none**. Any content URL is in-spec, not Reels-only. | **Unofficial** shortcode (same as Threads) | oEmbed is a gray skeleton → **`embed.js` iframe**. No author, no caption in JSON. | Handle + text |
 | **TikTok** | **Yes** on `/@{user}/video/` or `/photo/`. Short `vm.` / `vt.` / `/t/` need resolve first. | **Yes** (Snowflake, seconds) | oEmbed JSON has handle + title, then **`embed.js` iframe**. Also a player iframe by id. | Handle + text (oEmbed is enough) |
 
-Stake **time** (when money showed up) is a different filter from **post date**. Don’t mix them.
+Pledge **time** (when money showed up) is a different filter from **post date**. Don’t mix them.
 
 ---
 
@@ -84,7 +84,7 @@ Do **not** take a paid X API dependency ([requirements](./requirements.md) item 
 | Prove this @ is that person | **v0: bio** `votemap/@handle` or `votemap.net/handle` → **verified for 60 days** ([requirements](./requirements.md) item 6). Then they can be a **pay picker**. Chain dest is still the wallet. |
 | Search posts we don’t already have | No. |
 | Full long / note-tweet text | X syndication truncates. Official API or snapshot at paste. |
-| Deleted / private posts | Id date still decodes. Embed/oEmbed just fail. **At stake time:** no pot. **After money is in:** [open](./open.md) (not locked). |
+| Deleted / private posts | Id date still decodes. Embed/oEmbed just fail. **At first pledge:** no pot. **After pledges are in:** [open](./open.md) (not locked). |
 | IG/Threads lookup of **someone else’s** caption as a product API | Graph / Threads APIs are for **the app user’s own** content after Meta review — not “any public URL.” |
 | TikTok research / display APIs | Paid / app-review. Unnecessary if we snapshot oEmbed once. |
 
@@ -92,22 +92,22 @@ Unofficial one-shots (X syndication, X oEmbed, TikTok oEmbed, IG public `og:titl
 
 ---
 
-## Snapshot at first stake (browse cards) — v0, solved
+## Snapshot at first pledge (browse cards) — v0, solved
 
-**Signer** fetches from exact-host-allowlisted oEmbed / permalink hosts. **Never trust the client** for handle / text / date. Pot key = canonical URL (`keccak256(url)`). Changing the URL = a different pot; cannot overwrite another post’s row.
+**Fetcher** fetches from exact-host-allowlisted oEmbed / permalink hosts. **Never trust the client** for handle / text / date. Pot key = canonical URL (`keccak256(url)`). Changing the URL = a different pot; cannot overwrite another post’s row.
 
-Write once, on first successful stake (signer store, keyed by that hash):
+Write once, on first accepted pledge (API store, keyed by that hash):
 
 | Field | Where it comes from | Why |
 | --- | --- | --- |
 | `network`, `postId` | URL parse | Identity |
 | `canonical` | Same string as chain | Join to pot |
 | `originalUrl` | What they pasted | Recover a dropped X/IG handle |
-| `handle` | **Signer** oEmbed / permalink fetch (**not** client). **X:** keep `{user}` in paste for snapshot; pot key may be `/i/status/{id}`. **Threads / TikTok:** URL after signer fetch. **IG:** `/{user}/…` or public `og:description`, only after signer fetch. | Username filter + card |
-| `postedAt` | X Snowflake / IG+Threads shortcode / TikTok `id >> 32` (signer-parsed, not client) | Date filter with **no live refetch** |
+| `handle` | **Fetcher** oEmbed / permalink fetch (**not** client). **X:** keep `{user}` in paste for snapshot; pot key may be `/i/status/{id}`. **Threads / TikTok:** URL after fetcher fetch. **IG:** `/{user}/…` or public `og:description`, only after fetcher fetch. | Username filter + card |
+| `postedAt` | X Snowflake / IG+Threads shortcode / TikTok `id >> 32` (server-parsed, not client) | Date filter with **no live refetch** |
 | `text` | **X:** syndication / oEmbed HTML. **TikTok:** oEmbed `title`. **IG:** `og:title` / `og:description`. **Threads:** not in oEmbed — empty text ok if embed proved public. | Card preview if the embed dies |
 
-If the snapshot fetch fails, **reject the stake** (private / wrong host / failed embed). Do not store a client-typed handle. Do not backfill from the user.
+If the snapshot fetch fails, **reject the pledge** (private / wrong host / failed embed). Do not store a client-typed handle. Do not backfill from the user.
 
 Browse lists read **our** index. Re-render the live embed only on the issue screen. **Do not refetch 1M posts.**
 
@@ -119,4 +119,4 @@ v0 filters: **network, handle, post date**. No likes, no verified-only, no full-
 
 **Can we filter browse by username, post date, etc., or is that locked inside the embed iframe?**
 
-**Solved / v0.** Snapshot at first stake (item 25). **Why not scrape the live embed:** official widgets become **cross-origin iframes after hydrate** — parent JS cannot read them (item 23). Date is in the **id**. Handle is in the permalink (or signer snapshot). Caption is never in the URL — snapshot it. Locked paste formats: items 22–25.
+**Solved / v0.** Snapshot at first pledge (item 25). **Why not scrape the live embed:** official widgets become **cross-origin iframes after hydrate** — parent JS cannot read them (item 23). Date is in the **id**. Handle is in the permalink (or signer snapshot). Caption is never in the URL — snapshot it. Locked paste formats: items 22–25.
