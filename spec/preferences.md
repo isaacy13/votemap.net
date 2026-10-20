@@ -30,3 +30,4 @@
 - 2026-10-19: **Gender and birth year are optional analytics,** self-reported, asked after the first pledge, off-chain, aggregates of at least 20 accounts only, never on the public page.
 - 2026-10-19: **Smart wallets supported** (ERC-1271 / ERC-6492) to drop seed phrases and extensions from signup. Coinbase Onchain Verify on a smart-wallet address still needs a live test.
 - 2026-10-19: **Payout change protection.** Mapping a wallet or changing payout needs phone biometrics plus either the current payout wallet’s signature or a 72-hour wait with an email that can cancel it.
+- 2026-10-20: **TikTok binds with Login Kit** (free; `user.info.basic` + `user.info.profile`, read-only, pre-approval for the username scope), not post-a-token. X stays on free oEmbed post-a-token; Sign in with X is a paid profile read (~$0.01) and is only the fallback. Instagram personal accounts have no login API (Basic Display shut down 2024-12-04), so bio stays.
