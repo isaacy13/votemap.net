@@ -4,7 +4,7 @@
 
 **First pledge:** the **fetcher** fetches the snapshot from **exact-host-allowlisted** oEmbed / permalink hosts. **Never trust client-supplied handle / text / date.** One row: `network`, `handle`, `postedAt`, pot hash, one-line text. Browse = paged index (`LIMIT 50`). No refetch of 1M posts.
 
-**Pot key** = canonical URL. Changing the URL = a different pot; cannot overwrite another post’s row. Resolve TikTok shorts once, then key the permalink. At first pledge: private / deleted / not embeddable → **no pot** ([requirements](./requirements.md) item 22). After pledges are in: [open](./open.md). **Malicious URL is solvable this way** — not an open cheat.
+**Pot key** = network + post id ([requirements](./requirements.md) item 23). A different post = a different pot; cannot overwrite another post’s row. Resolve TikTok shorts once, then key the permalink. At first pledge: private / deleted / not embeddable → **no pot** ([requirements](./requirements.md) item 22). After pledges are in: [requirements](./requirements.md) item 25. **Malicious URL is solvable this way** — not an open cheat.
 
 **v0 social bind:** [requirements](./requirements.md) item 6. **Hybrid (2026-10-19): X post with the token via free oEmbed, TikTok and Threads OAuth, Instagram bio. No comment fallback. No other social OAuth, no cold-DM, no paid X API.** **Pay picker** = verified social @ → confirm → payout wallet. **Public page** is `votemap.net/@handle` (links **and shop catalog**). Token text stays `votemap/@handle` or `votemap.net/handle`. Verified marks in v0 are only TikTok, X, Threads, and Instagram, via the bind rule (X: a post carrying `votemap/@handle` or `votemap.net/handle`; TikTok and Threads: OAuth; Instagram: that token in the bio; 60 days, daily job on due binds only), and a website only if that site itself shows `votemap/@handle` or `votemap.net/handle` (same two strings, same 60-day window, same daily job: re-check when due, string still there → another 60 days, gone → lapses; do not fetch early; do not verify every URL). A street address and any other link stay unverified. Showing the website on the public page is optional. Hiding it does not unbind it. The 60-day lag is accepted v0, not open. Shop on the page is v0: products (name, USDC price, physical or not, short text; off-chain; not a token). Not shipping, tax, themes, inventory sync, or staff accounts. License stays later.
 
@@ -84,7 +84,7 @@ Do **not** take a paid X API dependency ([requirements](./requirements.md) item 
 | Prove this @ is that person | **v0: bio** `votemap/@handle` or `votemap.net/handle` → **verified for 60 days** ([requirements](./requirements.md) item 6). Then they can be a **pay picker**. Chain dest is still the wallet. |
 | Search posts we don’t already have | No. |
 | Full long / note-tweet text | X syndication truncates. Official API or snapshot at paste. |
-| Deleted / private posts | Id date still decodes. Embed/oEmbed just fail. **At first pledge:** no pot. **After pledges are in:** [open](./open.md) (not locked). |
+| Deleted / private posts | Id date still decodes. Embed/oEmbed just fail. **At first pledge:** no pot. **After pledges are in:** [requirements](./requirements.md) item 25. |
 | IG/Threads lookup of **someone else’s** caption as a product API | Graph / Threads APIs are for **the app user’s own** content after Meta review — not “any public URL.” |
 | TikTok research / display APIs | Paid / app-review. Unnecessary if we snapshot oEmbed once. |
 
@@ -94,7 +94,7 @@ Unofficial one-shots (X syndication, X oEmbed, TikTok oEmbed, IG public `og:titl
 
 ## Snapshot at first pledge (browse cards) — v0, solved
 
-**Fetcher** fetches from exact-host-allowlisted oEmbed / permalink hosts. **Never trust the client** for handle / text / date. Pot key = canonical URL (`keccak256(url)`). Changing the URL = a different pot; cannot overwrite another post’s row.
+**Fetcher** fetches from exact-host-allowlisted oEmbed / permalink hosts. **Never trust the client** for handle / text / date. Pot key = network + post id (`keccak256("network:postId")`). A different post = a different pot; cannot overwrite another post’s row.
 
 Write once, on first accepted pledge (API store, keyed by that hash):
 
@@ -103,7 +103,7 @@ Write once, on first accepted pledge (API store, keyed by that hash):
 | `network`, `postId` | URL parse | Identity |
 | `canonical` | Same string as chain | Join to pot |
 | `originalUrl` | What they pasted | Recover a dropped X/IG handle |
-| `handle` | **Fetcher** oEmbed / permalink fetch (**not** client). **X:** keep `{user}` in paste for snapshot; pot key may be `/i/status/{id}`. **Threads / TikTok:** URL after fetcher fetch. **IG:** `/{user}/…` or public `og:description`, only after fetcher fetch. | Username filter + card |
+| `handle` | **Fetcher** oEmbed / permalink fetch (**not** client). **X:** keep `{user}` in paste for snapshot; pot key is the status id. **Threads / TikTok:** URL after fetcher fetch. **IG:** `/{user}/…` or public `og:description`, only after fetcher fetch. | Username filter + card |
 | `postedAt` | X Snowflake / IG+Threads shortcode / TikTok `id >> 32` (server-parsed, not client) | Date filter with **no live refetch** |
 | `text` | **X:** syndication / oEmbed HTML. **TikTok:** oEmbed `title`. **IG:** `og:title` / `og:description`. **Threads:** not in oEmbed — empty text ok if embed proved public. | Card preview if the embed dies |
 

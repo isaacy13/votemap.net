@@ -6,7 +6,7 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 - System flow diagram: the PNG is not in this repo. The mermaid under section 2 is the text.
 - [where shop USDC goes](#where-shop-usdc-goes)
 
-**No custody.** VoteMap never holds USDC. **Fees:** **1.5% on pay · 0% pledge, cancel, lapse**. A pledge is a wallet-signed promise (no gas, no USDC moves). A pay goes from the voter’s wallet straight to the payee’s wallet in one transaction. **Pay picker** = verified social @ → confirm → **payout wallet**. Public officials cannot be paid ([requirements](./requirements.md) item 27).
+**No custody.** VoteMap never holds USDC. **Fees:** **none** on pledge, cancel, lapse, or pay; optional tip to votemap at pay. A pledge is a wallet-signed promise (no gas, no USDC moves). A pay goes from the voter’s wallet straight to the payee’s wallet in one transaction. **Pay picker** = verified social @ → confirm → **payout wallet**. Public officials cannot be paid ([requirements](./requirements.md) item 27).
 
 ## 1. User flow
 
@@ -18,7 +18,7 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 
 **Shop register:** Coinbase US on the payout wallet + merchant flag (off-chain). Address and/or website required. Street shown **unverified**. Website verified only as stated above. Verified social is the bio bind. Does not prove they control the street. A shop cannot be paid as a shop unless it has at least one verified link and zero unverified links. An address-only shop or any unverified link cannot. A street address is not a link and does not by itself disqualify a shop. The public payee picker is unchanged. Products live on the public page (item 6).
 
-**Browse:** fetcher snapshot at first pledge (canonical permalink; exact-host allowlist; never trust client handle/text/date). A post that is private, deleted, or not embeddable **at first pledge** does not get through. **No pot.** Live embed is iframe-opaque — filters never read it. After pledges are in, private/deleted is [open](./open.md). Browse sorts on **backed** USDC, not pledged.
+**Browse:** fetcher snapshot at first pledge (canonical permalink; exact-host allowlist; never trust client handle/text/date). A post that is private, deleted, or not embeddable **at first pledge** does not get through. **No pot.** Live embed is iframe-opaque — filters never read it. After pledges are in: snapshot card stays, private/deleted refuses new pledges, pays still go through ([requirements](./requirements.md) item 25). Browse sorts on **backed** USDC, not pledged.
 
 **Web/desktop:** readonly + QR / share sheet. **Pledge and pay only on iOS/Android** after Face ID / Class 3 (no PIN). Wallet optional until pledge; **max 3**, one payout. Coinbase Onchain Verify **EAS US** on the paying wallet and on the payee wallet. Paste a public canonical permalink (X / Threads / IG / TikTok).
 
@@ -26,7 +26,7 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 
 **Claim:** a verified-bind account posts “I did this” on a pot, with a link.
 
-**Pay:** pick a claimant or a **verified social @** (not votemap @) → reverse lookup votemap account → **confirm** (social @, muted votemap @, wallet, Coinbase country) → one transaction from the voter’s wallet: 98.5% to the **payout wallet**, 1.5% to the treasury. Unbound / unverified social cannot be a dest. Pays count toward the voter’s **follow-through**.
+**Pay:** pick a claimant or a **verified social @** (not votemap @) → reverse lookup votemap account → **confirm** (social @, muted votemap @, wallet, Coinbase country) → one transaction from the voter’s wallet: the full amount to the **payout wallet** (plus an optional tip to votemap). Unbound / unverified social cannot be a dest. Pays count toward the voter’s **follow-through** and toward a claim being **accepted** (pledgers with ⅓ of backed paid it). Pledgers can **dispute** a claim publicly.
 
 **Where the money went (v0):** rows are **pledge** / **cancel** (from the stored signed messages) and **pay** (from the router’s `Paid` events, only once on Base): action, from votemap handle, to votemap handle, amount, pot, tx hash. Handles are the names at that moment. The page lists those rows and **shows the action label**. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown (general explorer, later). Bound IG / X / Threads / TikTok from the pay lookup. Reads **`@isaac` paid `@grok`**. No archive node, no general USDC indexer. No privacy hide.
 
@@ -77,7 +77,7 @@ flowchart TB
   subgraph after ["After the pledge"]
     Cancel["Cancel or lapse — 0%"]
     Claim["Claim — someone posts I did this"]
-    Pay["Pay 1.5% · one tx from your wallet<br/>picker = claimant or verified social @<br/>confirm: social · muted votemap<br/>wallet · Coinbase country<br/>USDC → payout wallet"]
+    Pay["Pay · no fee · one tx from your wallet<br/>picker = claimant or verified social @<br/>confirm: social · muted votemap<br/>wallet · Coinbase country<br/>USDC → payout wallet"]
   end
 
   Pledge --> Cancel
@@ -145,14 +145,14 @@ flowchart TB
 
   subgraph base ["Base"]
     EAS["Coinbase EAS US · payer and payee"]
-    Router["PayRouter · holds no USDC<br/>98.5% → payee · 1.5% → treasury<br/>emits Paid"]
+    Router["PayRouter · holds no USDC<br/>amount → payee · optional tip → treasury<br/>emits Paid"]
     EAS --> Router
   end
 
   Signer -->|EIP-712 pay sig| Wallet["Voter wallet"]
   Wallet -->|one pay tx| Router
   Router -->|Paid events| Indexer
-  Fees["1.5% pay · 0% pledge / cancel / lapse"]
+  Fees["No fees · optional tip at pay"]
 
   classDef grey fill:#f3f4f6,stroke:#9ca3af,color:#374151
   classDef warn fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
@@ -183,12 +183,12 @@ flowchart TB
 
   VW -->|"1. Pledge<br/>signed message, USDC stays"| VW
   VW -->|"2. Pay for a listed product<br/>one tx"| R
-  R -->|"1.5% fee"| TR
-  R -->|"98.5%, same tx"| SH
+  R -->|"optional tip"| TR
+  R -->|"full price, same tx"| SH
 ```
 
 1. **Pledge.** The voter signs a promise toward the post’s outcome. USDC stays in the voter’s wallet.
-2. **Pay the shop.** When the voter buys a listed product, one transaction from the voter’s wallet pays the shop’s payout wallet and the 1.5% fee. The signed pay names the product and price. The shop can show the confirmed tx at the till.
+2. **Pay the shop.** When the voter buys a listed product, one transaction from the voter’s wallet pays the shop’s payout wallet the full price (plus any tip to votemap). The signed pay names the product and price. The shop can show the confirmed tx at the till.
 
 Pay is final. VoteMap cannot refund, reverse, or freeze it, because VoteMap never held it.
 
