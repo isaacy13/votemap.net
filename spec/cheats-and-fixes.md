@@ -33,9 +33,10 @@ Do **not** reopen fees for this.
 | Squat the real social | The bind: X post or Instagram bio with `votemap/@handle` or `votemap.net/handle`, or TikTok / Threads OAuth. Then they can be a **pay picker**. One social @ → one votemap account. No comment fallback. |
 | Pay picker vs chain dest | Picker **is** the verified social @. Chain dest is the **claimed wallet**. Unbound / unverified cannot be picked. |
 | Fake pot size | Pots show **backed** USDC: each wallet’s pledges count only up to what it holds on Base, pro rata across its open pledges. One $100 balance cannot back $100 on 50 pots. Revoked badge backs $0. |
-| Pledge and walk away | Free to do, and public. Follow-through shows paid / disputed / silent on pots with an **accepted** claim (pledgers holding ⅓ of backed paid it). Silence costs reputation, not money. Expected payout weights each pledge by its pledger’s record. |
-| Fake claim to shame pledgers | A claim only counts once pledgers with ⅓ of the pot’s backed dollars paid it, and any pledger can dispute it publicly. |
-| Friend pass-through | No exit fee exists, so there is nothing to dodge. A round trip back to the payer’s wallets within 30 days is marked **returned** and does not count anywhere. Faking an accepted claim needs a third of the pot’s real backed money. |
+| Pledge and walk away | Free to do, and public. Follow-through shows paid / declined / silent on pots someone else claimed. Paying any payee counts as paid. Silence costs reputation, not money. Expected payout weights each pledge by its pledger’s record. |
+| Fake claim to shame pledgers | Pledgers are notified and can decline in one step with a public reason, which never reads as silent. |
+| Whale decides for the pot | No pot-level vote exists. Each pledger’s record depends only on what that pledger did. |
+| Friend pass-through | No exit fee exists, so there is nothing to dodge. A round trip back to the payer’s wallets within 30 days is marked **returned** and does not count anywhere. Nothing pot-wide can be faked, because no pot-wide verdict exists. |
 | Signature replay | A pay sig names payer (`msg.sender`), nonce, deadline, chainId, and router. Works once. A stolen votemap key cannot move anyone else’s USDC. |
 | Stuck exits | Nothing is held, so nothing can be stuck. One payee per pay; a blacklisted payee fails only that pay. |
 | Unverified shop link | **Solved / v0.** A shop cannot be paid as a shop unless it has at least one verified link and zero unverified links. An address-only shop or any unverified link cannot. A street address is not a link and does not by itself disqualify a shop. The public payee picker is unchanged. |
@@ -55,7 +56,7 @@ Do **not** reopen fees for this.
 | Pledge $100 on a post, 180-day expiry | Signed, no gas, USDC stays in your wallet. Pot shows up to $100 backed if you hold it |
 | Pay $50 to A day 1, $25 to B day 2 | Two txs from your wallet. A gets $50, B gets $25. Your open pledge drops to $25 |
 | Buy a $20 listed product at shop C | One tx: C gets $20. Final |
-| Cancel the rest, or let it lapse | $0. Counts as silent on your follow-through if that pot has an accepted claim you did not dispute |
+| Cancel the rest, or let it lapse | $0. Counts as silent on your follow-through if someone else claimed that pot and you neither paid nor declined |
 | Spend the USDC elsewhere | Your backed amount drops; pot shows less backed |
 
 Do **not** add an exit fee back. Do **not** use a percentage to steer behavior. Do **not** hold USDC to enforce a pledge. Do **not** loop over payees in one call.
