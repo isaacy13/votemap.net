@@ -33,15 +33,12 @@ Do **not** reopen fees for this.
 | Squat the real social | The bind: X post or Instagram bio with `votemap/@handle` or `votemap.net/handle`, or TikTok / Threads OAuth. Then they can be a **pay picker**. One social @ → one votemap account. No comment fallback. |
 | Pay picker vs chain dest | Picker **is** the verified social @. Chain dest is the **claimed wallet**. Unbound / unverified cannot be picked. |
 | Fake pot size | Pots show **backed** USDC: each wallet’s pledges count only up to what it holds on Base, pro rata across its open pledges. One $100 balance cannot back $100 on 50 pots. Revoked badge backs $0. |
-| Pledge and walk away | Free to do, and public. Follow-through shows paid / declined / silent on pots someone else claimed. Paying any payee counts as paid. Silence costs reputation, not money. Expected payout weights each pledge by its pledger’s record. |
-| Fake claim to shame pledgers | Pledgers are notified and can decline in one step with a public reason, which never reads as silent. |
-| Whale decides for the pot | No pot-level vote exists. Each pledger’s record depends only on what that pledger did. |
-| Friend pass-through | No exit fee exists, so there is nothing to dodge. A round trip back to the payer’s wallets within 30 days is marked **returned** and does not count anywhere. Nothing pot-wide can be faked, because no pot-wide verdict exists. |
+| Pledge, claim, and pay abuse | See [Incentive scenarios](#incentive-scenarios) below. |
 | Signature replay | A pay sig names payer (`msg.sender`), nonce, deadline, chainId, and router. Works once. A stolen votemap key cannot move anyone else’s USDC. |
 | Stuck exits | Nothing is held, so nothing can be stuck. One payee per pay; a blacklisted payee fails only that pay. |
 | Unverified shop link | **Solved / v0.** A shop cannot be paid as a shop unless it has at least one verified link and zero unverified links. An address-only shop or any unverified link cannot. A street address is not a link and does not by itself disqualify a shop. The public payee picker is unchanged. |
 | `$5` bakery | Pay **$5** for a **listed product**: $5 to the bakery’s payout wallet, one tx from the voter’s wallet, no fee. Pay is final. Do not tokenize the listing. |
-| Self-pay | `to != msg.sender`, and the signer refuses this account’s own mapped wallets. |
+| Self-pay | `to != msg.sender`; the signer refuses this account’s own and its linked accounts’ wallets; one account per Coinbase user ([requirements](./requirements.md) item 5). |
 | Malicious / fake embed URL | **Solved / v0.** Fetcher snapshot from **exact-host** allowlist. Never trust client handle/text/date. At first pledge: private / deleted / not embeddable → **no pot**. New URL = new pot; cannot overwrite another row. After pledges are in: [requirements](./requirements.md) item 25. |
 | Public page | `votemap.net/@handle`. Verified marks in v0 are only TikTok, X, Threads, and Instagram, via the bind rule (X: a post carrying `votemap/@handle` or `votemap.net/handle`; TikTok and Threads: OAuth; Instagram: that token in the bio; 60 days, daily job on due binds only), and a website only if that site’s owner puts `votemap/@handle` or `votemap.net/handle` in its DNS TXT record or `/.well-known/votemap.txt` (requirements item 6) (same two strings, same 60-day window, same daily job: re-check when due, string still there → another 60 days, gone → lapses; do not fetch early; do not verify every URL). A street address and any other link stay unverified. Showing the website on the public page is optional. Hiding it does not unbind it. Pay picker still uses bio bind. **Shop is a catalog** (products: name, USDC price, physical or not, short text; off-chain; not a token). Not shipping / tax / themes / inventory / staff. License later. |
 | Where the money went | **v0.** Rows are **pledge** / **cancel** (signed messages) and **pay** (router `Paid` events, only once on Base): action, from handle, to handle, amount, pot, tx hash. Page **shows the action label**. Names at that moment. Hash → **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops not shown. Bound socials from the pay lookup. Reads **`@isaac` paid `@grok`**. No archive node, no general USDC indexer, no hop explorer. No privacy hide. |
@@ -56,7 +53,42 @@ Do **not** reopen fees for this.
 | Pledge $100 on a post, 180-day expiry | Signed, no gas, USDC stays in your wallet. Pot shows up to $100 backed if you hold it |
 | Pay $50 to A day 1, $25 to B day 2 | Two txs from your wallet. A gets $50, B gets $25. Your open pledge drops to $25 |
 | Buy a $20 listed product at shop C | One tx: C gets $20. Final |
-| Cancel the rest, or let it lapse | $0. Counts as silent on your follow-through if someone else claimed that pot and you neither paid nor declined |
+| Cancel the rest, or let it lapse | $0. If someone else claimed that pot (up to 30 days later), the $25 counts as silent unless you give a decline reason. Cutting the pledge within 30 days before the claim does not shrink what counts |
 | Spend the USDC elsewhere | Your backed amount drops; pot shows less backed |
 
 Do **not** add an exit fee back. Do **not** use a percentage to steer behavior. Do **not** hold USDC to enforce a pledge. Do **not** loop over payees in one call.
+
+---
+
+## Incentive scenarios
+
+Swept 2026-10-22. Rules: [requirements](./requirements.md) item 10. **Solved** = the attack does not work. **Bounded** = it works but buys little and is visible. **No fix** = no design can stop it; why is stated.
+
+| # | Scenario | Verdict | How |
+| --- | --- | --- | --- |
+| 1 | Pledge more than you hold, or one balance on many pots | Solved | Backed = balance-capped, pro rata. |
+| 2 | Move USDC between your wallets while the indexer reads, to count it twice | Solved | All balances in one refresh are read at one block. |
+| 3 | Borrow USDC to look backed | Bounded | Costs interest, shows as concentration, drops when repaid. |
+| 4 | One whale looks like a crowd | Solved | Concentration (top person’s share of backed) on every pot. |
+| 5 | Whale decides the outcome for everyone | Solved | No pot-level vote. Each record depends only on that pledger’s own acts. |
+| 6 | Pledge for the look, then ghost | Solved | Silent shows on the record and cuts reliability in expected payout. |
+| 7 | Cancel or cut the pledge just before or after the work lands | Solved | Counted amount = highest amount from 30 days before the first claim. |
+| 8 | Honest “not done” or “not what I wanted” looks like ghosting | Solved | Decline with a preset reason; shown as declined, not silent. Taste is respected. |
+| 9 | Paid in cash or off-platform, looks silent | Solved | Decline reason “paid outside votemap”: shown honestly, not counted as paid. |
+| 10 | Pay $1 of $1,000 to look paid | Solved | Everything is in dollars: $1 paid, $999 silent or declined. |
+| 11 | Pay yourself through a second account | Solved | One account per Coinbase user; linked phone, login, or wallet; signer refuses. If Coinbase refuses the OAuth app: Bounded (needs a second phone, login, and Coinbase account). |
+| 12 | Pay a friend, get it back on-chain | Solved | Returned pays (to any linked wallet within 30 days) count nowhere. |
+| 13 | Pay a friend, get it back in cash or via other wallets | **No fix** | While each pledger freely picks the payee, a sham pay to a real, separate person looks exactly like a real pay. Escrow, KYC, and fees all fail here too. Bounded: half weight until the payee has 3 other payers, record vouches only at the scale earned (k = pledge size), payee age and payer count shown. |
+| 14 | Friend ring (4+ KYC’d people) paying each other to look reliable | **No fix**, bounded | Beats the 3-payer rule. Costs four real identities, real money moved, and trust. Visible on the trail. |
+| 15 | Fake generosity (“I gave $10k to the cause”) via a friend | **No fix**, bounded | Trail names the payee, shows no claim / payer count / account age. Readers judge. |
+| 16 | Build a small honest record, then pledge big and ghost | Solved | k = max($100, pledge size): $100 of history barely moves a $10k pledge off the average. |
+| 17 | Brand-new account looks as reliable as a veteran | Solved | Shrinkage toward the average. |
+| 18 | Fake claim to make pledgers look silent | Solved | One end-of-pledge prompt; any decline reason means not silent. Claims by linked accounts never count. |
+| 19 | Claim spam / notification flood | Solved | One claim per account per pot, 20 open per account, daily digest. |
+| 20 | Claimant’s friends pay them to look popular (herding) | Bounded | Claim split shows payer count and share of backed; information only. |
+| 21 | Abusive decline text | Solved | Preset reasons, 140-char text under the stop rule. |
+| 22 | VoteMap edits records quietly | Solved | Daily Merkle root of signed pledges, cancels, declines, claims, and stops on Base; anyone can recompute except private account links. |
+| 23 | Fee avoidance | Solved | No fee; tip optional. |
+| 24 | A fee to deter sham pays | Rejected | A fee charges an honest pay exactly as much as a sham one. At 1.5% faking $10k costs $150; it would need ~20% to bite, which kills honest use. |
+| 25 | Lost Google/Apple login makes a new account | Solved | Coinbase sign-in recovers the old account after 72 hours with email notice. |
+| 26 | Two shops, one person | Later | One account per person in v0; multi-shop via Coinbase Business later. |
