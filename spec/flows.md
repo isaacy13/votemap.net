@@ -6,7 +6,7 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 - System flow diagram: the PNG is not in this repo. The mermaid under section 2 is the text.
 - [where shop USDC goes](#where-shop-usdc-goes)
 
-**No custody.** VoteMap never holds USDC. **Fees:** **none** on pledge, cancel, lapse, or pay; optional tip to votemap at pay. A pledge is a wallet-signed promise (no gas, no USDC moves). A pay goes from the voter’s wallet straight to the payee’s wallet in one transaction. **Pay picker** = verified social @ → confirm → **payout wallet**. Public officials cannot be paid ([requirements](./requirements.md) item 27).
+**Locked pot (2026-10-23).** A pledge locks USDC in the **PotVault**, an immutable contract VoteMap cannot move money out of. Locked money goes only to a payee the pledger picks, or back to the pledger at the expiry they chose; no early exit. **Fees:** **none** on deposit, pay, or refund; optional tip to votemap from the wallet at pay. **Pay picker** = verified social @ → confirm → **payout wallet**. Public officials cannot be paid ([requirements](./requirements.md) item 27).
 
 ## 1. User flow
 
@@ -18,17 +18,17 @@ Checked against [requirements](./requirements.md) — **v0 only**. Later (not so
 
 **Shop register:** Coinbase US on the payout wallet + merchant flag (off-chain). Address and/or website required. Street shown **unverified**. Website verified only as stated above. Verified social is the bio bind. Does not prove they control the street. A shop cannot be paid as a shop unless it has at least one verified link and zero unverified links. An address-only shop or any unverified link cannot. A street address is not a link and does not by itself disqualify a shop. The public payee picker is unchanged. Products live on the public page (item 6).
 
-**Browse:** fetcher snapshot at first pledge (canonical permalink; exact-host allowlist; never trust client handle/text/date). A post that is private, deleted, or not embeddable **at first pledge** does not get through. **No pot.** Live embed is iframe-opaque — filters never read it. After pledges are in: snapshot card stays, private/deleted refuses new pledges, pays still go through ([requirements](./requirements.md) item 25). Browse sorts on **backed** USDC, not pledged.
+**Browse:** fetcher snapshot at first pledge (canonical permalink; exact-host allowlist; never trust client handle/text/date). A post that is private, deleted, or not embeddable **at first pledge** does not get through. **No pot.** Live embed is iframe-opaque — filters never read it. After pledges are in: snapshot card stays, private/deleted refuses new pledges, pays still go through ([requirements](./requirements.md) item 25). Browse sorts on **locked** USDC.
 
 **Web/desktop:** readonly + QR / share sheet. **Pledge and pay only on iOS/Android** after Face ID / Class 3 (no PIN). Wallet optional until pledge; **max 3**, one payout. Coinbase Onchain Verify **EAS US** on the paying wallet and on the payee wallet. Paste a public canonical permalink (X / Threads / IG / TikTok).
 
-**Pledge:** pick a post → amount (≥ 1 USDC) and expiry → wallet signs → published with **backed** amount (up to what the wallet holds). Cancel anytime, free. Lapses at expiry.
+**Pledge:** pick a post → amount (≥ 1 USDC) and expiry (7–365 days) → one deposit transaction from the wallet into the vault. Top-ups add; expiry can only be extended. No cancel and no early withdrawal. At the expiry anything unpaid goes back to the wallet automatically.
 
 **Claim:** a verified-bind account posts “I did this” on a pot, with a link.
 
-**Pay:** pick a claimant or a **verified social @** (not votemap @) → reverse lookup votemap account → **confirm** (social @, muted votemap @, wallet, Coinbase country) → one transaction from the voter’s wallet: the full amount to the **payout wallet** (plus an optional tip to votemap). Unbound / unverified social cannot be a dest. Pays count toward the voter’s **follow-through**, whoever they pay. A pledger who thinks the work is not done (or not what they wanted) can **decline** publicly instead.
+**Pay:** pick a claimant or a **verified social @** (not votemap @) → reverse lookup votemap account → **confirm** (social @, muted votemap @, wallet, Coinbase country) → one transaction: the amount from the voter’s locked deposit (or straight from the wallet if they have none on that pot) to the **payout wallet**, plus an optional tip to votemap from the wallet. Unbound / unverified social cannot be a dest. Pays count toward the voter’s **follow-through**, whoever they pay. A pledger who thinks the work is not done (or not what they wanted) can **decline** publicly instead; the money still returns at the expiry.
 
-**Where the money went (v0):** rows are **pledge** / **cancel** (from the stored signed messages) and **pay** (from the router’s `Paid` events, only once on Base): action, from votemap handle, to votemap handle, amount, pot, tx hash. Handles are the names at that moment. The page lists those rows and **shows the action label**. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown (general explorer, later). Bound IG / X / Threads / TikTok from the pay lookup. Reads **`@isaac` paid `@grok`**. No archive node, no general USDC indexer. No privacy hide.
+**Where the money went (v0):** rows are **pledge** / **pay** / **refund** (from the vault’s events, only once on Base) and **decline** (from signed messages): action, from votemap handle, to votemap handle, amount, pot, tx hash. Handles are the names at that moment. The page lists those rows and **shows the action label**. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown (general explorer, later). Bound IG / X / Threads / TikTok from the pay lookup. Reads **`@isaac` paid `@grok`**. No archive node, no general USDC indexer. No privacy hide.
 
 Pay is final. VoteMap cannot refund, reverse, or freeze a pay, because VoteMap never held it.
 
@@ -66,7 +66,7 @@ flowchart TB
   subgraph phonecol ["iOS / Android — pledge and pay only here"]
     Face["Face ID / Android Class 3 · no PIN"]
     Wallet["Wallet optional until pledge<br/>max 3 · one payout · Coinbase EAS US"]
-    Pledge["Pledge ≥ 1 USDC · expiry<br/>wallet-signed · no gas · USDC stays in wallet"]
+    Pledge["Pledge ≥ 1 USDC · expiry 7–365 days<br/>one deposit tx · USDC locked in the vault"]
     Face --> Wallet --> Pledge
   end
 
@@ -75,7 +75,7 @@ flowchart TB
   QR --> Pledge
 
   subgraph after ["After the pledge"]
-    Cancel["Cancel or lapse — 0%"]
+    Cancel["Expiry — unpaid money back to your wallet · no fee"]
     Claim["Claim — someone posts I did this"]
     Pay["Pay · no fee · one tx from your wallet<br/>picker = claimant or verified social @<br/>confirm: social · muted votemap<br/>wallet · Coinbase country<br/>USDC → payout wallet"]
   end
@@ -105,7 +105,7 @@ User flow diagram PNG is not in this repo.
 
 ## 2. System
 
-Web JS is untrusted: `sendOk()` is ignored. Native plugin does Face ID / Class 3, signs with Secure Enclave / Keystore, HTTPS to the votemap API. The **API** stores wallet-signed pledges and claims and **looks up** verified social @ → votemap account → payout wallet, refusing listed public officials. The **signer** (key in KMS, no outbound fetches) EIP-712-signs each pay with payer, nonce, deadline, chainId and router. The **fetcher** (no secrets, public addresses only) **snapshots the post** from exact-host allowlisted oEmbed/permalink hosts and reads bios and websites. The **indexer** reads the router’s `Paid` events and pledgers’ USDC balances for trail rows (no-account hop is **unknown hands**), backed amounts, and follow-through. Never trust client handle/text/date. Official embeds are **cross-origin iframes after hydrate**. The PayRouter holds no USDC, so there is nothing to withdraw or freeze.
+Web JS is untrusted: `sendOk()` is ignored. Native plugin does Face ID / Class 3, signs with Secure Enclave / Keystore, HTTPS to the votemap API. The **API** stores wallet-signed pledges and claims and **looks up** verified social @ → votemap account → payout wallet, refusing listed public officials. The **signer** (key in KMS, no outbound fetches) EIP-712-signs each deposit and pay with payer, nonce, deadline, chainId and vault. The **fetcher** (no secrets, public addresses only) **snapshots the post** from exact-host allowlisted oEmbed/permalink hosts and reads bios and websites. The **indexer** reads the vault’s `Deposited`, `Paid`, and `Refunded` events for trail rows (no-account hop is **unknown hands**), locked amounts, and follow-through, and triggers refunds for expired deposits. Never trust client handle/text/date. Official embeds are **cross-origin iframes after hydrate**. The PotVault holds deposits, but has no owner or admin key: VoteMap can block a pay by not signing, never move or keep the money, and a refund at the expiry needs no VoteMap at all.
 
 ```mermaid
 %%{init: {"theme":"base","themeVariables":{"fontFamily":"Inter, system-ui, sans-serif","primaryColor":"#eef2ff","primaryTextColor":"#111827","lineColor":"#64748b","clusterBkg":"#f8fafc","clusterBorder":"#cbd5e1"}}}%%
@@ -133,9 +133,9 @@ flowchart TB
 
   subgraph server ["votemap services"]
     API["API · pledges · claims · lookup<br/>verified social @ → account → payout wallet<br/>refuses public officials"]
-    Signer["Signer · KMS key · signs only<br/>payer · nonce · deadline · chainId · router"]
+    Signer["Signer · KMS key · signs only<br/>payer · nonce · deadline · chainId · vault"]
     Fetcher["Fetcher · no secrets · public IPs only<br/>first-pledge snapshot · bio · website"]
-    Indexer["Indexer · Paid events · wallet balances<br/>trail · backed · follow-through"]
+    Indexer["Indexer · vault events<br/>trail · locked · follow-through · refunds"]
     API --> Signer
     API --> Fetcher
     Indexer --> API
@@ -145,13 +145,14 @@ flowchart TB
 
   subgraph base ["Base"]
     EAS["Coinbase EAS US · payer and payee"]
-    Router["PayRouter · holds no USDC<br/>amount → payee · optional tip → treasury<br/>emits Paid"]
+    Router["PotVault · no owner · no admin key<br/>deposit → locked · pay → payee<br/>expiry → back to pledger · tip → treasury"]
     EAS --> Router
   end
 
-  Signer -->|EIP-712 pay sig| Wallet["Voter wallet"]
-  Wallet -->|one pay tx| Router
-  Router -->|Paid events| Indexer
+  Signer -->|EIP-712 deposit or pay sig| Wallet["Voter wallet"]
+  Wallet -->|deposit or pay tx| Router
+  Router -->|events| Indexer
+  Indexer -->|refund after expiry| Router
   Fees["No fees · optional tip at pay"]
 
   classDef grey fill:#f3f4f6,stroke:#9ca3af,color:#374151
@@ -172,24 +173,25 @@ System flow diagram PNG is not in this repo.
 
 ## Where shop USDC goes
 
-VoteMap never holds it. There is no factory, no credit row, and no redeem step.
+VoteMap never controls it. There is no credit row and no redeem step.
 
 ```mermaid
 flowchart TB
-  VW["Voter wallet<br/>USDC they still hold"]
-  R["PayRouter on Base<br/>holds nothing"]
+  VW["Voter wallet"]
+  V["PotVault on Base<br/>no owner · no admin key"]
   TR["Treasury wallet"]
   SH["Shop payout wallet"]
 
-  VW -->|"1. Pledge<br/>signed message, USDC stays"| VW
-  VW -->|"2. Pay for a listed product<br/>one tx"| R
-  R -->|"optional tip"| TR
-  R -->|"full price, same tx"| SH
+  VW -->|"1. Pledge<br/>deposit, locked until expiry"| V
+  V -->|"2. Pay for a listed product<br/>from the deposit"| SH
+  VW -->|"optional tip"| TR
+  V -->|"3. Unpaid at expiry"| VW
 ```
 
-1. **Pledge.** The voter signs a promise toward the post’s outcome. USDC stays in the voter’s wallet.
-2. **Pay the shop.** When the voter buys a listed product, one transaction from the voter’s wallet pays the shop’s payout wallet the full price (plus any tip to votemap). The signed pay names the product and price. The shop can show the confirmed tx at the till.
+1. **Pledge.** The voter locks USDC in the vault toward the post’s outcome.
+2. **Pay the shop.** When the voter buys a listed product, one transaction pays the shop’s payout wallet the full price from the deposit (or from the wallet if there is no deposit). The signed pay names the product and price. The shop can show the confirmed tx at the till.
+3. **Expiry.** Anything the voter did not spend goes back to their wallet.
 
-Pay is final. VoteMap cannot refund, reverse, or freeze it, because VoteMap never held it.
+Pay is final. VoteMap cannot refund, reverse, or freeze it.
 
 Shop pay diagram PNG is not in this repo.

@@ -1,6 +1,6 @@
 # Legal reporting
 
-Research only. Dated 2026-10-07. Not legal advice. Not a lock. Not solved v0. This note does not change [requirements.md](./requirements.md). The “No taxpayer” row in [open.md](./open.md) stays open. **2026-10-19:** v0 moved to no custody (pledges plus direct pays through a router that holds nothing). The analysis below was written for the old factory, which held USDC; it needs a fresh counsel read against the new facts, especially the money-transmitter and 1099 sections.
+Research only. Dated 2026-10-07. Not legal advice. Not a lock. Not solved v0. This note does not change [requirements.md](./requirements.md). The “No taxpayer” row in [open.md](./open.md) stays open. **2026-10-19:** v0 moved to no custody. **2026-10-23:** v0 locks pledges in an immutable vault with no VoteMap key; VoteMap’s signer must approve each pay ([open.md](./open.md) “Locked pot legal review”). The analysis below was written for the old factory, which held USDC; it needs a fresh counsel read against the new facts, especially the money-transmitter and 1099 sections.
 
 Sources are IRS, FinCEN, OFAC, Coinbase, or a state statute or tax letter, read for this note. Where a 2026 figure could not be verified, the figure is omitted.
 

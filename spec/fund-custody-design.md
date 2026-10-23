@@ -2,7 +2,7 @@
 
 **As of:** 2026-09-25  
 **Status:** Design recommendation, not a spec or roadmap.  
-**Locked v0 money:** [requirements.md](./requirements.md). v0 has **no custody** (2026-10-19): pledges are wallet-signed promises, pays go straight from the voter’s wallet to the payee through a PayRouter that holds nothing, **1.5% on pay, 0% on pledge / cancel / lapse**, no escrow, no shop credit, no vest. Pots show backed USDC and each account shows follow-through. Public officials cannot be paid. Nothing personal goes on-chain. This note argued for escrow; v0 chose option B (no custody) instead. The escrow design below is research, **not** v0. [Fees vs behavior](./open.md) is open. [cheats-and-fixes.md](./cheats-and-fixes.md).  
+**Locked v0 money:** [requirements.md](./requirements.md). v0 (2026-10-23) locks pledges in an immutable PotVault with no VoteMap key: money goes only to payees the pledger picks or back to the pledger at their expiry, no fee, no shop credit, no vest. Pots show locked USDC and each account shows follow-through. Public officials cannot be paid. Nothing personal goes on-chain. This note argued for escrow; v0 chose option B (no custody) on 2026-10-19, then a locked vault with no VoteMap control on 2026-10-23. The escrow design below is research, **not** v0. [cheats-and-fixes.md](./cheats-and-fixes.md).  
 **Product context:** [x-thread-product-ideas.md](./x-thread-product-ideas.md)  
 **Companion:** who a wallet is — [wallet-identity-design.md](./wallet-identity-design.md)
 

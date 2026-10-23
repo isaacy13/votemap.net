@@ -4,14 +4,14 @@ Solved (v0 only): [requirements.md](./requirements.md). Later (not solved, unfin
 
 ## Pledges, not a pool
 
-v0 is **one pot per allowlisted URL** (X, Threads, Instagram, or TikTok), shown as **pledged** and **backed** USDC. VoteMap holds nothing (2026-10-19). Each pledge is a wallet-signed promise with a personal expiry. Each pay is one transaction from the voter’s wallet to one payee.
+v0 is **one pot per allowlisted URL** (X, Threads, Instagram, or TikTok), shown as **locked** USDC. Each pledge locks USDC in the PotVault until a personal expiry (2026-10-23); VoteMap cannot move it. Each pay is one transaction from a deposit (or the wallet) to one payee.
 
 So v0 does not implement:
 
 - Pay-only-when-done enforced by escrow (it is enforced by reputation: follow-through)
 - Pay-only-when-done as a **group** decision
 - Majority-to-withdraw + 7-day window
-- Solver certainty that pledged money will arrive (backed amount and follow-through are the signal)
+- Solver certainty that pledged money will arrive (locked amount and follow-through are the signal)
 - Pro-rata refund of a pool (there is no pool to refund)
 - Payer-named charity on timeout
 - Time-bomb / unretrievable funds
@@ -26,7 +26,7 @@ Later, unfinished (not solved) — license: [later.md](./later.md). Open: [open.
 
 ## Custody / money movement
 
-v0 has **no custody**. USDC stays in voters’ wallets until they pay. A pay goes through the PayRouter, which holds nothing: the full amount to the payee’s **payout wallet** on a votemap account (not a social @), plus any optional tip to the treasury (address required at deploy), in one transaction. No fee and nothing for VoteMap to sweep.
+v0 locks pledges in the **PotVault** (no owner, no admin key). A pay sends the amount from the deposit to the payee’s **payout wallet** on a votemap account (not a social @), plus any optional tip from the wallet to the treasury (address required at deploy), in one transaction. Unpaid money returns to the pledger at the expiry. No fee.
 
 v0 does not use escrow, a qualified custodian, fiat on-ramp, 1099 pipeline, yield, or YouTube / Facebook hosts (issue keys are **X, Threads, Instagram, TikTok**). Shop pays are pledge-to-purchase: pledge toward the outcome, pay the shop when you buy.
 
@@ -34,8 +34,8 @@ v0 does not use escrow, a qualified custodian, fiat on-ramp, 1099 pipeline, yiel
 
 **Categories stay off v0** (solved). No entity hubs, no voter grades / shaming, no AI “what did you get done,” no transparency score, no shipping labels / tax / themes / inventory sync / staff accounts / a general Shopify clone, no sports/tax-credit skins, no free/low-price vote seat vs paid seat as two products. v0 **does** have a Linktree-like **public page** (`votemap.net/@handle`, links **and shop catalog**). Grouping is **allowlisted post URL** (X / Threads / Instagram / TikTok).
 
-Pretty UI, vendor KYC / license, **general hop explorer** (beyond votemap’s own hops): [later.md](./later.md) (not solved). **Shop catalog on the public page is v0.** **Named who-paid-whom trail is v0.** **No custody, no vest (2026-10-19).**
+Pretty UI, vendor KYC / license, **general hop explorer** (beyond votemap’s own hops): [later.md](./later.md) (not solved). **Shop catalog on the public page is v0.** **Named who-paid-whom trail is v0.** **Locked pot, no VoteMap control, no vest (2026-10-23).**
 
 ## What v0 *does* lock so this list stays honest
 
-Issue = canonical allowlisted URL (X, Threads, Instagram, TikTok). **No custody.** One immutable PayRouter on Base that holds nothing. Native USDC, min 1. Pledge = wallet-signed, personal expiry, no gas. Pot shows pledged and **backed**. **No fees**; optional tip at pay to a **required** treasury. One account per Coinbase user; each pledger judges alone (no pot-level vote), claim split, public declines, round-trip exclusion, expected payout scaled to pledge size ([cheats](./cheats-and-fixes.md#incentive-scenarios)). One payee per pay. User pays Base gas on pay. Pay sig binds payer, nonce, deadline, chainId, router. Coinbase US EAS on payer and payee, read by the router. Nothing personal on-chain. Signer key in KMS; fetcher isolated, public addresses only. No payouts to public officials. Bio bind (**verified for 60 days**; **daily job** re-fetches only due binds, bio and website; no comment fallback; no social OAuth / cold-DM / paid X API) + FCFS votemap handle; **public page** `votemap.net/@handle` (links **and shop catalog**); **pay picker = verified social @**; **chain dest = payout wallet**. Street **unverified**; website verified only under the rule above. Fetcher browse snapshot. **Named trail:** pledge / cancel rows from signed messages, pay rows from `Paid` events; page lists rows and shows the action label; hash → **Basescan**; no-account hop is **unknown hands** (address, never a fake name); no trail score; **follow-through** (visible only) per account; off-platform hops not shown; no archive node / USDC indexer / hop explorer. Bound socials from the pay lookup. No attester; no mock. Embeds. Static export. No seeded issues.
+Issue = canonical allowlisted URL (X, Threads, Instagram, TikTok). **Locked pot.** One immutable PotVault on Base, no admin key, caps $5k per deposit / $250k total, audited. Native USDC, min 1. Pledge = deposit, expiry 7–365 days, no early exit, refund at expiry needs no VoteMap. Pot shows **locked**. **No fees**; optional tip at pay to a **required** treasury. One account per Coinbase user; each pledger judges alone (no pot-level vote), claim split, public declines, round-trip exclusion, expected payout scaled to pledge size ([cheats](./cheats-and-fixes.md#incentive-scenarios)). One payee per pay. User pays Base gas on deposit and pay. Deposit and pay sigs bind payer, nonce, deadline, chainId, vault. Coinbase US EAS on payer and payee, read by the vault. Nothing personal on-chain. Signer key in KMS; fetcher isolated, public addresses only. No payouts to public officials. Bio bind (**verified for 60 days**; **daily job** re-fetches only due binds, bio and website; no comment fallback; no social OAuth / cold-DM / paid X API) + FCFS votemap handle; **public page** `votemap.net/@handle` (links **and shop catalog**); **pay picker = verified social @**; **chain dest = payout wallet**. Street **unverified**; website verified only under the rule above. Fetcher browse snapshot. **Named trail:** pledge / pay / refund rows from vault events, decline rows from signed messages; page lists rows and shows the action label; hash → **Basescan**; no-account hop is **unknown hands** (address, never a fake name); no trail score; **follow-through** (visible only) per account; off-platform hops not shown; no archive node / USDC indexer / hop explorer. Bound socials from the pay lookup. No attester; no mock. Embeds. Static export. No seeded issues.

@@ -14,10 +14,10 @@ Later: vendor KYC / license. That is not a PEP screen and not a lobbying filing.
 
 ## Escrow, vest, and clawback
 
-Not v0, and not later work either. v0 has no custody (2026-10-19): no escrow, no shop credit, no vest, so there is nothing to claw back. A voter who wants to pay in stages sends several pays. Bringing escrow back would bring back custody, and that is a new decision, not an unfinished item.
+v0 locks pledges in the PotVault until the pledger’s expiry (2026-10-23), with no VoteMap control: money goes only to payees the pledger picks or back to the pledger. No shop credit, no vest, no clawback. A voter who wants to pay in stages sends several pays from the deposit.
 
 ## General hop explorer
 
-v0: named who-paid-whom ([requirements](./requirements.md) item 26). Rows are **pledge** and **cancel** (from the stored wallet-signed messages) and **pay** (from the router’s `Paid` events, only after the tx is on Base), with the **action label**. Handles are the names at that moment. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown. Bound IG / X / Threads / TikTok from the pay lookup. No archive node, no general USDC indexer. That named view is **v0**, not later.
+v0: named who-paid-whom ([requirements](./requirements.md) item 26). Rows are **pledge**, **pay**, and **refund** (from the vault’s events, only after the tx is on Base) and **decline** (from signed messages), with the **action label**. Handles are the names at that moment. Hash links **Basescan**. No-account hop is **unknown hands** (address, never a fake name). No trail score. Off-platform hops are not shown. Bound IG / X / Threads / TikTok from the pay lookup. No archive node, no general USDC indexer. That named view is **v0**, not later.
 
 Later: a general in-app hop explorer **beyond** those hops (USDC that left votemap). Not solved.
