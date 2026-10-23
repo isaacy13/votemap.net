@@ -2,7 +2,7 @@
 
 **As of:** 2026-09-25  
 **Status:** Design recommendation, not a spec or roadmap.  
-**Locked fees / v0 money:** [requirements.md](./requirements.md) — shop **credits**; **vest 0–365d** (clawback later); **0% restake / 1.5% disperse / shop move 5% · public move 1.5% / 5% leftover leave / 0% redeem**. Leftover expire stays **5%** in v0. [Fees vs behavior](./open.md) is open (not later). The ~10% figures below are thread-era, not v0. Majority-to-withdraw, per-issue escrow, vendor-KYC solver, pledge-to-purchase — research in this note, **not** v0. v0 is one factory, own-line leftover, Coinbase US + claimed wallet. **Named trail is v0** (signer appends one row on stake / disperse / move / redeem with **action** label; **unknown hands** if no account; visible-only score = share of those rows on votemap wallets; hash → Basescan; no archive node / indexer). A general hop explorer beyond votemap’s own hops is **later**. [cheats-and-fixes.md](./cheats-and-fixes.md).  
+**Locked v0 money:** [requirements.md](./requirements.md). v0 (2026-10-23) locks pledges in an immutable PotVault with no VoteMap key: money goes only to payees the pledger picks or back to the pledger at their expiry, no fee, no shop credit, no vest. Pots show locked USDC and each account shows follow-through. Public officials cannot be paid. Nothing personal goes on-chain. This note argued for escrow; v0 chose option B (no custody) on 2026-10-19, then a locked vault with no VoteMap control on 2026-10-23. The escrow design below is research, **not** v0. [cheats-and-fixes.md](./cheats-and-fixes.md).  
 **Product context:** [x-thread-product-ideas.md](./x-thread-product-ideas.md)  
 **Companion:** who a wallet is — [wallet-identity-design.md](./wallet-identity-design.md)
 
